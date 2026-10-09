@@ -5,6 +5,8 @@ import { Player } from '../entities/Player.js';
 import { NPC } from '../entities/NPC.js';
 import { DialogueUI } from '../ui/DialogueUI.js';
 import { DialogueSystem } from '../systems/DialogueSystem.js';
+import { PortalSystem } from '../systems/PortalSystem.js';
+import { MonsterDecoration } from '../entities/MonsterDecoration.js';
 
 // Dùng cho các khu vực dùng cùng bộ tile và cơ chế di chuyển.
 export class BaseWorldScene extends Scene {
@@ -31,6 +33,8 @@ export class BaseWorldScene extends Scene {
         this.world.build();
         this.player = new Player(this, { ...map.player, ...this.spawn });
         this.npcs = (map.npcs ?? []).map(data => new NPC(this, data, this.world));
+        this.monsters = (map.monsters ?? []).map(data => new MonsterDecoration(this, data, map.tileSize));
+        this.portals = new PortalSystem(this, this.world, map.portals);
         this.worldCollider = this.physics.add.collider(this.player.sprite, this.world.blockers);
         this.dialogueUI = new DialogueUI(this);
         this.dialogue = new DialogueSystem(this, this.player, this.npcs, this.dialogueUI);
@@ -51,6 +55,8 @@ export class BaseWorldScene extends Scene {
             this.dialogue = null;
             this.dialogueUI = null;
             this.worldCollider = null;
+            this.portals = null;
+            this.monsters = [];
         });
     }
 
@@ -58,5 +64,6 @@ export class BaseWorldScene extends Scene {
         if (!this.dialogue || !this.player) return;
         this.dialogue.update();
         this.player.update(this.dialogue.isOpen);
+        this.portals.update(this.player, this.dialogue.isOpen);
     }
 }

@@ -11,7 +11,7 @@ export const villageNPCs = [
 
         lines: [
             'Chào mừng cháu đến Làng Khởi Đầu!',
-            'Giếng nước nằm ở phía đông quảng trường. Người dân thường gặp nhau ở đó.',
+            'Khu cây xanh nằm ở phía tây bắc của làng.',
             'Hãy làm quen với mọi người trước khi bắt đầu chuyến phiêu lưu.'
         ]
     },
@@ -54,8 +54,8 @@ export const villageNPCs = [
         row: 23.7,
 
         lines: [
-            'Cháu thấy vườn nấm của chúng ta chưa?',
-            'Đi theo con đường phía nam sẽ đến những ngôi nhà và khu vườn.'
+            'Cháu đã ghé khu cây xanh phía tây bắc chưa?',
+            'Đi theo đường phía nam sẽ đến những ngôi nhà còn lại.'
         ]
     }
 ];
