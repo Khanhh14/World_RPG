@@ -122,22 +122,38 @@ export class WorldBuilder {
     }
 
     tree(x, y, autumn = false) {
-        const frames = autumn
-            ? [[9, 10, 11], [21, 22, 23], [33, 34, 35]]
-            : [[6, 7, 8], [18, 19, 20], [30, 31, 32]];
-        const bottom = (y + 3) * this.tileSize;
-        const depth = 100 + bottom;
-        this.add.ellipse(
-            (x + 1.5) * this.tileSize, bottom - 8,
-            90, 24, 0x000000, 0.15
-        ).setDepth(depth - 1);
-        frames.forEach((row, dy) => {
-            row.forEach((frame, dx) => {
-                this.tile(x + dx, y + dy, frame, depth);
-            });
-        });
-        this.blocker((x + 1.5) * this.tileSize, bottom - 20, 30, 24);
-    }
+    // Hai ô ghép theo chiều dọc:
+    // xanh: 4 + 16; vàng: 3 + 15.
+    const frames = autumn ? [3, 15] : [4, 16];
+
+    // Giữ vị trí chân cây như bản đồ hiện tại.
+    const col = x + 1;
+    const row = y + 1;
+    const centerX = (col + 0.5) * this.tileSize;
+    const bottom = (row + 2) * this.tileSize;
+    const depth = 100 + bottom;
+
+    this.add.ellipse(
+        centerX,
+        bottom - 6,
+        this.tileSize * 0.8,
+        this.tileSize * 0.25,
+        0x000000,
+        0.15
+    ).setDepth(depth - 1);
+
+    frames.forEach((frame, index) => {
+        this.tile(col, row + index, frame, depth);
+    });
+
+    // Va chạm ở gốc, không chặn toàn bộ tán cây.
+    this.blocker(
+        centerX,
+        bottom - 10,
+        this.tileSize * 0.5,
+        18
+    );
+}
 
     fence(x, y, length) {
         for (let i = 0; i < length; i++) {
