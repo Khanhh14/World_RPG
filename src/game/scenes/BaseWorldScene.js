@@ -22,6 +22,8 @@ export class BaseWorldScene extends Scene {
 
     preload() { loadWorldAssets(this); }
 
+    createWorld(map) { return new WorldBuilder(this, map); }
+
     create() {
         const map = this.mapData;
         const width = map.cols * map.tileSize;
@@ -29,7 +31,7 @@ export class BaseWorldScene extends Scene {
         this.physics.world.setBounds(0, 0, width, height);
         this.cameras.main.setBounds(0, 0, width, height);
         this.cameras.main.setBackgroundColor(map.backgroundColor);
-        this.world = new WorldBuilder(this, map);
+        this.world = this.createWorld(map);
         this.world.build();
         this.player = new Player(this, { ...map.player, ...this.spawn });
         this.npcs = (map.npcs ?? []).map(data => new NPC(this, data, this.world));

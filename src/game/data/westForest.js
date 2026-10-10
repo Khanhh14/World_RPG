@@ -14,14 +14,14 @@ const trees = [];
 for (let row = 0; row <= 39; row += 3) {
     for (let col = 0; col <= 52; col += 3) {
         const x = col + (row % 6 === 0 ? 0 : 0.75);
-        // tree() đã sửa vẽ cây tại [x+1, row+1], rộng 1 ô, cao 2 ô.
+        // Tán cây mới rộng 2 ô, cao 2.5 ô; chừa khoảng quanh đường và bãi trống.
         const overlaps = reserved.some(([rx, ry, rw, rh]) => (
-            x + 1 < rx + rw + 0.5 && x + 2 > rx - 0.5 &&
-            row + 1 < ry + rh + 0.5 && row + 3 > ry - 0.5
+            x + 0.5 < rx + rw + 0.5 && x + 2.5 > rx - 0.5 &&
+            row + 0.5 < ry + rh + 0.5 && row + 3 > ry - 0.5
         ));
         // Bỏ một số vị trí để có khoảng trống tự nhiên giữa các cụm cây.
         const sparseGap = ((col / 3) * 7 + (row / 3) * 11) % 5 === 0;
-        if (!overlaps && !sparseGap) trees.push([x, row, false]);
+        if (!overlaps && !sparseGap) trees.push([x, row, ((col + row) / 3) % 3]);
     }
 }
 
@@ -31,7 +31,6 @@ export const westForest = {
     tileSize,
     cols: 56,
     rows: 44,
-    tileset: 'town',
     backgroundColor: '#83c46a',
     player: {
         x: 2496, y: 1068,
@@ -40,9 +39,16 @@ export const westForest = {
     paths,
     paving: [], houses: [], props: [], fences: [], gardens: [],
     trees,
-    decorations: [
-        [9, 8, 28], [16, 14, 17], [26, 11, 28],
-        [35, 17, 17], [37, 29, 28], [45, 36, 17]
+    objects: [
+        { type: 'rock', col: 5, row: 19 },
+        { type: 'rock', col: 21, row: 27 },
+        { type: 'rock', col: 48, row: 30 },
+        { type: 'bush', col: 7, row: 18 },
+        { type: 'bush', col: 23, row: 8 },
+        { type: 'bush', col: 47, row: 27 },
+        ...trees.filter((_, i) => i % 2 === 0).map(([x, y]) => ({
+            type: 'grass', col: x + 2.5, row: y + 3
+        }))
     ],
     solidTiles: [],
     npcs: [],
