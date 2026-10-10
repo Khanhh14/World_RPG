@@ -1,10 +1,5 @@
-export const ITEMS = {
-    health_potion: { name: 'Bình hồi máu', frame: 114, type: 'consumable', description: 'Hồi 40 HP. Chỉ dùng khi chưa đầy máu.', heal: 40 },
-    mana_potion: { name: 'Bình hồi năng lượng', frame: 116, type: 'consumable', description: 'Hồi 25 MP. Chỉ dùng khi chưa đầy năng lượng.', mana: 25 },
-    iron_sword: { name: 'Kiếm sắt', frame: 103, type: 'weapon', description: 'Trang bị: +5 công.', attack: 5 },
-    wood_staff: { name: 'Trượng tập sự', frame: 129, type: 'weapon', description: 'Trang bị: +3 công.', attack: 3 },
-    round_shield: { name: 'Khiên nhỏ', frame: 102, type: 'shield', description: 'Trang bị: +3 thủ.', defense: 3 }
-};
+import { ITEMS, EQUIPMENT_SLOTS, BAG_CAPACITY } from '../data/items.js';
+export { ITEMS } from '../data/items.js';
 export const DESTINATIONS = [
     ['village', 'Làng Khởi Đầu'], ['west-forest', 'Khu Rừng Phía Tây'], ['atlast-lake', 'Hồ Nước Atlast']
 ];
@@ -22,32 +17,33 @@ export class RPGState {
         this.listeners = new Set();
         try { this.storage = storage === undefined ? globalThis.localStorage : storage; } catch { this.storage = null; }
         this.data = {
-            version: 1, level: 1, exp: 0, hp: 100, mp: 50, gold: 50,
+            version: 2, level: 1, exp: 0, hp: 100, mp: 50, gold: 50,
             inventory: { health_potion: 5, mana_potion: 3, iron_sword: 1, wood_staff: 1, round_shield: 1 },
-            equipment: { weapon: null, shield: null }, visited: [], explorationClaimed: false
+            equipment: Object.fromEntries(EQUIPMENT_SLOTS.map(([slot]) => [slot, null])), visited: [], explorationClaimed: false
         };
         this.restore();
     }
-    get maxHP() { return 100 + (this.data.level - 1) * 10; }
+    bonus(stat) { return Object.values(this.data.equipment).reduce((sum, id) => sum + (ITEMS[id]?.[stat] ?? 0), 0); }
+    get maxHP() { return 100 + (this.data.level - 1) * 10 + this.bonus("maxHP"); }
     get maxMP() { return 50 + (this.data.level - 1) * 5; }
     get expNeeded() { return this.data.level * 100; }
-    get attack() { return 10 + (this.data.level - 1) * 2 + (ITEMS[this.data.equipment.weapon]?.attack ?? 0); }
-    get defense() { return 5 + this.data.level - 1 + (ITEMS[this.data.equipment.shield]?.defense ?? 0); }
+    get attack() { return 10 + (this.data.level - 1) * 2 + this.bonus("attack"); }
+    get defense() { return 5 + this.data.level - 1 + this.bonus("defense"); }
     get explorationReady() { return DESTINATIONS.every(([id]) => this.data.visited.includes(id)); }
     restore() {
         try {
             const saved = JSON.parse(this.storage?.getItem(SAVE_KEY) ?? 'null');
-            if (!saved || saved.version !== 1) return;
+            if (!saved || ![1, 2].includes(saved.version)) return;
             this.data.level = integer(saved.level, 1, 100, 1);
             this.data.exp = integer(saved.exp, 0, this.expNeeded - 1, 0);
-            this.data.hp = integer(saved.hp, 0, this.maxHP, this.maxHP);
             this.data.mp = integer(saved.mp, 0, this.maxMP, this.maxMP);
             this.data.gold = integer(saved.gold, 0, 9999999, 50);
             for (const id of Object.keys(ITEMS)) this.data.inventory[id] = integer(saved.inventory?.[id], 0, 99, 0);
-            for (const slot of ['weapon', 'shield']) {
+            for (const [slot] of EQUIPMENT_SLOTS) {
                 const id = saved.equipment?.[slot];
                 if (ITEMS[id]?.type === slot && this.data.inventory[id] > 0) this.data.equipment[slot] = id;
             }
+            this.data.hp = integer(saved.hp, 0, this.maxHP, this.maxHP);
             this.data.visited = DESTINATIONS.map(([id]) => id).filter(id => saved.visited?.includes?.(id));
             this.data.explorationClaimed = saved.explorationClaimed === true;
         } catch { /* Dữ liệu không hợp lệ: dùng trạng thái khởi đầu. */ }
@@ -80,9 +76,30 @@ export class RPGState {
         if (this.data.level === 100) this.data.exp = Math.min(this.data.exp, this.expNeeded - 1);
         this.changed();
     }
+    canAdd(id, quantity = 1) {
+        const item = ITEMS[id], count = this.data.inventory[id] ?? 0;
+        if (!item || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) return 'Số lượng không hợp lệ.';
+        if (count + quantity > item.maxStack) return item.maxStack === 1 ? 'Bạn đã sở hữu trang bị này.' : 'Mỗi ô chứa tối đa 99 bình.';
+        if (!count && Object.values(this.data.inventory).filter(n => n > 0).length >= BAG_CAPACITY) return 'Ba lô đã đầy.';
+        return null;
+    }
+    canBuy(id, quantity = 1) {
+        const error = this.canAdd(id, quantity);
+        if (error) return { ok:false, message:error };
+        if (this.data.gold < ITEMS[id].price * quantity) return { ok:false, message:'Không đủ vàng.' };
+        return { ok:true, message:'' };
+    }
+    buyItem(id, quantity = 1) {
+        const check = this.canBuy(id, quantity);
+        if (!check.ok) return check;
+        this.data.gold -= ITEMS[id].price * quantity;
+        this.data.inventory[id] = (this.data.inventory[id] ?? 0) + quantity;
+        this.changed();
+        return { ok:true, message:`Đã mua ${quantity} ${ITEMS[id].name.toLowerCase()}.` };
+    }
     addItem(id, quantity = 1) {
-        if (!ITEMS[id]) return false;
-        this.data.inventory[id] = Math.min(99, (this.data.inventory[id] ?? 0) + integer(quantity, 0, 99, 0));
+        if (this.canAdd(id, quantity)) return false;
+        this.data.inventory[id] = (this.data.inventory[id] ?? 0) + quantity;
         this.changed(); return true;
     }
     useItem(id) {
@@ -100,6 +117,7 @@ export class RPGState {
         }
         const equipped = this.data.equipment[item.type] === id;
         this.data.equipment[item.type] = equipped ? null : id;
+        this.data.hp = Math.min(this.data.hp, this.maxHP);
         this.changed(); return `${equipped ? 'Đã tháo' : 'Đã trang bị'} ${item.name.toLowerCase()}.`;
     }
     claimExploration() {

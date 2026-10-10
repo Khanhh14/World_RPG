@@ -69,7 +69,7 @@ export class BaseWorldScene extends Scene {
         if (!this.dialogue || !this.player) return;
         const menuOpen = this.hud?.blocked ?? false;
         if (!menuOpen) this.dialogue.update();
-        const blocked = menuOpen || this.dialogue.isOpen;
+        const blocked = (this.hud?.blocked ?? false) || this.dialogue.isOpen;
         this.player.update(blocked);
         this.portals.update(this.player, blocked);
         this.hud?.syncDialogue(this.dialogue.isOpen);

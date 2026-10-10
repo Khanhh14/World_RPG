@@ -3,6 +3,7 @@ import { Input } from 'phaser';
 // Chọn NPC gần nhất và quản lý tiến trình hội thoại.
 export class DialogueSystem {
     constructor(scene, player, npcs, ui, range = 88) {
+        this.scene = scene;
         this.player = player;
         this.npcs = npcs;
         this.ui = ui;
@@ -42,6 +43,10 @@ export class DialogueSystem {
             return;
         }
         const npc = this.nearest();
+        if (npc?.isMerchant) {
+            this.player.stop(); npc.facePlayer(this.player);
+            this.scene.hud?.openShop(npc); return;
+        }
         if (!npc || !npc.lines?.length) return;
         this.active = { npc, index: 0 };
         this.player.stop();

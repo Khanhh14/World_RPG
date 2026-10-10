@@ -58,7 +58,7 @@ export class ActionBarUI {
     setNPC(npc) {
         if (this.npc === npc) return;
         this.npc = npc;
-        this.caption.setText(npc ? 'Trò chuyện' : 'Tương tác');
+        this.caption.setText(npc ? (npc.isMerchant ? 'Mua bán' : 'Trò chuyện') : 'Tương tác');
         this.draw();
     }
 
