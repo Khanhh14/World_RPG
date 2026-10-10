@@ -1,4 +1,3 @@
-import { createCustomMonsterTextures } from '../world/customMonsterTextures.js';
 
 // Chỉ hiển thị quái, chưa có AI/PvE/thanh máu.
 export class MonsterDecoration {
@@ -8,14 +7,11 @@ export class MonsterDecoration {
         const texture = data.texture ?? 'dungeon';
         const scale = data.scale ?? 3;
 
-        if (texture === 'moss-guardian') {
-            createCustomMonsterTextures(scene);
-        }
 
         this.shadow = scene.add.ellipse(
             x, feetY - 2,
-            texture === 'moss-guardian' ? 48 : 30,
-            texture === 'moss-guardian' ? 14 : 10,
+            30,
+            10,
             0x000000, 0.2
         ).setDepth(99 + feetY);
 

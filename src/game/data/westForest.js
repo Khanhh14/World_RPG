@@ -21,7 +21,7 @@ for (let row = 0; row <= 39; row += 3) {
         ));
         // Bỏ một số vị trí để có khoảng trống tự nhiên giữa các cụm cây.
         const sparseGap = ((col / 3) * 7 + (row / 3) * 11) % 5 === 0;
-        if (!overlaps && !sparseGap) trees.push([x, row, ((col + row) / 3) % 3]);
+        if (!overlaps && !sparseGap) trees.push([x, row, false]);
     }
 }
 
@@ -31,7 +31,7 @@ export const westForest = {
     tileSize,
     cols: 56,
     rows: 44,
-    backgroundColor: '#83c46a',
+    backgroundColor: '#83c46a', tileset: 'town',
     player: {
         x: 2496, y: 1068,
         texture: 'dungeon', frame: 96, scale: 3, speed: 200
@@ -39,16 +39,9 @@ export const westForest = {
     paths,
     paving: [], houses: [], props: [], fences: [], gardens: [],
     trees,
-    objects: [
-        { type: 'rock', col: 5, row: 19 },
-        { type: 'rock', col: 21, row: 27 },
-        { type: 'rock', col: 48, row: 30 },
-        { type: 'bush', col: 7, row: 18 },
-        { type: 'bush', col: 23, row: 8 },
-        { type: 'bush', col: 47, row: 27 },
-        ...trees.filter((_, i) => i % 2 === 0).map(([x, y]) => ({
-            type: 'grass', col: x + 2.5, row: y + 3
-        }))
+    decorations: [
+        [9, 8, 17], [16, 14, 28], [26, 11, 17],
+        [35, 17, 28], [37, 29, 17], [45, 36, 28]
     ],
     solidTiles: [],
     npcs: [],
@@ -58,7 +51,7 @@ export const westForest = {
         { col: 29, row: 15, frame: 108 },
         { col: 34, row: 16, frame: 120 },
         { col: 41, row: 33, frame: 121 },
-        { col: 33.5, row: 14.5, texture: 'moss-guardian', name: 'Hộ Vệ Rêu', scale: 3 }
+        { col: 33.5, row: 14.5, frame: 122, name: 'Bọ Cạp', scale: 3 }
     ],
     portals: [{
         x: 2592, feetY: 1104,

@@ -11,24 +11,22 @@ for (let row = 5; row < 32; row++) {
 
 export const atlastLake = {
     id: 'atlast-lake', title: 'HỒ NƯỚC ATLAST',
-    tileSize: 48, cols: 48, rows: 36, backgroundColor: '#83c46a',
+    tileSize: 48, cols: 48, rows: 36, backgroundColor: '#83c46a', tileset: 'town',
     player: { x: 288, y: 912, texture: 'dungeon', frame: 96, scale: 3, speed: 200 },
     paths: [[2, 18, 10, 3]],
     water,
     // Cầu gỗ từ bờ phía tây ra một sàn nhỏ; đi được trên phần gỗ.
     docks: [[11, 18, 7, 2], [17, 17, 4, 4]],
+    dockPosts: [[17.25,17.3],[20.75,17.3],[17.25,20.8],[20.75,20.8]],
     trees: [
-        [3, 3, 0], [8, 5, 1], [17, 1, 2], [30, 1, 0],
-        [40, 5, 1], [42, 12, 2], [41, 25, 0], [32, 30, 1],
-        [20, 30, 2], [10, 28, 0], [3, 25, 1], [6, 11, 2]
+        [3, 3, false], [8, 5, false], [17, 1, false], [30, 1, false],
+        [40, 5, false], [42, 12, false], [41, 25, false], [32, 30, false],
+        [20, 30, false], [10, 28, false], [3, 25, false], [6, 11, false]
     ],
-    objects: [
-        { type: 'grass', col: 6, row: 8 }, { type: 'grass', col: 10, row: 11 },
-        { type: 'grass', col: 9, row: 25 }, { type: 'grass', col: 17, row: 32 },
-        { type: 'grass', col: 37, row: 31 }, { type: 'grass', col: 43, row: 22 },
-        { type: 'grass', col: 42, row: 10 }, { type: 'grass', col: 27, row: 5 },
-        { type: 'bush', col: 8, row: 15 }, { type: 'bush', col: 39, row: 29 },
-        { type: 'rock', col: 12, row: 26 }, { type: 'rock', col: 40, row: 11 }
+    decorations: [
+        [6, 8, 17], [10, 11, 17], [9, 25, 28], [17, 32, 17],
+        [37, 31, 17], [43, 22, 28], [42, 10, 17], [27, 5, 17],
+        [8, 15, 28], [39, 29, 28]
     ],
     npcs: [], monsters: [],
     portals: [{
