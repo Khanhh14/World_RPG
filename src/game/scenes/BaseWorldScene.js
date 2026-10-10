@@ -7,6 +7,8 @@ import { DialogueUI } from '../ui/DialogueUI.js';
 import { DialogueSystem } from '../systems/DialogueSystem.js';
 import { PortalSystem } from '../systems/PortalSystem.js';
 import { MonsterDecoration } from '../entities/MonsterDecoration.js';
+import { RPGState } from '../systems/RPGState.js';
+import { RPGHUD } from '../ui/RPGHUD.js';
 
 // Dùng cho các khu vực dùng cùng bộ tile và cơ chế di chuyển.
 export class BaseWorldScene extends Scene {
@@ -42,14 +44,15 @@ export class BaseWorldScene extends Scene {
         this.dialogue = new DialogueSystem(this, this.player, this.npcs, this.dialogueUI);
         this.cameras.main.startFollow(this.player.sprite, true, 0.12, 0.12);
         this.cameras.main.roundPixels = true;
-        this.add.text(16, 16, `${map.title}\nWASD: di chuyển · E: nói chuyện · Esc: đóng`, {
-            fontFamily: 'Arial', fontSize: '18px', color: '#ffffff',
-            backgroundColor: '#20382b', padding: { x: 12, y: 10 }
-        }).setScrollFactor(0).setDepth(10000);
+        this.rpgState = RPGState.forScene(this);
+        this.rpgState.visit(map.id);
+        this.hud = new RPGHUD(this, this.rpgState, map.title);
 
         // Phaser tự dọn Game Objects khi Scene shutdown.
         // Bỏ tham chiếu các lớp quản lý để tạo lại sạch khi vào map lần nữa.
         this.events.once('shutdown', () => {
+            this.hud?.destroy();
+            this.hud = null;
             this.dialogue.active = null;
             this.world = null;
             this.player = null;
@@ -64,8 +67,11 @@ export class BaseWorldScene extends Scene {
 
     update() {
         if (!this.dialogue || !this.player) return;
-        this.dialogue.update();
-        this.player.update(this.dialogue.isOpen);
-        this.portals.update(this.player, this.dialogue.isOpen);
+        const menuOpen = this.hud?.blocked ?? false;
+        if (!menuOpen) this.dialogue.update();
+        const blocked = menuOpen || this.dialogue.isOpen;
+        this.player.update(blocked);
+        this.portals.update(this.player, blocked);
+        this.hud?.syncDialogue(this.dialogue.isOpen);
     }
 }
