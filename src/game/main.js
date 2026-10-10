@@ -1,6 +1,7 @@
 import { AUTO, Game, Scale } from 'phaser';
 import { Game as VillageGame } from './scenes/Game.js';
 import { WestForest } from './scenes/WestForest.js';
+import { AtlastLake } from './scenes/AtlastLake.js';
 
 const StartGame = (parent = 'game-container') => new Game({
     type: AUTO,
@@ -14,7 +15,7 @@ const StartGame = (parent = 'game-container') => new Game({
         default: 'arcade',
         arcade: { gravity: { x: 0, y: 0 }, debug: false }
     },
-    scene: [VillageGame, WestForest]
+    scene: [VillageGame, WestForest, AtlastLake]
 });
 
 export default StartGame;
