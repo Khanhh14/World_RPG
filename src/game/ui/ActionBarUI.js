@@ -8,7 +8,7 @@ export class ActionBarUI {
         this.graphics = scene.add.graphics()
             .setScrollFactor(0).setDepth(10010);
 
-        this.smallSlots = [103, 116, 129].map((frame, index) => ({
+        this.smallSlots = [103, 116, 129, 114, 102].map((frame, index) => ({
             icon: scene.add.image(0, 0, 'dungeon', frame)
                 .setScrollFactor(0).setDepth(10011).setAlpha(0.6),
             key: scene.add.text(0, 0, `${index + 1}`, {
@@ -28,7 +28,7 @@ export class ActionBarUI {
     }
 
     resize(width, height) {
-        const scale = Math.min(1, Math.max(0.2, (width - 32) / 284));
+        const scale = Math.min(1, Math.max(0.2, (width - 32) / 400));
         const big = 88 * scale;
         const small = 52 * scale;
         const gap = 8 * scale;
@@ -43,7 +43,7 @@ export class ActionBarUI {
             .setFontSize(13 * scale);
 
         this.smallSlots.forEach((slot, index) => {
-            const left = x - 12 * scale - (3 - index) * (small + gap) + gap;
+            const left = x - 12 * scale - (5 - index) * (small + gap) + gap;
             const top = y + big - small;
             slot.x = left;
             slot.y = top;
@@ -67,7 +67,7 @@ export class ActionBarUI {
         const g = this.graphics;
         g.clear();
 
-        // Ba ô kỹ năng nhỏ, làm mờ vì chưa có kỹ năng được gắn.
+        // Năm ô kỹ năng, làm mờ vì chưa có kỹ năng được gắn.
         for (const slot of this.smallSlots) {
             g.fillStyle(0x12251d, 0.9);
             g.fillRect(slot.x, slot.y, small, small);

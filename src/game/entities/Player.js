@@ -11,6 +11,13 @@ export class Player {
         this.shadow = scene.add.ellipse(config.x, config.y + 22, 26, 10, 0x000000, 0.2);
         this.cursors = scene.input.keyboard.createCursorKeys();
         this.keys = scene.input.keyboard.addKeys('W,A,S,D');
+
+        // Sprites cho vũ khí và khiên
+        this.weaponSprite = null;
+        this.shieldSprite = null;
+        this.currentWeapon = null;
+        this.currentShield = null;
+
         this.updateAppearance();
     }
 
@@ -38,11 +45,95 @@ export class Player {
     }
 
     updateAppearance() {
-        this.sprite.setDepth(100 + this.feetY);
-        this.shadow.setPosition(this.x, this.sprite.y + 22).setDepth(99 + this.feetY);
+    const facingLeft = this.sprite.flipX;
+    const playerDepth = 100 + this.feetY;
+
+    this.sprite.setDepth(playerDepth);
+    this.shadow
+        .setPosition(this.x, this.sprite.y + 22)
+        .setDepth(playerDepth - 1);
+
+    // Vũ khí: cách nhân vật 14px, thấp hơn một chút.
+    if (this.weaponSprite) {
+        this.weaponSprite
+            .setPosition(
+                this.x + (facingLeft ? -22 : 22),
+                this.sprite.y + 6
+            )
+            .setDepth(playerDepth + (facingLeft ? -1 : 1))
+            .setFlipX(facingLeft);
+    }
+
+    // Khiên: nằm phía đối diện, cách nhân vật 14px.
+    if (this.shieldSprite) {
+        this.shieldSprite
+            .setPosition(
+                this.x + (facingLeft ? 22 : -22),
+                this.sprite.y + 1
+            )
+            .setDepth(playerDepth + (facingLeft ? 1 : -1))
+            .setFlipX(facingLeft);
+    }
+}
+
+    updateEquipment(weapon, shield) {
+        // Cập nhật vũ khí
+        if (this.currentWeapon !== weapon) {
+            if (this.weaponSprite) {
+                this.weaponSprite.destroy();
+                this.weaponSprite = null;
+            }
+            this.currentWeapon = weapon;
+            if (weapon) {
+                const frame = this.getWeaponFrame(weapon);
+                if (frame !== null) {
+                    this.weaponSprite = this.scene.add.image(this.x, this.sprite.y, 'dungeon', frame)
+                        .setScale(this.sprite.scaleX)
+                        .setOrigin(0.5, 0.5);
+                }
+            }
+        }
+
+        // Cập nhật khiên
+        if (this.currentShield !== shield) {
+            if (this.shieldSprite) {
+                this.shieldSprite.destroy();
+                this.shieldSprite = null;
+            }
+            this.currentShield = shield;
+            if (shield) {
+                const frame = this.getShieldFrame(shield);
+                if (frame !== null) {
+                    this.shieldSprite = this.scene.add.image(this.x, this.sprite.y, 'dungeon', frame)
+                        .setScale(this.sprite.scaleX)
+                        .setOrigin(0.5, 0.5);
+                }
+            }
+        }
+        this.updateAppearance();
+    }
+
+    getWeaponFrame(weaponId) {
+        // Kiếm: frames 103-107, Gậy: frame 129
+        const weaponFrames = {
+            'iron_sword': 103, 'iron_sword_2': 104, 'iron_sword_3': 105,
+            'iron_sword_4': 106, 'iron_sword_5': 107, 'wood_staff': 129
+        };
+        return weaponFrames[weaponId] ?? null;
+    }
+
+    getShieldFrame(shieldId) {
+        // Khiên: frames 102, 101
+        const shieldFrames = {
+            'round_shield': 102, 'round_shield_2': 101, 'round_shield_3': 102,
+            'round_shield_4': 101, 'round_shield_5': 102
+        };
+        return shieldFrames[shieldId] ?? null;
     }
 
     destroy() {
+        if (this.weaponSprite) this.weaponSprite.destroy();
+        if (this.shieldSprite) this.shieldSprite.destroy();
         this.sprite.destroy();
         this.shadow.destroy();
     }

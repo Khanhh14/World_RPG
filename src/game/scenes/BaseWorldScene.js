@@ -48,9 +48,14 @@ export class BaseWorldScene extends Scene {
         this.rpgState.visit(map.id);
         this.hud = new RPGHUD(this, this.rpgState, map.title);
 
+        // Cập nhật trang bị ban đầu và lắng nghe thay đổi
+        this.updatePlayerEquipment();
+        this.equipmentUnsubscribe = this.rpgState.subscribe(() => this.updatePlayerEquipment());
+
         // Phaser tự dọn Game Objects khi Scene shutdown.
         // Bỏ tham chiếu các lớp quản lý để tạo lại sạch khi vào map lần nữa.
         this.events.once('shutdown', () => {
+            if (this.equipmentUnsubscribe) this.equipmentUnsubscribe();
             this.hud?.destroy();
             this.hud = null;
             this.dialogue.active = null;
@@ -63,6 +68,12 @@ export class BaseWorldScene extends Scene {
             this.portals = null;
             this.monsters = [];
         });
+    }
+
+    updatePlayerEquipment() {
+        if (!this.player || !this.rpgState) return;
+        const equipment = this.rpgState.data.equipment;
+        this.player.updateEquipment(equipment.weapon, equipment.shield);
     }
 
     update() {

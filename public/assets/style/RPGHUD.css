@@ -1,0 +1,829 @@
+/* ==================== GIAO DIỆN CHUNG ==================== */
+
+.rpg-ui {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    pointer-events: none;
+    font-family: Arial, sans-serif;
+    color: #f3ebd4;
+    font-size: 14px;
+
+    --gold: #d9b66c;
+    --muted: #a8bbae;
+}
+
+.rpg-ui * {
+    box-sizing: border-box;
+}
+
+.rpg-ui button {
+    font: inherit;
+    cursor: pointer;
+    color: inherit;
+    border: 1px solid #607064;
+    background: #253f32;
+    border-radius: 7px;
+    padding: 9px 12px;
+    transition:
+        background .15s,
+        border-color .15s,
+        transform .15s;
+}
+
+.rpg-ui button:hover {
+    background: #36583f;
+    border-color: var(--gold);
+}
+
+.rpg-ui button:focus-visible {
+    outline: 3px solid #ffe19c;
+    outline-offset: 2px;
+}
+
+.rpg-ui button:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+.rpg-ui .rpg-primary {
+    background: #b99b61;
+    border-color: #e2c27e;
+    color: #12271d;
+    font-weight: bold;
+}
+
+.rpg-ui .rpg-primary:hover {
+    background: #d0b174;
+}
+
+.rpg-ui .rpg-icon {
+    display: inline-block;
+    flex-shrink: 0;
+    background-image:
+        url('/assets/tiny-dungeon/Tilemap/tilemap_packed.png');
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+
+.rpg-subtle {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.rpg-tier {
+    font-size: 10px;
+    color: #ebce85;
+}
+
+/* ==================== THANH TRẠNG THÁI ==================== */
+
+.rpg-status {
+    position: absolute;
+    left: 18px;
+    top: 18px;
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    width: 310px;
+    background: linear-gradient(135deg, #203c31f5, #112720f5);
+    border: 1px solid #9b8854;
+    box-shadow: 0 3px 0 #0e211bb0;
+    border-radius: 12px;
+}
+
+.rpg-portrait {
+    position: relative;
+    align-self: flex-start;
+    width: 61px;
+    height: 70px;
+    display: grid;
+    place-items: center;
+    background: #2f4b3b;
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+}
+
+.rpg-level {
+    position: absolute;
+    bottom: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: bold;
+    background: var(--gold);
+    color: #172a20;
+    padding: 3px 7px;
+    border-radius: 5px;
+}
+
+.rpg-meters {
+    flex: 1;
+    min-width: 0;
+}
+
+.rpg-name {
+    font-weight: bold;
+    margin-bottom: 7px;
+    font-size: 14px;
+}
+
+.rpg-bar {
+    height: 17px;
+    margin-top: 5px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #091c19;
+    border: 1px solid #415448;
+    position: relative;
+}
+
+.rpg-fill {
+    height: 100%;
+    transition: width .2s;
+}
+
+.rpg-bar.hp .rpg-fill {
+    background: linear-gradient(#e67468, #b74342);
+}
+
+.rpg-bar.mp .rpg-fill {
+    background: linear-gradient(#71b8d9, #40789c);
+}
+
+.rpg-bar.xp {
+    height: 12px;
+}
+
+.rpg-bar.xp .rpg-fill {
+    background: linear-gradient(#ecd08c, #bf9650);
+}
+
+.rpg-bar-label {
+    position: absolute;
+    inset: 0;
+    text-align: center;
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 15px;
+    color: #fff;
+    text-shadow: 0 1px 2px #000;
+}
+
+.rpg-bar.xp .rpg-bar-label {
+    font-size: 9px;
+    line-height: 10px;
+}
+
+.rpg-location {
+    position: absolute;
+    right: 18px;
+    top: 18px;
+    text-align: right;
+    max-width: 44%;
+    font-size: 13px;
+}
+
+.rpg-location-name,
+.rpg-gold {
+    display: block;
+    width: fit-content;
+    margin-left: auto;
+    padding: 9px 12px;
+    background: #172d25ed;
+    border: 1px solid #60725d;
+    border-radius: 7px;
+}
+
+.rpg-gold {
+    margin-top: 7px;
+    color: #f6d67f;
+}
+
+/* ==================== MENU ==================== */
+
+.rpg-nav {
+    position: absolute;
+    left: 18px;
+    bottom: 20px;
+    display: flex;
+    gap: 7px;
+    pointer-events: auto;
+}
+
+.rpg-nav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 64px;
+    background: #152b25ed;
+    box-shadow: 0 2px 0 #102018;
+    position: relative;
+}
+
+.rpg-nav kbd {
+    font: 11px Arial;
+    color: #dcc996;
+}
+
+.rpg-dot {
+    position: absolute;
+    right: 7px;
+    top: 5px;
+    width: 8px;
+    height: 8px;
+    background: #f3cb68;
+    border-radius: 50%;
+}
+
+.rpg-ui.talking .rpg-nav {
+    display: none;
+}
+
+.rpg-overlay {
+    position: absolute;
+    inset: 0;
+    background: #081710b8;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+}
+
+.rpg-overlay[hidden],
+.rpg-toast[hidden] {
+    display: none;
+}
+
+.rpg-modal {
+    width: min(740px, 100%);
+    max-height: calc(100dvh - 36px);
+    overflow: auto;
+    background: linear-gradient(145deg, #213b30, #11261f);
+    border: 2px solid #b89a60;
+    border-radius: 14px;
+    box-shadow: 0 16px 80px #0008;
+    padding: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: #71815c #10271f;
+}
+
+.rpg-modal.rpg-inventory-modal {
+    width: min(1060px, 100%);
+}
+
+.rpg-modal.rpg-shop-modal {
+    width: min(900px, 100%);
+}
+
+.rpg-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.rpg-modal h2 {
+    font-size: 22px;
+    margin: 0;
+}
+
+.rpg-modal h3 {
+    font-size: 16px;
+    margin: 0 0 12px;
+}
+
+.rpg-tabs {
+    display: flex;
+    gap: 6px;
+    border-bottom: 1px solid #4d604b;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.rpg-tabs button {
+    font-size: 12px;
+    padding: 7px 10px;
+}
+
+.rpg-tabs button.active,
+.rpg-shop-filters button.active {
+    background: #b6985e;
+    color: #182c21;
+    border-color: #e4c585;
+    font-weight: bold;
+}
+
+/* ==================== NHÂN VẬT VÀ BALO ==================== */
+
+.rpg-bag-layout {
+    display: grid;
+    grid-template-columns:
+        minmax(330px, .95fr)
+        minmax(300px, 1fr);
+    gap: 20px;
+}
+
+.rpg-equipment-panel,
+.rpg-bag-panel {
+    min-width: 0;
+    padding: 18px;
+    background: linear-gradient(160deg, #19362b, #0d211b);
+    border: 1px solid #486551;
+    border-radius: 12px;
+    box-shadow: inset 0 1px #ffffff08;
+}
+
+.rpg-section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.rpg-section-heading h3 {
+    margin: 0;
+}
+
+.rpg-section-heading > span {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+/* Khung xem mô hình nhân vật */
+
+.rpg-model-stage {
+    position: relative;
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(
+            ellipse at 50% 70%,
+            #42604455,
+            transparent 65%
+        ),
+        linear-gradient(#0b1d19, #18362a);
+    border: 1px solid #526547;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.rpg-model-stage::before {
+    content: '';
+    position: absolute;
+    width: 176px;
+    height: 56px;
+    border: 1px solid #cdb37166;
+    border-radius: 50%;
+    background: #9dab6820;
+    bottom: 32px;
+    box-shadow: 0 0 32px #d9b66c10;
+}
+
+.rpg-model-stage canvas {
+    position: relative;
+    width: 240px;
+    height: 180px;
+    image-rendering: pixelated;
+    z-index: 1;
+}
+
+.rpg-model-caption {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    color: var(--gold);
+    font-size: 10px;
+    letter-spacing: 1px;
+}
+
+.rpg-model-level {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 11px;
+    background: #c4a568;
+    color: #142a20;
+    border-radius: 5px;
+    padding: 4px 7px;
+}
+
+.rpg-model-controls {
+    position: absolute;
+    bottom: 9px;
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+}
+
+.rpg-model-controls button {
+    padding: 4px 9px;
+    font-size: 11px;
+}
+
+/* Các ô trang bị */
+
+.rpg-equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.rpg-equipment-slot {
+    min-width: 0;
+    padding: 10px;
+    background: #0d1f18;
+    border: 1px solid #3d5246;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.rpg-equipment-slot.equipped {
+    border-color: #d9b66c;
+    background: #152b23;
+}
+
+.rpg-equipment-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rpg-equipment-header > div {
+    min-width: 0;
+}
+
+.rpg-equipment-header .rpg-icon,
+.rpg-equipment-header .rpg-gear-icon {
+    flex-shrink: 0;
+}
+
+.rpg-equipment-title {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+
+.rpg-equipment-name {
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.rpg-equipment-empty {
+    color: #758a7d;
+    font-style: italic;
+    font-weight: normal;
+}
+
+.rpg-equipment-stats {
+    font-size: 11px;
+    color: #9fb5a3;
+    line-height: 1.5;
+}
+
+.rpg-equipment-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px;
+    margin-top: auto;
+}
+
+.rpg-equipment-footer button {
+    padding: 4px 8px;
+    font-size: 11px;
+}
+
+/* Tổng chỉ số */
+
+.rpg-summary-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.rpg-summary-stats > div {
+    text-align: center;
+    padding: 10px 3px;
+    background: #0b1f18;
+    border: 1px solid #354e3c;
+    border-radius: 7px;
+}
+
+.rpg-summary-stats span {
+    display: block;
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 5px;
+}
+
+.rpg-summary-stats strong {
+    color: #edcf87;
+    font-size: 18px;
+}
+
+/* Các ô balo */
+
+.rpg-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 7px;
+    align-content: start;
+}
+
+.rpg-ui .rpg-slot {
+    position: relative;
+    aspect-ratio: 1;
+    min-height: 48px;
+    min-width: 0;
+    padding: 2px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(145deg, #213c2d, #0d211a);
+    border: 1px solid #42583f;
+    border-radius: 9px;
+}
+
+.rpg-ui .rpg-slot:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px #0004;
+}
+
+.rpg-ui .rpg-slot.selected {
+    border: 2px solid #e6ca83;
+    background: #314d35;
+    box-shadow: 0 0 16px #d9b66c22;
+}
+
+.rpg-ui .rpg-slot.empty {
+    background: #0b1f18;
+    opacity: .6;
+}
+
+.rpg-qty {
+    position: absolute;
+    right: 4px;
+    bottom: 2px;
+    font-size: 11px;
+    text-shadow: 0 1px 2px #000;
+}
+
+.rpg-item-detail {
+    margin-top: 16px;
+    padding: 16px;
+    background: #0b2018;
+    border: 1px solid #49613f;
+    border-radius: 10px;
+    min-height: 180px;
+}
+
+.rpg-item-detail header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.rpg-item-detail h4 {
+    margin: 0 0 6px;
+    font-size: 16px;
+}
+
+.rpg-item-detail p {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #bfceb9;
+}
+
+.rpg-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.rpg-item-actions button {
+    flex: 1;
+}
+
+.rpg-empty-bag {
+    text-align: center;
+    padding: 24px 8px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.rpg-bag-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    font-size: 12px;
+    color: #b4c1af;
+}
+
+/* ==================== CỬA HÀNG ==================== */
+
+.rpg-shop-gold {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: #f6d67f;
+}
+
+.rpg-shop-filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+}
+
+.rpg-shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.rpg-shop-item {
+    background: #10271f;
+    border: 1px solid #506449;
+    border-radius: 9px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.rpg-shop-item header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.rpg-shop-item h3 {
+    margin: 0 0 5px;
+    font-size: 15px;
+}
+
+.rpg-shop-item p {
+    margin: 0;
+    flex: 1;
+}
+
+.rpg-shop-buy {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    color: #f6d67f;
+}
+
+.rpg-shop-item button {
+    font-size: 12px;
+}
+
+/* ==================== NHIỆM VỤ ==================== */
+
+.rpg-quest {
+    padding: 20px;
+    background: #10271f;
+    border: 1px solid #49634d;
+    border-radius: 9px;
+}
+
+.rpg-quest ul {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+}
+
+.rpg-quest li {
+    padding: 9px 0;
+    color: #b2c3b3;
+}
+
+.rpg-quest li.done {
+    color: #c7df99;
+}
+
+.rpg-rewards {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    border-top: 1px solid #3c5541;
+    padding-top: 16px;
+    color: #e5c879;
+}
+
+/* ==================== THÔNG BÁO ==================== */
+
+.rpg-toast {
+    position: absolute;
+    left: 50%;
+    top: 145px;
+    transform: translateX(-50%);
+    max-width: 90%;
+    padding: 11px 18px;
+    border: 1px solid #b59c65;
+    background: #10271ff5;
+    border-radius: 8px;
+    text-align: center;
+    z-index: 2;
+    box-shadow: 0 3px 12px #0005;
+}
+
+/* ==================== MÀN HÌNH NHỎ ==================== */
+
+@media (max-width: 760px) {
+    .rpg-bag-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .rpg-model-stage {
+        height: 220px;
+    }
+}
+
+@media (max-width: 700px) {
+    .rpg-status {
+        width: 274px;
+        left: 10px;
+        top: 10px;
+        padding: 9px;
+        gap: 9px;
+    }
+
+    .rpg-location {
+        top: 10px;
+        right: 10px;
+        max-width: 35%;
+        font-size: 11px;
+    }
+
+    .rpg-nav {
+        left: 10px;
+        bottom: 12px;
+        gap: 4px;
+    }
+
+    .rpg-nav button {
+        min-width: 49px;
+        padding: 7px;
+        font-size: 11px;
+    }
+
+    .rpg-modal {
+        padding: 14px;
+    }
+
+    .rpg-toast {
+        top: 125px;
+    }
+}
+
+@media (max-width: 430px) {
+    .rpg-location-name {
+        display: none;
+    }
+
+    .rpg-status {
+        width: 265px;
+    }
+
+    .rpg-location {
+        max-width: 90px;
+    }
+
+    .rpg-gold {
+        padding: 7px;
+    }
+}
+
+@media (max-width: 380px) {
+    .rpg-equipment-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .rpg-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
