@@ -1,5 +1,4 @@
-import './auth.css';
-import { authApi } from './authApi.js';
+import { authApi } from '../../api/authApi.js';
 const scenery = `<svg class="auth-scenery" viewBox="0 0 960 540" preserveAspectRatio="xMidYMid slice" aria-hidden="true" shape-rendering="crispEdges">
 <defs><pattern id="auth-grass" width="58" height="48" patternUnits="userSpaceOnUse"><rect width="58" height="48" fill="#86bf64"/><path d="M8 12h4v4h4v-4h3v7H8zM40 36h3v-4h3v8h-6z" fill="#76af58"/><path d="M30 8h5v3h-5z" fill="#98ca76"/></pattern><g id="auth-tree"><rect x="-3" y="3" width="6" height="15" fill="#755239"/><path d="M-5-34H5v6h6v8h5v25h-5v6h-22V5h-5v-25h5v-8h6z" fill="#344c35"/><path d="M-3-28H4v7h6v23H5v5H-6V2h-5v-21h5v-9z" fill="#509345"/><path d="M-2-22h4v8h3v7H-5v-12h3z" fill="#94cb67"/></g><g id="auth-flower"><path d="M0 0h3v10H0z" fill="#4d893f"/><path d="M-3-4h8v8h-8z" fill="#f9db73"/><path d="M0-7h3v3H0zM-6-1h3v3h-3zM5-1h3v3H5z" fill="#fff2af"/></g></defs>
 <rect width="960" height="540" fill="url(#auth-grass)"/><path d="M0 346H960M280 0V540" stroke="#d49754" stroke-width="67"/><path d="M0 346H960M280 0V540" stroke="#e8ac68" stroke-width="53"/>
