@@ -1,21 +1,47 @@
-import { AUTO, Game, Scale } from 'phaser';
+import { withAuth } from '../auth/bootstrap.js';
+import { AUTO, Game as PhaserGame, Scale } from 'phaser';
+
 import { Game as VillageGame } from './scenes/Game.js';
 import { WestForest } from './scenes/WestForest.js';
 import { AtlastLake } from './scenes/AtlastLake.js';
 
-const StartGame = (parent = 'game-container') => new Game({
-    type: AUTO,
-    parent,
-    width: window.innerWidth,
-    height: window.innerHeight,
-    pixelArt: true,
-    backgroundColor: '#83c46a',
-    scale: { mode: Scale.RESIZE, autoCenter: Scale.NO_CENTER },
-    physics: {
-        default: 'arcade',
-        arcade: { gravity: { x: 0, y: 0 }, debug: false }
-    },
-    scene: [VillageGame, WestForest, AtlastLake]
-});
+// Hàm này chỉ được withAuth gọi sau khi xác thực thành công.
+function StartGame(parent = 'game-container') {
+    const config = {
+        type: AUTO,
+        parent,
 
-export default StartGame;
+        width: window.innerWidth,
+        height: window.innerHeight,
+
+        pixelArt: true,
+        backgroundColor: '#83c46a',
+
+        scale: {
+            mode: Scale.RESIZE,
+            autoCenter: Scale.NO_CENTER,
+        },
+
+        physics: {
+            default: 'arcade',
+            arcade: {
+                gravity: {
+                    x: 0,
+                    y: 0,
+                },
+                debug: false,
+            },
+        },
+
+        scene: [
+            VillageGame,
+            WestForest,
+            AtlastLake,
+        ],
+    };
+
+    return new PhaserGame(config);
+}
+
+// Kiểm tra phiên hoặc hiển thị đăng nhập trước khi tạo game.
+export default withAuth(StartGame);
