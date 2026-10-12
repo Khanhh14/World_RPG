@@ -1,3 +1,4 @@
+import { applyCharacterToScene } from '../characters/characterSession.js';
 import { Scene } from 'phaser';
 import { loadWorldAssets } from '../config/assets.js';
 import { WorldBuilder } from '../world/WorldBuilder.js';
@@ -47,6 +48,7 @@ export class BaseWorldScene extends Scene {
         this.rpgState = RPGState.forScene(this);
         this.rpgState.visit(map.id);
         this.hud = new RPGHUD(this, this.rpgState, map.title);
+        applyCharacterToScene(this);
 
         // Cập nhật trang bị ban đầu và lắng nghe thay đổi
         this.updatePlayerEquipment();

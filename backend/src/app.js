@@ -14,6 +14,7 @@ app.get('/api/health', async (req, res) => {
   catch { res.status(503).json({ success: false, server: 'ok', database: 'disconnected' }); }
 });
 app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/characters', require('./routes/character.routes'));
 // Gắn API nhân vật/mua đồ tại đây sau khi triển khai; dùng requireAuth để bảo vệ.
 app.use((req, res) => res.status(404).json({ success: false, message: 'API không tồn tại.' }));
 app.use((error, req, res, next) => {

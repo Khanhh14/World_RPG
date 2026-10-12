@@ -59,3 +59,6 @@ export function gearIcon(kind, level=1, size=40) {
     };
     return `<svg aria-hidden="true" class="rpg-gear-icon" width="${size}" height="${size}" viewBox="0 0 16 16" style="image-rendering:pixelated;flex-shrink:0" shape-rendering="crispEdges"><g fill="${base}" stroke="#243b3c" stroke-width=".5">${shapes[kind]??shapes.armor}</g></svg>`;
 }
+
+// Vũ khí khởi đầu của Đấu sĩ.
+ITEMS.starter_axe = {name:'Rìu tập sự',frame:118,type:'weapon',category:'weapon',level:1,price:35,maxStack:1,attack:6,description:'+6 công. Vũ khí khởi đầu của Đấu sĩ.'};

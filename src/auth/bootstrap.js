@@ -1,3 +1,5 @@
+import { chooseCharacter } from '../game/characters/CharacterCreationUI.js';
+import { setCharacterProfile } from '../game/characters/characterSession.js';
 import { AuthUI } from './AuthUI.js';
 import { authApi } from './authApi.js';
 // Bọc hàm khởi tạo Phaser hiện có, giữ nguyên cấu hình và các map.
@@ -7,10 +9,12 @@ export function withAuth(startGame) {
     if (pending) return pending;
     pending = (async () => {
       const user = await new AuthUI().wait();
+      const character = await chooseCharacter(user);
+      setCharacterProfile(character, user);
       const game = await startGame(user, ...args);
       game?.registry?.set('auth-user', user);
       const panel = document.createElement('div'); panel.className = 'rpg-account-panel';
-      const name = document.createElement('span'); name.textContent = user.username;
+      const name = document.createElement('span'); name.textContent = character.name + ' · ' + character.class.name;
       const logout = document.createElement('button'); logout.type = 'button'; logout.textContent = 'Đăng xuất';
       const status = document.createElement('span'); status.setAttribute('role', 'status'); status.className = 'account-status';
       panel.append(name, logout, status); document.body.appendChild(panel);

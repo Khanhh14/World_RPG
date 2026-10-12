@@ -1,3 +1,4 @@
+import { createCharacterState, getCharacterProfile, getCharacterAccountId } from '../characters/characterSession.js';
 import { ITEMS, EQUIPMENT_SLOTS, BAG_CAPACITY } from '../data/items.js';
 export { ITEMS } from '../data/items.js';
 export const DESTINATIONS = [
@@ -9,14 +10,16 @@ const integer = (value, min, max, fallback) => Number.isFinite(value)
 
 export class RPGState {
     static forScene(scene) {
-        const accountId = scene.registry.get('auth-user')?.id;
+        const accountId = scene.registry.get('auth-user')?.id ?? getCharacterAccountId();
         if ((typeof accountId !== 'string' && typeof accountId !== 'number') || !String(accountId).trim()) {
             throw new Error('Không thể tải tiến trình game khi chưa xác định được tài khoản đăng nhập.');
         }
         const userId = String(accountId);
+        const characterId = getCharacterProfile()?.id;
+        if (!characterId) throw new Error('Chưa chọn nhân vật. Hãy đăng nhập lại.');
         let state = scene.registry.get('rpg-state-v1');
-        if (!state || state.userId !== userId) {
-            state = new RPGState(undefined, userId);
+        if (!state || state.userId !== userId || String(state.data.characterId) !== String(characterId)) {
+            state = createCharacterState(RPGState, userId);
             scene.registry.set('rpg-state-v1', state);
         }
         return state;
