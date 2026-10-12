@@ -9,11 +9,24 @@ const integer = (value, min, max, fallback) => Number.isFinite(value)
 
 export class RPGState {
     static forScene(scene) {
+        const accountId = scene.registry.get('auth-user')?.id;
+        if ((typeof accountId !== 'string' && typeof accountId !== 'number') || !String(accountId).trim()) {
+            throw new Error('Không thể tải tiến trình game khi chưa xác định được tài khoản đăng nhập.');
+        }
+        const userId = String(accountId);
         let state = scene.registry.get('rpg-state-v1');
-        if (!state) { state = new RPGState(); scene.registry.set('rpg-state-v1', state); }
+        if (!state || state.userId !== userId) {
+            state = new RPGState(undefined, userId);
+            scene.registry.set('rpg-state-v1', state);
+        }
         return state;
     }
-    constructor(storage) {
+    constructor(storage, userId) {
+        if ((typeof userId !== 'string' && typeof userId !== 'number') || !String(userId).trim()) {
+            throw new Error('RPGState cần ID tài khoản để lưu tiến trình riêng.');
+        }
+        this.userId = String(userId);
+        this.saveKey = `${SAVE_KEY}:${encodeURIComponent(this.userId)}`;
         this.listeners = new Set();
         try { this.storage = storage === undefined ? globalThis.localStorage : storage; } catch { this.storage = null; }
         this.data = {
@@ -32,7 +45,7 @@ export class RPGState {
     get explorationReady() { return DESTINATIONS.every(([id]) => this.data.visited.includes(id)); }
     restore() {
         try {
-            const saved = JSON.parse(this.storage?.getItem(SAVE_KEY) ?? 'null');
+            const saved = JSON.parse(this.storage?.getItem(this.saveKey) ?? 'null');
             if (!saved || ![1, 2].includes(saved.version)) return;
             this.data.level = integer(saved.level, 1, 100, 1);
             this.data.exp = integer(saved.exp, 0, this.expNeeded - 1, 0);
@@ -50,7 +63,7 @@ export class RPGState {
     }
     subscribe(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
     changed() {
-        try { this.storage?.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch { /* Vẫn chơi được khi storage bị chặn. */ }
+        try { this.storage?.setItem(this.saveKey, JSON.stringify(this.data)); } catch { /* Vẫn chơi được khi storage bị chặn. */ }
         for (const fn of this.listeners) fn(this.data);
     }
     visit(id) {

@@ -7,7 +7,7 @@ export function withAuth(startGame) {
     if (pending) return pending;
     pending = (async () => {
       const user = await new AuthUI().wait();
-      const game = await startGame(...args);
+      const game = await startGame(user, ...args);
       game?.registry?.set('auth-user', user);
       const panel = document.createElement('div'); panel.className = 'rpg-account-panel';
       const name = document.createElement('span'); name.textContent = user.username;

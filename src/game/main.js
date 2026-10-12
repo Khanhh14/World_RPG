@@ -6,10 +6,13 @@ import { WestForest } from './scenes/WestForest.js';
 import { AtlastLake } from './scenes/AtlastLake.js';
 
 // Hàm này chỉ được withAuth gọi sau khi xác thực thành công.
-function StartGame(parent = 'game-container') {
+function StartGame(user, parent = 'game-container') {
     const config = {
         type: AUTO,
         parent,
+        callbacks: {
+            preBoot: game => game.registry.set('auth-user', user),
+        },
 
         width: window.innerWidth,
         height: window.innerHeight,
