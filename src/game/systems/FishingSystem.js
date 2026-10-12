@@ -3,31 +3,37 @@ import { FishingUI } from '../ui/FishingUI.js';
 export class FishingSystem {
   constructor(scene) {
     if (scene.mapData?.id !== 'atlast-lake') return;
-    this.scene = scene; this.alive = true; this.phase = 'idle'; this.basketOpen = false; this.attemptId = null;
-    this.ui = new FishingUI(() => this.start(), () => this.openBasket(), () => this.grantRod(), () => this.closeBasket(), () => this.cancel());
+    this.scene = scene; this.alive = true; this.phase = 'idle'; this.shopOpen = false; this.attemptId = null;
+    this.ui = new FishingUI(
+      () => this.start(),
+      () => this.buyRod(),
+      () => this.closeShop(),
+      () => this.cancel(),
+      fishId => this.sellFish(fishId)
+    );
     this.originalUpdate = scene.update;
     scene.update = (...args) => {
       if (!this.alive) return;
       if (this.phase === 'casting' && (!this.near() || scene.hud?.blocked || document.hidden)) void this.cancel();
-      if (this.phase !== 'idle' || this.basketOpen) scene.player?.stop();
+      if (this.phase !== 'idle' || this.shopOpen) scene.player?.stop();
       else this.originalUpdate.apply(scene, args);
       this.update();
     };
     this.onKey = event => {
       if (event.repeat || event.ctrlKey || event.altKey || event.metaKey || /INPUT|TEXTAREA|SELECT/.test(event.target?.tagName)) return;
       const key = event.key.toLowerCase();
-      if (key === 'tab' && this.basketOpen) {
+      if (key === 'tab' && this.shopOpen) {
         const buttons = [...this.ui.overlay.querySelectorAll('button:not(:disabled)')];
         const first = buttons[0], last = buttons.at(-1);
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
         event.stopImmediatePropagation(); return;
       }
-      if (key === 'escape' && (this.phase !== 'idle' || this.basketOpen)) {
-        event.preventDefault(); event.stopImmediatePropagation(); this.basketOpen ? this.closeBasket() : void this.cancel();
-      } else if (key === 'e' && this.near() && !scene.hud?.blocked && !scene.dialogue?.isOpen && !this.basketOpen) {
+      if (key === 'escape' && (this.phase !== 'idle' || this.shopOpen)) {
+        event.preventDefault(); event.stopImmediatePropagation(); this.shopOpen ? this.closeShop() : void this.cancel();
+      } else if (key === 'e' && this.near() && scene.dialogue?.nearest()?.role !== 'fishing-merchant' && !scene.hud?.blocked && !scene.dialogue?.isOpen && !this.shopOpen) {
         event.preventDefault(); event.stopImmediatePropagation(); void this.start();
-      } else if ((this.basketOpen || this.phase !== 'idle') && ['b','c','j','h'].includes(key)) {
+      } else if ((this.shopOpen || this.phase !== 'idle') && ['b','c','j','h'].includes(key)) {
         event.preventDefault(); event.stopImmediatePropagation();
       }
     };
@@ -44,24 +50,65 @@ export class FishingSystem {
   async load(cancelOld = false) {
     try {
       const data = await fishingApi.bootstrap(); if (!this.alive) return;
-      this.data = data; this.ui.inventory(data);
+      this.data = data; this.syncFishingItems(data); this.syncGold(data.gold); this.ui.inventory(data);
       if (cancelOld && data.activeId) await fishingApi.cancel(data.activeId);
-    } catch (error) { if (this.alive) { this.ui.basketStatus(error.message); this.ui.toast(error.message); } }
+    } catch (error) { if (this.alive) { this.ui.shopStatus(error.message); this.ui.toast(error.message); } }
   }
-  openBasket() {
-    if (!this.alive || this.phase !== 'idle' || this.scene.hud?.blocked || this.scene.dialogue?.isOpen) return;
-    this.basketOpen = true; this.ui.showBasket(true); this.scene.player.stop(); void this.load(true);
+  openMerchant(npc) {
+    if (!this.alive || this.phase !== 'idle' || this.scene.hud?.blocked || this.scene.dialogue?.isOpen ||
+        npc?.role !== 'fishing-merchant' || this.scene.dialogue?.nearest() !== npc) return;
+    this.shopOpen = true;
+    this.merchantOpen = true;
+    this.ui.showShop(true, this.scene.rpgState.data.gold);
+    this.scene.player.stop();
+    void this.load(true);
   }
-  closeBasket() { this.basketOpen = false; this.ui.showBasket(false); }
-  async grantRod() {
-    if (this.granting) return; this.granting = true;
-    try { const data = await fishingApi.rod(); if (this.alive) { this.data = { ...this.data, ...data }; this.ui.inventory(data); this.ui.toast('Đã có cần câu. Đứng ở mép bến và nhấn E để câu.'); } }
-    catch (error) { if (this.alive) this.ui.basketStatus(error.message); }
+  closeShop() { this.shopOpen = false; this.merchantOpen = false; this.ui.showShop(false); }
+  syncFishingItems(data) {
+    const state = this.scene.rpgState;
+    if (!state?.data?.inventory || !Array.isArray(data.items)) return;
+    const quantities = new Map(data.items.map(item => [item.id, Number(item.quantity)]));
+    let changed = false;
+    for (const id of ['starter_fishing_rod', 'fish_perch', 'fish_carp', 'fish_catfish', 'fish_gold']) {
+      const quantity = quantities.get(id) || 0;
+      if (state.data.inventory[id] !== quantity) {
+        state.data.inventory[id] = quantity;
+        changed = true;
+      }
+    }
+    if (changed) state.changed();
+  }
+  syncGold(gold) {
+    if (!Number.isFinite(Number(gold)) || !this.scene.rpgState?.data) return;
+    this.scene.rpgState.data.gold = Number(gold);
+    this.scene.rpgState.changed();
+  }
+  async buyRod() {
+    if (this.granting || !this.merchantOpen) return; this.granting = true;
+    try {
+      const data = await fishingApi.buyRod(this.position());
+      if (this.alive) {
+        this.data = { ...this.data, ...data }; this.syncFishingItems(data); this.ui.inventory(this.data); this.syncGold(data.gold);
+        this.ui.toast(data.hasRod ? 'Bạn đã có cần câu.' : 'Đã mua cần câu với giá 50 vàng.');
+      }
+    }
+    catch (error) { if (this.alive) this.ui.shopStatus(error.message); }
     finally { this.granting = false; }
   }
+  async sellFish(fishId) {
+    if (this.selling || !this.merchantOpen) return; this.selling = true;
+    try {
+      const data = await fishingApi.sell(fishId, this.position());
+      if (this.alive) {
+        this.data = { ...this.data, ...data }; this.syncFishingItems(data); this.ui.inventory(this.data); this.syncGold(data.gold);
+        this.ui.toast(`Đã bán ${data.sold.name} ×${data.sold.quantity}, nhận ${data.sold.total} vàng.`);
+      }
+    } catch (error) { if (this.alive) this.ui.shopStatus(error.message); }
+    finally { this.selling = false; }
+  }
   async start() {
-    if (!this.alive || this.phase !== 'idle' || this.basketOpen || !this.near() || this.scene.hud?.blocked || this.scene.dialogue?.isOpen) return;
-    if (!this.data.hasRod) { this.ui.toast('Bạn cần cần câu. Mở Giỏ cá để nhận cần câu tập sự.'); return; }
+    if (!this.alive || this.phase !== 'idle' || this.shopOpen || !this.near() || this.scene.hud?.blocked || this.scene.dialogue?.isOpen) return;
+    if (!this.data.hasRod) { this.ui.toast('Bạn cần mua cần câu từ Cần thủ ở Hồ Atlast.'); return; }
     this.phase = 'starting'; this.scene.player.stop(); this.ui.setProgress(0);
     this.cancelRequested = false;
     try {
@@ -76,8 +123,8 @@ export class FishingSystem {
     try {
       const result = await fishingApi.finish(this.attemptId, this.position());
       if (this.alive) {
-        this.data = { ...this.data, ...result.inventory }; this.ui.inventory(result.inventory);
-        this.ui.toast(`Bạn câu được ${result.fish.name} ×1! Đã lưu vào MySQL.`);
+        this.data = { ...this.data, ...result.inventory }; this.syncFishingItems(result.inventory); this.ui.inventory(result.inventory);
+        this.ui.toast(`Bạn câu được ${result.fish.name} ×1! Cá đã vào túi đồ.`);
       }
     } catch (error) {
       if (this.alive) {
@@ -86,7 +133,7 @@ export class FishingSystem {
         try {
           const recovered = await fishingApi.cancel(this.attemptId);
           if (this.alive && recovered.result) this.ui.toast(`Đã nhận ${recovered.result.fish.name} ×1. Kết quả đã lưu.`);
-        } catch { /* Mất mạng: lần mở Giỏ cá sau sẽ đọc lại dữ liệu. */ }
+        } catch { /* Mất mạng: lần đăng nhập sau sẽ đồng bộ lại cá đã lưu. */ }
         if (this.alive) await this.load();
       }
     }
@@ -103,7 +150,7 @@ export class FishingSystem {
   }
   reset() { this.phase = 'idle'; this.attemptId = null; this.ui.progress.hidden = true; }
   update() {
-    const visible = this.near() && !this.basketOpen && !this.scene.hud?.blocked && !this.scene.dialogue?.isOpen;
+    const visible = this.near() && !this.shopOpen && !this.scene.hud?.blocked && !this.scene.dialogue?.isOpen;
     const bar = this.scene.dialogueUI?.actionBar;
     this.ui.actionVisible(visible, bar?.layout, this.scene);
     // Chỉ phủ ô E, giữ nguyên các ô kỹ năng của HUD hiện tại.

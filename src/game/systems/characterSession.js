@@ -16,7 +16,7 @@ export function createCharacterState(StateClass, userId) {
   Object.assign(seed, { level: profile.level, exp: profile.exp, gold: profile.gold, hp: profile.hp, mp: profile.mana, gems: 0, inventory: {}, visited: [], explorationClaimed: false });
   for (const slot of Object.keys(seed.equipment || {})) seed.equipment[slot] = null;
   for (const item of profile.items || []) {
-    if (!ITEMS[item.id]) continue; // Cần câu/cá tiếp tục hiển thị trong Giỏ cá MySQL riêng.
+    if (!ITEMS[item.id]) continue;
     seed.inventory[item.id] = (seed.inventory[item.id] || 0) + item.quantity;
     if (item.location === 'equipment' && Object.hasOwn(seed.equipment || {}, item.slot)) seed.equipment[item.slot] = item.id;
   }

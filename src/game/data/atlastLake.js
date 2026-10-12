@@ -28,7 +28,19 @@ export const atlastLake = {
         [37, 31, 17], [43, 22, 28], [42, 10, 17], [27, 5, 17],
         [8, 15, 28], [39, 29, 28]
     ],
-    npcs: [], monsters: [],
+    npcs: [{
+        id: 'atlast-fisherman',
+        name: 'Cần thủ',
+        role: 'fishing-merchant',
+        col: 18.5,
+        row: 18,
+        frame: 85,
+        lines: [
+            'Ta bán cần câu với giá 50 vàng và thu mua cá.',
+            'Cá rô 5 vàng, cá chép 7 vàng, cá trê 9 vàng; cá vàng quý hiếm giá 100 vàng.'
+        ]
+    }],
+    monsters: [],
     portals: [{
         x: 144, feetY: 960, label: 'Về Làng Khởi Đầu',
         target: 'Game', spawn: { x: 1872, y: 720 }

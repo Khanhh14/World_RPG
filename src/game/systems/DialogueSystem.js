@@ -43,6 +43,10 @@ export class DialogueSystem {
             return;
         }
         const npc = this.nearest();
+        if (npc?.role === 'fishing-merchant') {
+            this.player.stop(); npc.facePlayer(this.player);
+            this.scene.fishingSystem?.openMerchant(npc); return;
+        }
         if (npc?.isMerchant) {
             this.player.stop(); npc.facePlayer(this.player);
             this.scene.hud?.openShop(npc); return;

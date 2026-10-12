@@ -4,7 +4,9 @@ import { renderQuestJournal } from './QuestJournal.js';
 
 const escape = value => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const icon = (frame, size = 40) => `<span class="rpg-icon" aria-hidden="true" style="width:${size}px;height:${size}px;background-size:${size*12}px ${size*11}px;background-position:-${frame%12*size}px -${Math.floor(frame/12)*size}px"></span>`;
-const itemIcon = (item, size = 40) => item?.icon ? gearIcon(item.icon, item.level, size) : icon(item?.frame ?? 103, size);
+const itemIcon = (item, size = 40) => item?.emoji
+    ? `<span class="rpg-item-emoji" role="img" aria-label="${escape(item.name)}" style="font-size:${size * 0.72}px;line-height:1">${item.emoji}</span>`
+    : item?.icon ? gearIcon(item.icon, item.level, size) : icon(item?.frame ?? 103, size);
 export class RPGHUD {
     constructor(scene, state, mapTitle) {
         this.scene = scene; this.state = state; this.mapTitle = mapTitle;
@@ -186,9 +188,9 @@ export class RPGHUD {
             <div class="rpg-bag-column">
             <section class="rpg-bag-panel"><div class="rpg-section-heading"><h3>Ba lô</h3><span>${ids.length} / ${capacity} ô</span></div>
                 <div class="rpg-grid">${cells}</div>
-                ${item ? `<article class="rpg-item-detail"><header>${itemIcon(item,48)}<div><h4>${escape(item.name)}</h4><div class="rpg-tier">CẤP ${item.level ?? 1} · Có ${this.bagQuantity(this.selected)}</div></div></header>
+                ${item ? `<article class="rpg-item-detail"><header>${itemIcon(item,48)}<div><h4>${escape(item.name)}</h4><div class="rpg-tier">${item.category === 'fishing' ? 'CÂU CÁ' : `CẤP ${item.level ?? 1}`} · Có ${this.bagQuantity(this.selected)}</div></div></header>
                     <p>${escape(item.description ?? '')}</p>${this.gearStats(item) ? `<p class="rpg-tier">${this.gearStats(item)}</p>` : ''}
-                    <div class="rpg-item-actions">${['weapon','shield'].includes(item.type) ? '<button type="button" data-action="preview">Thử đồ</button>' : ''}<button type="button" class="rpg-primary" data-action="use">${item.type === 'consumable' ? 'Sử dụng' : 'Trang bị'}</button></div>
+                    ${item.category === 'fishing' ? '<p class="rpg-subtle">Vật phẩm câu cá được lưu trong túi đồ nhân vật.</p>' : `<div class="rpg-item-actions">${['weapon','shield'].includes(item.type) ? '<button type="button" data-action="preview">Thử đồ</button>' : ''}<button type="button" class="rpg-primary" data-action="use">${item.type === 'consumable' ? 'Sử dụng' : 'Trang bị'}</button></div>`}
                 </article>` : '<div class="rpg-empty-bag">Ba lô đang trống.<br>Tháo trang bị hoặc mua thêm vật phẩm từ thương nhân.</div>'}
             </section>
             ${this.currencyContent()}

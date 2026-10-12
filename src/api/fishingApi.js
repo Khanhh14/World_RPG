@@ -9,11 +9,13 @@ async function request(action, body = {}) {
     return data;
   } catch (error) {
     if (error.status) throw error;
-    throw new Error('Mất kết nối máy chủ. Mở Giỏ cá để kiểm tra kết quả trước khi câu tiếp.');
+    throw new Error('Mất kết nối máy chủ. Vật phẩm câu cá sẽ được đồng bộ lại khi đăng nhập.');
   } finally { clearTimeout(timeout); }
 }
 export const fishingApi = {
-  bootstrap: () => request('bootstrap'), rod: () => request('rod'),
+  bootstrap: () => request('bootstrap'),
+  buyRod: position => request('rod', position),
+  sell: (fishId, position) => request('sell', { fishId, ...position }),
   start: position => request('start', position),
   finish: (attemptId, position) => request('finish', { attemptId, ...position }),
   cancel: attemptId => request('cancel', { attemptId }),

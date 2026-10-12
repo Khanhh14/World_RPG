@@ -2,6 +2,7 @@ import { BaseWorldScene } from './BaseWorldScene.js';
 import { atlastLake } from '../data/atlastLake.js';
 import { village } from '../data/village.js';
 import { TinyOutdoorWorldBuilder } from '../world/TinyOutdoorWorldBuilder.js';
+import { FishingSystem } from '../systems/FishingSystem.js';
 
 export class AtlastLake extends BaseWorldScene {
     constructor() {
@@ -17,6 +18,10 @@ export class AtlastLake extends BaseWorldScene {
         });
     }
     createWorld(map) { return new TinyOutdoorWorldBuilder(this, map); }
+    create() {
+        super.create();
+        this.fishingSystem = new FishingSystem(this);
+    }
     preload() {
         super.preload();
         if (!this.textures.exists('battle')) {

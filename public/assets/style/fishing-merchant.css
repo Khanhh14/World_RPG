@@ -1,0 +1,46 @@
+.fish-shop-header{display:flex;align-items:center;gap:15px;padding-bottom:17px;border-bottom:1px solid #456452}
+.fish-shop-emblem{display:grid;place-items:center;flex:0 0 54px;height:54px;border:1px solid #d4b976;border-radius:13px;background:linear-gradient(145deg,#365c42,#203c30);font-size:30px;box-shadow:inset 0 0 16px #d4b97620}
+.fish-shop-heading{min-width:0;flex:1}
+.fish-shop-kicker,.fish-buyback>header>div>span{display:block;color:#d7bf82;font-size:10px;font-weight:700;letter-spacing:1.7px}
+.fish-shop-heading h2{margin:4px 0 0;font-size:24px;letter-spacing:.2px}
+.fish-modal .fish-close{white-space:nowrap;border-color:#81956e;background:#244733}
+.fish-modal .fish-close kbd{margin-left:5px;color:#d9cb9b;font:inherit}
+.fish-info{margin:16px 0;color:#c3d0bd;font-size:13px}
+.fish-shop-wallet{display:flex;align-items:center;justify-content:space-between;margin:15px 0;padding:11px 14px;border:1px solid #526d4c;border-radius:8px;background:#10291f}
+.fish-shop-wallet>span{color:#a9bba7;font-size:10px;font-weight:700;letter-spacing:1.5px}
+.fish-shop-wallet strong{color:#f4dda0;font-size:16px}
+.fish-shop-wallet i{color:#e9c96f;font-size:13px;font-style:normal}
+.fish-rod-offer{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #a38d58;border-radius:9px;background:linear-gradient(110deg,#293f30,#183025 70%)}
+.fish-rod-icon{display:grid;place-items:center;flex:0 0 54px;height:54px;border-radius:8px;background:#0c251d;font-size:30px}
+.fish-rod-copy{display:grid;flex:1;gap:4px;min-width:0}
+.fish-rod-copy strong{font-size:15px;color:#f2e5c4}
+.fish-rod-copy span{font-size:11px;line-height:1.5;color:#b6c6b3}
+.fish-rod-copy b{color:#e8ca79;font-size:13px}
+.fish-modal .fish-rod{width:auto;min-width:118px;background:linear-gradient(#e6ce8b,#b49a5e);border:1px solid #f1dda1;color:#172c20;font-weight:700;box-shadow:0 3px 0 #77643c}
+.fish-modal .fish-rod:disabled{box-shadow:none}
+.fish-buyback{margin-top:20px}
+.fish-buyback>header{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:10px}
+.fish-buyback>header h3{margin:4px 0 0;font-size:17px}
+.fish-buyback>header p{margin:0;color:#aebea9;font-size:11px;text-align:right}
+.fish-modal .fish-items{display:grid;grid-template-columns:1fr;gap:7px;margin:0}
+.fish-modal .fish-items article{display:flex;align-items:center;gap:11px;padding:9px 11px;border-color:#3e614c;background:#10291f}
+.fish-sale-icon{display:grid;place-items:center;flex:0 0 38px;height:38px;border-radius:7px;background:#1e3a2b;font-size:23px}
+.fish-sale-copy{display:grid;flex:1;gap:4px;min-width:0}
+.fish-sale-copy strong{color:#f1e4c5;font-size:13px}
+.fish-sale-copy small{color:#b5c5ae;font-size:11px}
+.fish-modal .fish-items article>button{display:grid;gap:3px;min-width:122px;padding:7px 10px;border-color:#6c8258;background:#2d5036;text-align:center;font-size:11px}
+.fish-modal .fish-items article>button b{color:#f2d88f;font-size:11px}
+.fish-empty{margin:0;padding:17px;border:1px dashed #506b54;border-radius:8px;color:#bdc9b7;text-align:center;font-size:12px;line-height:1.6}
+.fish-modal .fish-status{margin:13px 0 0;padding-top:10px;border-top:1px solid #355341;color:#acbdaa}
+@media(max-width:600px){
+ .fish-modal{padding:17px}
+ .fish-shop-heading h2{font-size:19px}
+ .fish-shop-emblem{flex-basis:46px;height:46px;font-size:26px}
+ .fish-modal .fish-close{padding:7px}
+ .fish-rod-offer{flex-wrap:wrap}
+ .fish-rod-copy{flex-basis:calc(100% - 70px)}
+ .fish-modal .fish-rod{width:100%}
+ .fish-buyback>header{align-items:start;flex-direction:column}
+ .fish-buyback>header p{text-align:left}
+ .fish-modal .fish-items article>button{min-width:105px;padding:7px}
+}
