@@ -1,5 +1,5 @@
-import { chooseCharacter } from '../game/characters/CharacterCreationUI.js';
-import { setCharacterProfile } from '../game/characters/characterSession.js';
+import { chooseCharacter } from '../game/ui/CharacterCreationUI.js';
+import { setCharacterProfile } from '../game/systems/characterSession.js';
 import { AuthUI } from './AuthUI.js';
 import { authApi } from './authApi.js';
 // Bọc hàm khởi tạo Phaser hiện có, giữ nguyên cấu hình và các map.

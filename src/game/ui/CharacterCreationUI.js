@@ -1,5 +1,4 @@
-import './character.css';
-import { characterApi } from './characterApi.js';
+import { characterApi } from '../../api/characterApi.js';
 import { authApi } from '../../auth/authApi.js';
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const sprite = (frame, size) => `<span class="cc-sprite" aria-hidden="true" style="width:${size}px;height:${size}px;background-size:${size * 12}px ${size * 11}px;background-position:-${frame % 12 * size}px -${Math.floor(frame / 12) * size}px"></span>`;

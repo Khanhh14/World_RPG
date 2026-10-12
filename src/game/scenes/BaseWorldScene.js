@@ -1,4 +1,4 @@
-import { applyCharacterToScene } from '../characters/characterSession.js';
+import { applyCharacterToScene } from '../systems/characterSession.js';
 import { Scene } from 'phaser';
 import { loadWorldAssets } from '../config/assets.js';
 import { WorldBuilder } from '../world/WorldBuilder.js';
