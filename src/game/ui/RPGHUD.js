@@ -1,4 +1,4 @@
-import { EQUIPMENT_SLOTS, SHOP_ITEMS, gearIcon } from '../data/items.js';
+import { EQUIPMENT_SLOTS, SHOP_ITEMS, MONSTER_MATERIALS, gearIcon } from '../data/items.js';
 import { ITEMS } from '../systems/RPGState.js';
 import { renderQuestJournal } from './QuestJournal.js';
 
@@ -51,6 +51,9 @@ export class RPGHUD {
                 if (result.ok && item?.type === 'consumable' && ['hp','mp'].includes(item.category)) {
                     this.scene.dialogueUI?.actionBar?.selectPotion(item.category, id);
                 }
+            }
+            if (action === 'exchange-materials' && this.exchangeNPC && this.scene.dialogue?.nearest() === this.exchangeNPC) {
+                this.toast(this.state.exchangeMonsterMaterials().message);
             }
             if (action === 'unequip') {
                 const slot = ITEMS[id]?.type;
@@ -125,8 +128,14 @@ export class RPGHUD {
         this.shopNPC = npc; this.shopCategory = 'all'; this.shopLevel = 0;
         this.toggle('shop');
     }
+    openExchange(npc) {
+        if (npc?.role !== 'monster-material-exchange' || this.scene.dialogue?.nearest() !== npc) return;
+        this.exchangeNPC = npc;
+        this.toggle('exchange');
+    }
     toggle(tab) {
         if (tab === 'shop' && (!this.shopNPC || this.scene.dialogue?.nearest() !== this.shopNPC)) return;
+        if (tab === 'exchange' && (!this.exchangeNPC || this.scene.dialogue?.nearest() !== this.exchangeNPC)) return;
         if (this.scene.dialogue?.isOpen) { this.toast('Kết thúc hội thoại để mở menu.'); return; }
         if (this.tab === tab) { this.close(); return; }
         if (!this.tab) {
@@ -142,7 +151,7 @@ export class RPGHUD {
     }
     close() {
         if (!this.tab) return;
-        this.previewId = null; this.tab = null; this.shopNPC = null; this.overlay.hidden = true;
+        this.previewId = null; this.tab = null; this.shopNPC = null; this.exchangeNPC = null; this.overlay.hidden = true;
         this.scene.input.keyboard.resetKeys();
         this.scene.input.keyboard.enabled = this.keyboardWasEnabled;
         if (!this.scene.dialogue?.isOpen) this.scene.dialogueUI?.actionBar?.setVisible(true);
@@ -157,11 +166,13 @@ export class RPGHUD {
             ? { quests: 'Nhật ký nhiệm vụ' }
             : { inventory: 'Túi đồ & Trang bị', potential: 'Tiềm Năng' };
         if (this.shopNPC && this.tab !== 'quests') names.shop = 'Cửa hàng';
+        if (this.exchangeNPC && this.tab === 'exchange') names.exchange = 'Đổi vật phẩm quái';
         const tabs = this.tab === 'quests' ? '' : `<div class="rpg-tabs">${Object.entries(names).map(([id, name]) => `<button type="button" data-action="tab" data-id="${id}" class="${id === this.tab ? 'active' : ''}">${name}</button>`).join('')}</div>`;
         this.modal.classList.toggle('rpg-shop-modal', this.tab === 'shop');
         this.modal.classList.toggle('rpg-inventory-modal', this.tab === 'inventory');
         this.modal.classList.toggle('rpg-potential-modal', this.tab === 'potential');
         this.modal.classList.toggle('rpg-quests-modal', this.tab === 'quests');
+        this.modal.classList.toggle('rpg-exchange-modal', this.tab === 'exchange');
         this.modal.innerHTML = `<header class="rpg-modal-header"><h2 id="rpg-modal-title">${names[this.tab]}</h2><button type="button" data-action="close" aria-label="Đóng menu">✕ <small>Esc</small></button></header>${tabs}${this.content()}`;
         this.drawCharacterPreview();
         if (focusWasInside && focusAction) {
@@ -172,6 +183,7 @@ export class RPGHUD {
     content() {
         const s = this.state, d = s.data;
         if (this.tab === 'shop') return this.shopContent();
+        if (this.tab === 'exchange') return this.exchangeContent();
         if (this.tab === 'inventory') {
             return this.inventoryContent();
         }
@@ -225,7 +237,7 @@ export class RPGHUD {
                 <div class="rpg-grid">${cells}</div>
                 ${item ? `<article class="rpg-item-detail"><header>${itemIcon(item,48)}<div><h4>${escape(item.name)}</h4><div class="rpg-tier">${item.category === 'fishing' ? 'CÂU CÁ' : `CẤP ${item.level ?? 1}`} · Có ${this.bagQuantity(this.selected)}</div></div></header>
                     <p>${escape(item.description ?? '')}</p>${this.gearStats(item) ? `<p class="rpg-tier">${this.gearStats(item)}</p>` : ''}
-                    ${item.category === 'fishing' ? '<p class="rpg-subtle">Vật phẩm câu cá được lưu trong túi đồ nhân vật.</p>' : `<div class="rpg-item-actions">${['weapon','shield'].includes(item.type) ? '<button type="button" data-action="preview">Thử đồ</button>' : ''}<button type="button" class="rpg-primary" data-action="use">${item.type === 'consumable' ? 'Sử dụng' : 'Trang bị'}</button></div>`}
+                    ${item.category === 'fishing' ? '<p class="rpg-subtle">Vật phẩm câu cá được lưu trong túi đồ nhân vật.</p>' : (EQUIPMENT_SLOTS.some(([slot]) => slot === item.type) || item.type === 'consumable') ? `<div class="rpg-item-actions">${['weapon','shield'].includes(item.type) ? '<button type="button" data-action="preview">Thử đồ</button>' : ''}<button type="button" class="rpg-primary" data-action="use">${item.type === 'consumable' ? 'Sử dụng' : 'Trang bị'}</button></div>` : '<p class="rpg-subtle">Vật phẩm nguyên liệu, có thể đổi tại Thợ săn ở Khu Rừng Phía Tây.</p>'}
                 </article>` : '<div class="rpg-empty-bag">Ba lô đang trống.<br>Tháo trang bị hoặc mua thêm vật phẩm từ thương nhân.</div>'}
             </section>
             ${this.currencyContent()}
@@ -318,6 +330,25 @@ export class RPGHUD {
             const item=ITEMS[id], check=s.canBuy(id);
             return `<article class="rpg-shop-item"><header>${itemIcon(item,44)}<div><h3>${item.name}</h3><span class="rpg-tier">CẤP ${item.level} · Đang có: ${d.inventory[id]??0}</span></div></header><p class="rpg-subtle">${item.description}</p><div class="rpg-shop-buy"><strong>● ${item.price} vàng</strong><button data-action="buy" data-id="${id}" ${check.ok?'class="rpg-primary"':'disabled'} title="${escape(check.message)}">${check.ok?'Mua 1':item.maxStack===1 && d.inventory[id]?'Đã sở hữu':check.message}</button></div></article>`;
         }).join('')}</div>`;
+    }
+    exchangeContent() {
+        const inventory = this.state.data.inventory;
+        const total = MONSTER_MATERIALS.reduce(
+            (sum, material) => sum + (inventory[material.id] ?? 0), 0
+        );
+        const exchangeError = this.state.canExchangeMonsterMaterials();
+        const canExchange = !exchangeError;
+        const materials = MONSTER_MATERIALS.map(material => `
+            <article class="rpg-shop-item">
+                <header>${itemIcon(ITEMS[material.id],44)}<div><h3>${escape(material.name)}</h3><span class="rpg-tier">Đang có: ${inventory[material.id] ?? 0}</span></div></header>
+                <p class="rpg-subtle">${escape(material.description)}</p>
+            </article>`).join('');
+        return `<div class="rpg-shop-gold"><strong>${escape(this.exchangeNPC?.name ?? 'Thợ săn')}</strong><span>Vật phẩm quái: ${total} / 10</span></div>
+            <p class="rpg-subtle">Gộp vật phẩm rơi từ bất kỳ quái nào: 10 vật phẩm đổi lấy 1 đá nâng cấp trang bị.</p>
+            <div class="rpg-shop-grid">${materials}</div>
+            <div class="rpg-shop-buy"><span>${escape(exchangeError || 'Đổi 10 vật phẩm lấy 1 đá nâng cấp.')}</span>
+                <button type="button" data-action="exchange-materials" ${canExchange ? 'class="rpg-primary"' : 'disabled'}>Đổi 10 vật phẩm</button>
+            </div>`;
     }
     syncDialogue(open) { this.root.classList.toggle('talking', open); }
     toast(message) {

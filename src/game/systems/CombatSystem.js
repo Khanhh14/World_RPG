@@ -3,6 +3,7 @@ import { CombatVFX } from './CombatVFX.js';
 import { ITEMS } from '../data/items.js';
 import { COMBAT_SKILLS } from '../data/combatSkills.js';
 const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
+const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
 export function segmentDistance(p,a,b) {
   const dx=b.x-a.x,dy=b.y-a.y,len=dx*dx+dy*dy;
   const t=len?clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/len,0,1):0;
@@ -98,13 +99,24 @@ export class CombatSystem {
   }
   projectile(damage,range,color){const p=this.origin();if(p)this.shots.push({...p,dx:this.facing.x,dy:this.facing.y,damage,left:range,color,trail:[]});}
   hit(t,damage){
-    if(t.hp<=0)return;t.hp=Math.max(0,t.hp-Math.round(damage));t.aggro=true;t.visibleUntil=this.now+4500;
+    if(t.hp<=0)return;t.hp=Math.max(0,t.hp-Math.round(damage));t.aggro=true;t.chaseUntil=this.now+6000;t.visibleUntil=this.now+4500;
     this.float(this.targetPoint(t),`−${Math.round(damage)}`,'#ffe0ad');
     this.flash(this.targetPoint(t),34,0xffd397,'impact');
     if(t.hp===0){
       t.respawnAt=this.now+15000;t.aggro=false;
+      t.entity.sprite.body?.stop();
       for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(false);
-      this.notify('Hạ quái! Quái sẽ xuất hiện lại sau 15 giây.');
+      const forestReward=this.scene.mapData.id==='west-forest';
+      if(forestReward){
+        this.state.addExperience(30);
+        this.state.addGold(10);
+      }
+      const drop=ITEMS[t.entity.data.dropItem];
+      if(drop&&Math.random()<0.25){
+        if(this.state.addItem(t.entity.data.dropItem)){
+          this.scene.hud?.toast(`Nhặt được ${drop.name}.`);
+        }
+      }
       void this.scene.questSystem?.recordKill();
     }
   }
@@ -116,18 +128,80 @@ export class CombatSystem {
   }
   flash(p,radius,color,kind='ring'){this.vfx.emit(kind,p,radius,color,Math.atan2(this.facing.y,this.facing.x));}
   float(p,text,color){if(!p)return;const o=this.scene.add.text(p.x,p.y-30,text,{fontFamily:'Arial',fontSize:'18px',fontStyle:'bold',color,stroke:'#152b23',strokeThickness:4}).setOrigin(.5).setDepth(9600);this.effects.push({text:o,y:o.y,at:this.now,end:this.now+750});}
+  monsterDirection(entity, target, distance, speed) {
+    const dx=target.x-entity.sprite.x,dy=target.y-entity.sprite.y;
+    if(distance<2)return {x:0,y:0};
+    const desired=Math.atan2(dy,dx);
+    const angles=[0,Math.PI/4,-Math.PI/4,Math.PI/2,-Math.PI/2,3*Math.PI/4,-3*Math.PI/4,Math.PI];
+    for(const offset of angles){
+      const angle=desired+offset;
+      const destination={x:entity.sprite.x+Math.cos(angle)*32,y:entity.sprite.y+Math.sin(angle)*32};
+      if(this.clearLine({x:entity.sprite.x,y:entity.sprite.y-18}, {x:destination.x,y:destination.y-18}))
+        return {x:Math.cos(angle)*speed,y:Math.sin(angle)*speed};
+    }
+    return {x:0,y:0};
+  }
+  updateMonsterAI(target) {
+    const {entity}=target,data=entity.data,body=entity.sprite.body;
+    if(!data.ai||!body)return;
+    if(target.hp<=0||this.busy){body.setVelocity(0,0);return;}
+
+    const player=this.scene.player.sprite;
+    const playerDistance=distance(entity.sprite,player);
+    const detectionRange=data.detectionRange??260;
+    const chaseRange=data.chaseRange??360;
+    if(playerDistance<=detectionRange){
+      target.aggro=true;
+      target.chaseUntil=this.now+6000;
+    }else if(target.aggro&&playerDistance>chaseRange&&this.now>=target.chaseUntil){
+      target.aggro=false;
+    }
+
+    const speed=data.moveSpeed??72;
+    let destination=null, movementSpeed=speed;
+    if(target.aggro&&playerDistance<=chaseRange){
+      destination={x:player.x,y:player.y};
+    }else{
+      target.aggro=false;
+      if(!target.patrolTarget||this.now>=target.nextPatrolAt||
+        distance(entity.sprite,target.patrolTarget)<10){
+        const angle=Math.random()*Math.PI*2;
+        const radius=24+Math.random()*52;
+        target.patrolTarget={
+          x:entity.home.x+Math.cos(angle)*radius,
+          y:entity.home.y+Math.sin(angle)*radius
+        };
+        target.nextPatrolAt=this.now+1200+Math.random()*1600;
+      }
+      destination=target.patrolTarget;
+      movementSpeed=28;
+    }
+    const direction=this.monsterDirection(entity,destination,distance(entity.sprite,destination),movementSpeed);
+    body.setVelocity(direction.x,direction.y);
+    if(direction.x)entity.sprite.setFlipX(direction.x<0);
+
+    if(Math.hypot(body.velocity.x,body.velocity.y)>0){
+      entity.sprite.setDepth(100+entity.sprite.y);
+      entity.shadow.setPosition(entity.sprite.x,entity.sprite.y-2).setDepth(99+entity.sprite.y);
+      entity.label?.setPosition(entity.sprite.x,entity.sprite.y-entity.sprite.displayHeight-8);
+    }
+  }
   update(time,delta=16){
     if(!this.alive||!this.state||!this.scene.player)return;
     if(this.state.data.hp<=0||this.uiBlocked)this.scene.player.stop();
     const v=this.scene.player.sprite.body?.velocity;if(v&&Math.hypot(v.x,v.y)>1){const l=Math.hypot(v.x,v.y);this.facing={x:v.x/l,y:v.y/l};}
-    for(const entity of this.scene.monsters||[])if(entity.sprite?.active&&!this.targets.has(entity))this.targets.set(entity,{entity,hp:60,maxHP:60,aggro:false,nextHit:0});
+    for(const entity of this.scene.monsters||[])if(entity.sprite?.active&&!this.targets.has(entity)){
+      const hp=entity.data.hp??60;
+      this.targets.set(entity,{entity,hp,maxHP:hp,damage:entity.data.damage??10,aggro:false,nextHit:0,chaseUntil:0});
+    }
     const g=this.graphics;g.clear();
     for(const t of this.targets.values()){
       if(!t.entity.sprite.active)continue;
-      if(t.hp<=0){if(this.now>=t.respawnAt){t.hp=t.maxHP;t.aggro=false;for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(true);}else continue;}
+      if(t.hp<=0){if(this.now>=t.respawnAt){t.hp=t.maxHP;t.aggro=false;t.entity.sprite.setPosition(t.entity.home?.x??t.entity.sprite.x,t.entity.home?.y??t.entity.sprite.y);t.entity.sprite.body?.reset(t.entity.sprite.x,t.entity.sprite.y);for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(true);}else continue;}
+      this.updateMonsterAI(t);
       const p=this.targetPoint(t),me=this.origin();
       if(t.aggro&&!this.busy&&this.now>=t.nextHit&&Math.hypot(p.x-me.x,p.y-me.y)<95&&this.clearLine(p,me)){
-        t.nextHit=this.now+1300;this.damagePlayer(Math.max(2,10-Math.floor(this.state.defense/2)));
+        t.nextHit=this.now+1300;this.damagePlayer(Math.max(2,t.damage-Math.floor(this.state.defense/2)));
       }
       if(t.hp<t.maxHP){const y=p.y-t.entity.sprite.displayHeight/2-8;g.fillStyle(0x172b24,.95).fillRect(p.x-23,y,46,6);g.fillStyle(0xe9806e,1).fillRect(p.x-22,y+1,44*t.hp/t.maxHP,4);}
     }

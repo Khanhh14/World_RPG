@@ -11,6 +11,23 @@ export const POTION_TIERS = [
     { level:5, hp:500, mp:250, hpPrice:120, mpPrice:95 }
 ];
 export const ITEMS = {};
+export const MONSTER_MATERIALS = [
+    { id:'boar_hide', name:'Da heo rừng', emoji:'🐗', description:'Da thu được khi hạ heo rừng ở Khu Rừng Phía Tây.' },
+    { id:'wolf_fang', name:'Nanh sói', emoji:'🦷', description:'Nanh thu được khi hạ sói xám ở Khu Rừng Phía Tây.' },
+    { id:'forest_gel', name:'Gel rừng', emoji:'🟢', description:'Gel thu được khi hạ slime rừng ở Khu Rừng Phía Tây.' },
+    { id:'scorpion_tail', name:'Đuôi bọ cạp', emoji:'🦂', description:'Đuôi thu được khi hạ bọ cạp ở Khu Rừng Phía Tây.' }
+];
+for (const material of MONSTER_MATERIALS) {
+    ITEMS[material.id] = {
+        name:material.name, type:'material', category:'monster-drop', level:1,
+        maxStack:99, emoji:material.emoji, description:material.description
+    };
+}
+ITEMS.upgrade_stone = {
+    name:'Đá nâng cấp trang bị', type:'material', category:'upgrade',
+    level:1, maxStack:99, emoji:'💎',
+    description:'Nguyên liệu dùng để nâng cấp trang bị.'
+};
 for (const tier of POTION_TIERS) {
     const suffix = tier.level === 1 ? '' : `_${tier.level}`;
     ITEMS[`health_potion${suffix}`] = {
@@ -45,7 +62,9 @@ for (const spec of gear) for (let i=0;i<5;i++) {
 }
 // Giữ id cũ để không mất trượng trong bản lưu trước.
 ITEMS.wood_staff={name:'Trượng tập sự',frame:129,type:'weapon',category:'weapon',level:1,price:28,maxStack:1,attack:3,description:'+3 công. Có thể trang bị ở mọi cấp nhân vật.'};
-export const SHOP_ITEMS=Object.keys(ITEMS).sort((a,b)=>ITEMS[a].level-ITEMS[b].level || ITEMS[a].price-ITEMS[b].price);
+export const SHOP_ITEMS=Object.keys(ITEMS)
+    .filter(id => !['monster-drop','upgrade'].includes(ITEMS[id].category))
+    .sort((a,b)=>ITEMS[a].level-ITEMS[b].level || ITEMS[a].price-ITEMS[b].price);
 
 // Biểu tượng pixel cho các loại giáp chưa có ảnh riêng trong Tiny Dungeon.
 export function gearIcon(kind, level=1, size=40) {

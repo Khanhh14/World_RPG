@@ -7,7 +7,8 @@ import {
 import {
     ITEMS,
     EQUIPMENT_SLOTS,
-    BAG_CAPACITY
+    BAG_CAPACITY,
+    MONSTER_MATERIALS
 } from '../data/items.js';
 
 export { ITEMS } from '../data/items.js';
@@ -376,6 +377,46 @@ export class RPGState {
         return true;
     }
 
+    canExchangeMonsterMaterials() {
+        const total = MONSTER_MATERIALS.reduce(
+            (sum, material) => sum + (this.data.inventory[material.id] ?? 0),
+            0
+        );
+        if (total < 10) {
+            return `Cần thêm ${10 - total} vật phẩm rơi từ quái để đổi.`;
+        }
+
+        let remaining = 10;
+        let freesSlot = false;
+        for (const material of MONSTER_MATERIALS) {
+            const count = Math.min(remaining, this.data.inventory[material.id] ?? 0);
+            if (count && count === this.data.inventory[material.id]) freesSlot = true;
+            remaining -= count;
+            if (!remaining) break;
+        }
+
+        const error = this.canAdd('upgrade_stone');
+        if (error && !(error === 'Ba lô đã đầy.' && freesSlot && !this.data.inventory.upgrade_stone)) {
+            return error;
+        }
+        return '';
+    }
+
+    exchangeMonsterMaterials() {
+        const error = this.canExchangeMonsterMaterials();
+        if (error) return { ok: false, message: error };
+        let remaining = 10;
+        for (const material of MONSTER_MATERIALS) {
+            const count = Math.min(remaining, this.data.inventory[material.id] ?? 0);
+            this.data.inventory[material.id] -= count;
+            remaining -= count;
+            if (!remaining) break;
+        }
+        this.data.inventory.upgrade_stone = (this.data.inventory.upgrade_stone ?? 0) + 1;
+        this.changed();
+        return { ok: true, message: 'Đổi thành công 10 vật phẩm quái lấy 1 đá nâng cấp trang bị.' };
+    }
+
     useItem(id) {
         const item = ITEMS[id];
 
@@ -408,6 +449,10 @@ export class RPGState {
             this.changed();
 
             return `Đã dùng ${item.name.toLowerCase()}.`;
+        }
+
+        if (!EQUIPMENT_SLOTS.some(([slot]) => slot === item.type)) {
+            return 'Vật phẩm này không thể sử dụng hoặc trang bị.';
         }
 
         const equipped = this.data.equipment[item.type] === id;

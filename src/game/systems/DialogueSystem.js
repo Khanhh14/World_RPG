@@ -43,6 +43,10 @@ export class DialogueSystem {
             return;
         }
         const npc = this.nearest();
+        if (npc?.role === 'monster-material-exchange') {
+            this.player.stop(); npc.facePlayer(this.player);
+            this.scene.hud?.openExchange(npc); return;
+        }
         if (npc?.role === 'fishing-merchant') {
             this.player.stop(); npc.facePlayer(this.player);
             this.scene.fishingSystem?.openMerchant(npc); return;

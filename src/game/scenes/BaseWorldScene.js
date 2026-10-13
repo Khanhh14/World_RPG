@@ -39,7 +39,7 @@ export class BaseWorldScene extends Scene {
         this.world.build();
         this.player = new Player(this, { ...map.player, ...this.spawn });
         this.npcs = (map.npcs ?? []).map(data => new NPC(this, data, this.world));
-        this.monsters = (map.monsters ?? []).map(data => new MonsterDecoration(this, data, map.tileSize));
+        this.monsters = (map.monsters ?? []).map(data => new MonsterDecoration(this, data, map.tileSize, this.world));
         this.portals = new PortalSystem(this, this.world, map.portals);
         this.worldCollider = this.physics.add.collider(this.player.sprite, this.world.blockers);
         this.dialogueUI = new DialogueUI(this);
@@ -71,6 +71,7 @@ export class BaseWorldScene extends Scene {
             this.dialogueUI = null;
             this.worldCollider = null;
             this.portals = null;
+            this.monsters.forEach(monster => monster.destroy());
             this.monsters = [];
         });
     }

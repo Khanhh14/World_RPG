@@ -7,9 +7,17 @@ const paths = [
     [30, 13, 3, 20],
     [39, 23, 3, 12]
 ];
-const clearings = [[8, 7, 10, 9], [25, 10, 12, 9], [36, 28, 11, 10]];
+const clearings = [
+    [2, 5, 9, 13], [42, 5, 11, 13],
+    [2, 27, 9, 12], [42, 27, 11, 12]
+];
 const reserved = [...paths, ...clearings];
 const trees = [];
+
+const pack = (name, frame, dropItem, locations) => locations.map(([col, row]) => ({
+    name, frame, dropItem, col, row, hp: 70, damage: 10,
+    ai: true, detectionRange: 260, chaseRange: 360, moveSpeed: 130
+}));
 
 for (let row = 0; row <= 39; row += 3) {
     for (let col = 0; col <= 52; col += 3) {
@@ -44,14 +52,28 @@ export const westForest = {
         [35, 17, 28], [37, 29, 17], [45, 36, 28]
     ],
     solidTiles: [],
-    npcs: [],
-    // Hình quái đứng yên, không có AI, sát thương hoặc thanh máu.
+    npcs: [{
+        id: 'west-forest-material-exchange',
+        name: 'Thợ săn',
+        role: 'monster-material-exchange',
+        frame: 87,
+        col: 48.5,
+        row: 25.5,
+        lines: ['Đổi 10 vật phẩm rơi từ quái để nhận 1 đá nâng cấp trang bị.']
+    }],
     monsters: [
-        { col: 13, row: 12, frame: 108 },
-        { col: 29, row: 15, frame: 108 },
-        { col: 34, row: 16, frame: 120 },
-        { col: 41, row: 33, frame: 121 },
-        { col: 33.5, row: 14.5, frame: 122, name: 'Bọ Cạp', scale: 3 }
+        ...pack('Heo rừng', 108, 'boar_hide', [
+            [3.5, 7], [6.5, 7], [9.5, 7], [3.5, 12], [6.5, 12], [9.5, 12]
+        ]),
+        ...pack('Sói xám', 120, 'wolf_fang', [
+            [43.5, 7], [46.5, 7], [49.5, 7], [43.5, 12], [46.5, 12], [49.5, 12]
+        ]),
+        ...pack('Slime rừng', 121, 'forest_gel', [
+            [3.5, 29], [6.5, 29], [9.5, 29], [3.5, 34], [6.5, 34], [9.5, 34]
+        ]),
+        ...pack('Bọ cạp', 122, 'scorpion_tail', [
+            [43.5, 29], [46.5, 29], [49.5, 29], [43.5, 34], [46.5, 34], [49.5, 34]
+        ])
     ],
     portals: [{
         x: 2592, feetY: 1104,
