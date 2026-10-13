@@ -36,3 +36,20 @@
 .ra-picker header{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:16px}.ra-picker header button{background:#1a3429;color:#e3d7af;border:1px solid #78906c;border-radius:6px;width:28px;height:28px;font-size:22px;cursor:pointer}.ra-picker p{font-size:11px;line-height:1.6;color:#bbceb7;margin:10px 0}.ra-potion-list{display:grid;gap:7px}
 .ra-potion-option{width:100%;display:flex;align-items:center;gap:8px;text-align:left;padding:6px 8px;border:1px solid #627b61;border-radius:8px;background:#172e26;color:#f4e8c9;cursor:pointer;font:12px Arial}.ra-potion-option[aria-pressed=true]{border-color:#e4c578;background:linear-gradient(100deg,#465337,#243f2e);box-shadow:inset 0 0 0 1px #dbc37e44}.ra-potion-option:hover:not(:disabled){background:#355240;border-color:#f2d797}.ra-potion-option:disabled{opacity:.5;cursor:default}.ra-potion-option:focus-visible{outline:2px solid #ffdda0;outline-offset:1px}.ra-potion-art{display:block;width:43px;height:43px;flex-shrink:0}.ra-potion-art svg{width:100%;height:100%}.ra-potion-option strong{display:block;font-size:12px}.ra-potion-option small{display:block;margin-top:5px;font-size:10px;color:#bfd0b9}.ra-potion-tag{margin-left:auto;font-size:10px;color:#e9cf8e;white-space:nowrap}.ra-picking .ra-notice{display:none}
 @media(max-width:1100px){.rpg-actions{right:12px;bottom:88px}}@media(max-width:650px){.rpg-actions{right:8px;bottom:86px}}@media(max-width:450px){.rpg-actions{transform:scale(.5)}}
+
+/* V3: cùng tỷ lệ hình tròn; Q/R/F cách tâm E 120px, góc 0/45/90 độ. */
+.rpg-actions{width:602px;height:216px}
+.rpg-actions .ra-utility,.rpg-actions .ra-main{appearance:none;-webkit-appearance:none;box-sizing:border-box;aspect-ratio:1/1;flex:none;padding:0;line-height:1;border-radius:50%;transform:none;box-shadow:inset 0 0 0 3px #192f26,inset 0 0 0 4px #d3ca9855,0 2px 6px #14261f66}
+.rpg-actions .ra-utility{width:68px;min-width:68px;max-width:68px;height:68px;min-height:68px;max-height:68px;border-width:2px}
+.rpg-actions .ra-main{width:100px;min-width:100px;max-width:100px;height:100px;min-height:100px;max-height:100px;border-width:2px;right:0;bottom:0}
+.rpg-actions .ra-utility[data-id=hp]{right:136px;bottom:16px}
+.rpg-actions .ra-utility[data-id=mp]{right:100.85px;bottom:100.85px}
+.rpg-actions .ra-utility[data-id=special]{right:16px;bottom:136px}
+.rpg-actions .ra-utility:hover:not(:disabled),.rpg-actions .ra-main:hover:not(:disabled){transform:none;box-shadow:inset 0 0 0 3px #192f26,inset 0 0 0 4px #eddfa477,0 0 12px #e0cc7d55}
+.rpg-actions .ra-main[data-context=npc],.rpg-actions .ra-main[data-context=fish]{box-shadow:inset 0 0 0 3px #192f26,inset 0 0 0 4px #eddfa477,0 0 15px #e0cc7d55}
+.ra-utility[data-id=hp] .ra-icon,.ra-utility[data-id=mp] .ra-icon{display:grid;place-items:center;width:40px;height:40px;flex:none;margin:0 0 2px;filter:none}
+.ra-pixel-potion{display:block;flex:none;width:32px!important;height:32px!important;min-width:32px;min-height:32px;background-repeat:no-repeat;background-size:384px 352px;background-position:calc(var(--potion-col) * -32px) -288px;image-rendering:pixelated;image-rendering:crisp-edges}
+.ra-potion-art{display:grid;place-items:center}.ra-utility .ra-level{bottom:5px;padding:1px 4px;font-size:9px}.ra-utility kbd{left:12px;top:10px}.ra-utility .ra-count{right:10px;top:10px}
+.ra-utility[data-id=special] .ra-icon{width:39px;height:39px}.ra-main .ra-icon{width:45px;height:45px;margin-top:-2px}.ra-main .ra-label{font-size:10px;line-height:1.2;margin-top:1px}
+.ra-assign-hp{right:129px;bottom:8px}.ra-assign-mp{right:93.85px;bottom:92.85px}
+.ra-assign{width:22px;height:22px;min-width:22px;min-height:22px;max-width:22px;max-height:22px;box-sizing:border-box;aspect-ratio:1/1;line-height:16px;padding:0;box-shadow:0 1px 4px #15291f66}

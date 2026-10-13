@@ -5,7 +5,7 @@ export { actionIcon } from './actionIcons.js';
 export class ActionBarUI {
   constructor(scene){
     this.scene=scene;this.managesInput=true;this.visible=true;this.alive=true;this.npc=null;
-    if(!document.getElementById('rpg-action-style')){const link=document.createElement('link');link.id='rpg-action-style';link.rel='stylesheet';link.href=`${import.meta.env?.BASE_URL??'/'}assets/style/actionBar.css?v=2`;document.head.appendChild(link);}
+    if(!document.getElementById('rpg-action-style')){const link=document.createElement('link');link.id='rpg-action-style';link.rel='stylesheet';link.href=`${import.meta.env?.BASE_URL??'/'}assets/style/actionBar.css?v=3`;document.head.appendChild(link);}
     this.root=document.createElement('section');this.root.className='rpg-actions';this.root.setAttribute('aria-label','Kỹ năng và tương tác');
     this.root.innerHTML=`<div class="ra-notice" role="status" hidden></div><div class="ra-skills">${COMBAT_SKILLS.map(s=>this.button(s.id,s.name,s.key,s.icon,'skill')).join('')}</div><div class="ra-orbit">${this.button('hp','Bình HP','Q','hp','utility')}${this.button('mp','Bình Mana','R','mp','utility')}${this.button('special','Vũ khí','F','special','utility')}${this.button('interact','Đánh thường','E','sword','main')}</div><div class="ra-tooltip" role="tooltip" hidden></div><section class="ra-picker" role="dialog" aria-label="Gán bình vào ô nhanh" hidden></section>`;
     document.body.appendChild(this.root);this.buttons=new Map([...this.root.querySelectorAll('button[data-id]')].map(b=>[b.dataset.id,b]));

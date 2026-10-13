@@ -15,8 +15,15 @@ const art={
  cancel:()=>base('<path d="M17 17l30 30m0-30L17 47" stroke="#f4b591" stroke-width="8"/><path d="M17 17l30 30m0-30L17 47" stroke="#ffe7b9" stroke-width="3"/>','#e69c77'),
  next:()=>base('<path d="M10 26h26V14l20 18-20 18V38H10z" fill="url(#gold)" stroke="#fff0b3" stroke-width="2"/>','#d5d994')
 };
-function bottle(kind){const hp=kind==='hp';return base(`<ellipse cx="32" cy="56" rx="17" ry="4" fill="#081b24" opacity=".5"/><path d="M25 11h14v13c3 6 14 11 14 21 0 10-8 13-21 13S11 55 11 45c0-10 11-15 14-21z" fill="url(#glass)" stroke="#c8e7d6" stroke-width="2"/><path d="M16 39q16 5 32 0v7c0 7-7 9-16 9s-16-2-16-9z" fill="url(#${hp?'red':'mana'})"/><ellipse cx="32" cy="40" rx="16" ry="4" fill="${hp?'#ff9b90':'#9ceaff'}"/><path d="M25 6h14v10H25z" fill="#b08550" stroke="#503f31" stroke-width="1.5"/><path d="M25 8h14M29 7v5" stroke="#edd6a0" stroke-width="1.5"/><path d="M23 17h18v5H23z" fill="url(#gold)"/><path d="M21 33c-5 5-7 11-4 15M43 48l-2 3" stroke="#fff" stroke-opacity=".75" stroke-width="3" fill="none"/><circle cx="32" cy="44" r="7" fill="${hp?'#a42d41':'#22548b'}" stroke="#f8dc9c"/>${hp?'<path d="M32 40v8m-4-4h8" stroke="#ffecc4" stroke-width="2"/>':'<path d="M32 39l4 5-4 5-4-5z" fill="#c4f6ff"/>'}`,hp?'#e86370':'#59bae6');}
 export function actionIcon(id){
+ // Atlas tiny-dungeon packed: 12 cột × 11 hàng, tile 16px.
+ // HP = frame 114 (cột 6, hàng 9); Mana = frame 116 (cột 8, hàng 9).
+ if(id==='hp'||id==='mp'){
+   const col=id==='hp'?6:8;
+   const url=`${import.meta.env?.BASE_URL??'/'}assets/tiny-dungeon/tilemap/tilemap_packed.png`;
+   return `<span class="ra-pixel-potion" aria-hidden="true" style="--potion-col:${col};background-image:url('${url}')"></span>`;
+ }
+
  const uid=`ra-art-${++serial}-`;
  let markup=`<svg viewBox="0 0 64 64" aria-hidden="true"><defs>
  <linearGradient id="gold" x2=".8" y2="1"><stop stop-color="#fff0b1"/><stop offset=".5" stop-color="#d9b26c"/><stop offset="1" stop-color="#a37844"/></linearGradient>
@@ -29,6 +36,6 @@ export function actionIcon(id){
  <linearGradient id="glass" x2="1" y2=".3"><stop stop-color="#6b9d9e" stop-opacity=".7"/><stop offset=".5" stop-color="#d9f6ed" stop-opacity=".35"/><stop offset="1" stop-color="#8cc4cc" stop-opacity=".7"/></linearGradient>
  <linearGradient id="red" x2="0" y2="1"><stop stop-color="#f37980"/><stop offset="1" stop-color="#b93151"/></linearGradient>
  <linearGradient id="mana" x2="0" y2="1"><stop stop-color="#67d8f0"/><stop offset="1" stop-color="#2b73be"/></linearGradient>
- </defs>${id==='hp'||id==='mp'?bottle(id):(art[id]||art.sword)()}</svg>`;
+ </defs>${(art[id]||art.sword)()}</svg>`;
  return markup.replace(/id="([a-z]+)"/g,(_,name)=>`id="${uid}${name}"`).replace(/url\(#([a-z]+)\)/g,(_,name)=>`url(#${uid}${name})`);
 }
