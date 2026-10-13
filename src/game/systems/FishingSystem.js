@@ -150,12 +150,6 @@ export class FishingSystem {
   }
   reset() { this.phase = 'idle'; this.attemptId = null; this.ui.progress.hidden = true; }
   update() {
-    const visible = this.near() && !this.shopOpen && !this.scene.hud?.blocked && !this.scene.dialogue?.isOpen;
-    const bar = this.scene.dialogueUI?.actionBar;
-    this.ui.actionVisible(visible, bar?.layout, this.scene);
-    // Chỉ phủ ô E, giữ nguyên các ô kỹ năng của HUD hiện tại.
-    if (bar?.caption && visible) { bar.caption.setVisible(false); this.captionHidden = true; }
-    else if (bar?.caption && this.captionHidden) { bar.caption.setVisible(bar.visible !== false); this.captionHidden = false; }
     if (this.phase === 'casting') {
       const percent = (performance.now() - this.startedAt) / this.duration * 100;
       this.ui.setProgress(percent); if (percent >= 100) void this.finish();

@@ -16,11 +16,11 @@ const art={
  next:()=>base('<path d="M10 26h26V14l20 18-20 18V38H10z" fill="url(#gold)" stroke="#fff0b3" stroke-width="2"/>','#d5d994')
 };
 export function actionIcon(id){
- // Atlas tiny-dungeon packed: 12 cột × 11 hàng, tile 16px.
+ // Dùng đúng atlas và frame như icon bình trong shop/túi đồ.
  // HP = frame 114 (cột 6, hàng 9); Mana = frame 116 (cột 8, hàng 9).
  if(id==='hp'||id==='mp'){
    const col=id==='hp'?6:8;
-   const url=`${import.meta.env?.BASE_URL??'/'}assets/tiny-dungeon/tilemap/tilemap_packed.png`;
+   const url=`${import.meta.env?.BASE_URL??'/'}assets/tiny-dungeon/Tilemap/tilemap_packed.png`;
    return `<span class="ra-pixel-potion" aria-hidden="true" style="--potion-col:${col};background-image:url('${url}')"></span>`;
  }
 

@@ -10,7 +10,7 @@ export class FishingUI {
       link.rel = 'stylesheet';
       document.head.appendChild(link);
     }
-    if (link.getAttribute('href') !== stylesheet + '?v=fishing-merchant-2') link.setAttribute('href', stylesheet + '?v=fishing-merchant-2');
+    if (link.getAttribute('href') !== stylesheet + '?v=fishing-merchant-3') link.setAttribute('href', stylesheet + '?v=fishing-merchant-3');
     const shopStylesheet = '/assets/style/fishing-merchant.css';
     const shopLink = document.createElement('link');
     shopLink.rel = 'stylesheet';

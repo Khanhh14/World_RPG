@@ -44,7 +44,14 @@ export class RPGHUD {
             if (action === 'preview-reset') { this.previewId = null; this.renderModal(); }
             if (action === 'preview-turn') { this.previewLeft = !this.previewLeft; this.drawCharacterPreview(); }
             if (action === 'use') { this.previewId = null; this.toast(this.state.useItem(this.selected)); this.render(); }
-            if (action === 'buy' && this.shopNPC && this.scene.dialogue?.nearest() === this.shopNPC) this.toast(this.state.buyItem(id).message);
+            if (action === 'buy' && this.shopNPC && this.scene.dialogue?.nearest() === this.shopNPC) {
+                const result = this.state.buyItem(id);
+                this.toast(result.message);
+                const item = ITEMS[id];
+                if (result.ok && item?.type === 'consumable' && ['hp','mp'].includes(item.category)) {
+                    this.scene.dialogueUI?.actionBar?.selectPotion(item.category, id);
+                }
+            }
             if (action === 'unequip') {
                 const slot = ITEMS[id]?.type;
                 if (slot && this.state.data.equipment[slot] === id) {
