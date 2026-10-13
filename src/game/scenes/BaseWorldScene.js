@@ -9,6 +9,7 @@ import { DialogueSystem } from '../systems/DialogueSystem.js';
 import { PortalSystem } from '../systems/PortalSystem.js';
 import { MonsterDecoration } from '../entities/MonsterDecoration.js';
 import { RPGState } from '../systems/RPGState.js';
+import { QuestSystem } from '../systems/QuestSystem.js';
 import { RPGHUD } from '../ui/RPGHUD.js';
 
 // Dùng cho các khu vực dùng cùng bộ tile và cơ chế di chuyển.
@@ -48,6 +49,7 @@ export class BaseWorldScene extends Scene {
         this.rpgState = RPGState.forScene(this);
         this.rpgState.visit(map.id);
         this.hud = new RPGHUD(this, this.rpgState, map.title);
+        this.questSystem = new QuestSystem(this);
         applyCharacterToScene(this);
 
         // Cập nhật trang bị ban đầu và lắng nghe thay đổi
@@ -60,6 +62,7 @@ export class BaseWorldScene extends Scene {
             if (this.equipmentUnsubscribe) this.equipmentUnsubscribe();
             this.hud?.destroy();
             this.hud = null;
+            this.questSystem = null;
             this.dialogue.active = null;
             this.world = null;
             this.player = null;

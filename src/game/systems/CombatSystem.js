@@ -105,6 +105,7 @@ export class CombatSystem {
       t.respawnAt=this.now+15000;t.aggro=false;
       for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(false);
       this.notify('Hạ quái! Quái sẽ xuất hiện lại sau 15 giây.');
+      void this.scene.questSystem?.recordKill();
     }
   }
   damagePlayer(amount){

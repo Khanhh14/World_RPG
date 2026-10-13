@@ -26,7 +26,7 @@ export class RPGHUD {
             document.head.appendChild(link);
         }
         // Đổi phiên bản để trình duyệt tải CSS mới sau khi thay file.
-        const href = stylesheet + '?v=rpg-menu-4';
+        const href = stylesheet + '?v=rpg-quest-board-2';
         if (link.getAttribute('href') !== href) link.setAttribute('href', href);
         this.root = document.createElement('div'); this.root.className = 'rpg-ui';
         this.root.innerHTML = '<div class="rpg-overview"></div><nav class="rpg-nav" aria-label="Menu nhân vật"></nav><div class="rpg-overlay" hidden><section class="rpg-modal" role="dialog" aria-modal="true" aria-labelledby="rpg-modal-title"></section></div><div class="rpg-toast" role="status" hidden></div>';
@@ -61,7 +61,8 @@ export class RPGHUD {
             }
             if (action === 'filter') { this.shopCategory = id; this.renderModal(); }
             if (action === 'tier') { this.shopLevel = Number(id); this.renderModal(); }
-            if (action === 'claim') this.toast(this.state.claimExploration());
+            if (action === 'claim') void this.claimQuest(id);
+            if (action === 'quest-retry') this.scene.questSystem?.retry();
         };
         this.onKey = event => {
             if (this.destroyed || event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
@@ -88,9 +89,36 @@ export class RPGHUD {
     render() {
         const s = this.state, d = s.data;
         this.scene.player?.updateEquipment?.(d.equipment.weapon, d.equipment.shield);
-        this.root.querySelector('.rpg-overview').innerHTML = `<div class="rpg-status"><div class="rpg-portrait">${icon(96,48)}<span class="rpg-level">LV ${d.level}</span></div><div class="rpg-meters"><div class="rpg-name">Lữ khách</div>${this.bar('hp','HP',d.hp,s.maxHP)}${this.bar('mp','MP',d.mp,s.maxMP)}${this.bar('xp','EXP',d.exp,s.expNeeded)}</div></div><div class="rpg-location"><span class="rpg-location-name">${escape(this.mapTitle)}</span><span class="rpg-gold">● ${d.gold.toLocaleString('vi-VN')} vàng</span></div>`;
-        this.root.querySelector('.rpg-nav').innerHTML = [['inventory','Túi đồ','B'],['potential','Tiềm Năng','C'],['quests','Nhiệm vụ','J']].map(([id,name,key]) => `<button type="button" data-action="tab" data-id="${id}" aria-label="${name} (${key})"><span>${name}</span><kbd>${key}</kbd>${id==='quests' && s.explorationReady && !d.explorationClaimed?'<i class="rpg-dot"></i>':''}</button>`).join('');
+        const quests = Array.isArray(d.quests) ? d.quests : [];
+        const activeQuest = quests.find(quest => quest.status !== 'claimed');
+        const trackerContent = activeQuest ? (() => {
+            const quest = activeQuest;
+            const current = quest.objective.current;
+            const target = quest.objective.target;
+            const percent = target > 0 ? Math.min(100, current / target * 100) : 0;
+            const complete = quest.status === 'completed';
+            return `<div class="rpg-quest-tracker-card">
+                <span class="rpg-quest-tracker-step">NHIỆM VỤ HIỆN TẠI</span>
+                <strong class="rpg-quest-tracker-name">${escape(quest.name)}</strong>
+                <p>${escape(quest.description)}</p>
+                <div class="rpg-quest-tracker-objective"><span>${escape(quest.objective.label)}</span><strong>${current} / ${target}</strong></div>
+                <div class="rpg-quest-tracker-progress" role="progressbar" aria-label="${escape(quest.name)}" aria-valuemin="0" aria-valuemax="${target}" aria-valuenow="${current}"><i style="width:${percent}%"></i></div>
+                <div class="rpg-quest-tracker-footer"><span>✦ ${quest.reward.exp} EXP · ${quest.reward.gold} vàng</span>
+                    ${complete ? `<button type="button" data-action="claim" data-id="${escape(quest.id)}">Nhận thưởng</button>` : '<span class="rpg-quest-tracker-hint">Hoàn thành để mở nhiệm vụ tiếp theo</span>'}
+                </div>
+            </div>`;
+        })() : `<p class="rpg-quest-tracker-message">${escape(d.questLoadStatus === 'error' ? d.questLoadError : 'Đang tải nhiệm vụ…')}</p>${d.questLoadStatus === 'error' ? '<button type="button" data-action="quest-retry">Tải lại</button>' : ''}`;
+        const tracker = `<section class="rpg-quest-tracker" aria-label="Nhiệm vụ và tiến độ">${trackerContent}</section>`;
+        this.root.querySelector('.rpg-overview').innerHTML = `<div class="rpg-status"><div class="rpg-portrait">${icon(96,48)}<span class="rpg-level">LV ${d.level}</span></div><div class="rpg-meters"><div class="rpg-name">${escape(d.name || 'Lữ khách')}</div>${this.bar('hp','HP',d.hp,s.maxHP)}${this.bar('mp','MP',d.mp,s.maxMP)}${this.bar('xp','EXP',d.exp,s.expNeeded)}</div></div>${tracker}<div class="rpg-location"><span class="rpg-location-name">${escape(this.mapTitle)}</span><span class="rpg-gold">● ${d.gold.toLocaleString('vi-VN')} vàng</span></div>`;
+        this.root.querySelector('.rpg-nav').innerHTML = [['inventory','Túi đồ','B'],['potential','Tiềm Năng','C'],['quests','Nhiệm vụ','J']].map(([id,name,key]) => `<button type="button" data-action="tab" data-id="${id}" aria-label="${name} (${key})"><span>${name}</span><kbd>${key}</kbd>${id==='quests' && d.quests?.some(quest => quest.status === 'completed')?'<i class="rpg-dot"></i>':''}</button>`).join('');
         if (this.tab) this.renderModal();
+    }
+    async claimQuest(questId) {
+        if (this.claimingQuest || !questId) return;
+        this.claimingQuest = true;
+        try { this.toast(await this.scene.questSystem.claim(questId)); }
+        catch (error) { this.toast(error.message); }
+        finally { this.claimingQuest = false; }
     }
     openShop(npc) {
         if (!npc?.isMerchant || this.scene.dialogue?.nearest() !== npc) return;

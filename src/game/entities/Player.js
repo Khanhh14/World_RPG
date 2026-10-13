@@ -114,10 +114,11 @@ export class Player {
     }
 
     getWeaponFrame(weaponId) {
-        // Kiếm: frames 103-107, Gậy: frame 129
+        // Kiếm: frames 103-107, Rìu: frame 118, Gậy: frame 129
         const weaponFrames = {
             'iron_sword': 103, 'iron_sword_2': 104, 'iron_sword_3': 105,
-            'iron_sword_4': 106, 'iron_sword_5': 107, 'wood_staff': 129
+            'iron_sword_4': 106, 'iron_sword_5': 107, 'starter_axe': 118,
+            'wood_staff': 129
         };
         return weaponFrames[weaponId] ?? null;
     }

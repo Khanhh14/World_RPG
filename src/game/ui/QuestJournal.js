@@ -1,19 +1,36 @@
-import { DESTINATIONS } from '../systems/RPGState.js';
-
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({
     '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
 })[char]);
 
-// Nhật ký riêng: mở bằng nút Nhiệm vụ hoặc phím J.
-// RPGHUD quản lý đóng/mở, bàn phím và thao tác nhận thưởng.
 export function renderQuestJournal(state) {
-    const d = state.data;
-    return `<article class="rpg-quest">
-        <h3>Những bước chân đầu tiên</h3>
-        <p class="rpg-subtle">Khám phá ba khu vực bằng các cổng dịch chuyển.</p>
-        <ul>${DESTINATIONS.map(([id, name]) => `<li class="${d.visited.includes(id) ? 'done' : ''}">${d.visited.includes(id) ? '✓' : '○'} ${escape(name)}</li>`).join('')}</ul>
-        <div class="rpg-rewards"><span>120 EXP · 30 vàng</span>
-            <button type="button" class="rpg-primary" data-action="claim" ${!state.explorationReady || d.explorationClaimed ? 'disabled' : ''}>${d.explorationClaimed ? 'Đã nhận thưởng' : state.explorationReady ? 'Nhận thưởng' : `${d.visited.length}/${DESTINATIONS.length} khu vực`}</button>
-        </div>
-    </article>`;
+    const quests = Array.isArray(state.data.quests)
+        ? state.data.quests.filter(quest => quest.status === 'active')
+        : [];
+    if (quests.length === 0) {
+        const loading = state.data.questLoadStatus === 'loading';
+        const pending = state.data.quests?.some(quest => quest.status === 'completed');
+        const message = loading
+            ? 'Đang tải nhiệm vụ từ máy chủ…'
+            : pending
+                ? 'Nhiệm vụ đã hoàn thành. Nhận thưởng trên bảng bên cạnh thanh máu để mở nhiệm vụ tiếp theo.'
+                : state.data.questLoadStatus === 'error'
+                    ? state.data.questLoadError
+                    : 'Bạn đã hoàn thành tất cả nhiệm vụ hiện có.';
+        return `<p class="rpg-subtle">${escape(message)}</p>${state.data.questLoadStatus === 'error' ? '<button type="button" data-action="quest-retry">Tải lại nhiệm vụ</button>' : ''}`;
+    }
+    return `<div class="rpg-quest-list">${quests.slice(0, 1).map(quest => {
+        const objective = quest.objective;
+        return `<article class="rpg-quest">
+            <h3>${escape(quest.name)}</h3>
+            <p class="rpg-subtle">${escape(quest.description)}</p>
+            <div class="rpg-quest-progress">
+                <span>${escape(objective.label)}</span>
+                <strong>${objective.current}/${objective.target}</strong>
+            </div>
+            <div class="rpg-rewards">
+                <span>${quest.reward.exp} EXP · ${quest.reward.gold} vàng</span>
+                <span>Đang thực hiện</span>
+            </div>
+        </article>`;
+    }).join('')}</div>`;
 }

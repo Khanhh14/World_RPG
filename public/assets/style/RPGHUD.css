@@ -12,6 +12,21 @@
 .rpg-ui .rpg-tier{font-size:10px;color:#ebce85}
 /* HUD ngoài bản đồ */
 .rpg-ui .rpg-status{position:absolute;left:18px;top:18px;display:flex;gap:12px;padding:12px;width:310px;background:linear-gradient(135deg,#203c31f5,#112720f5);border:1px solid #9b8854;box-shadow:0 3px 0 #0e211bb0;border-radius:12px}
+.rpg-ui .rpg-quest-tracker{position:absolute;left:18px;top:124px;width:310px;padding:11px 12px;border:1px solid #60725d;border-radius:10px;background:linear-gradient(145deg,#203c31f5,#10261ff5);box-shadow:0 5px 16px #07130f70}
+.rpg-ui .rpg-quest-tracker-card{padding:0}
+.rpg-ui .rpg-quest-tracker-step{display:block;margin-bottom:5px;color:#b9c9b7;font-size:9px;font-weight:bold;letter-spacing:1.1px}
+.rpg-ui .rpg-quest-tracker-name{display:block;font-size:13px;line-height:1.3}
+.rpg-ui .rpg-quest-tracker-card p{margin:5px 0 9px;color:#bdcabe;font-size:10px;line-height:1.4}
+.rpg-ui .rpg-quest-tracker-objective{display:flex;justify-content:space-between;gap:8px;font-size:10px}
+.rpg-ui .rpg-quest-tracker-objective span{color:#d1dacf}
+.rpg-ui .rpg-quest-tracker-objective strong{color:#f3d58a}
+.rpg-ui .rpg-quest-tracker-progress{height:7px;margin-top:5px;overflow:hidden;background:#091c19;border:1px solid #415448;border-radius:6px}
+.rpg-ui .rpg-quest-tracker-progress i{display:block;height:100%;background:linear-gradient(90deg,#ecd08c,#bf9650);transition:width .3s}
+.rpg-ui .rpg-quest-tracker-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:9px;color:#f6d67f;font-size:10px}
+.rpg-ui .rpg-quest-tracker-footer button{flex-shrink:0;padding:5px 8px;background:linear-gradient(#ecd08c,#bf9650);border-color:#f4d58b;color:#172a20;font-size:10px;font-weight:bold}
+.rpg-ui .rpg-quest-tracker-hint{color:#bdcabe;font-size:9px;text-align:right}
+.rpg-ui .rpg-quest-tracker-message{margin:5px 0;color:var(--muted);overflow-wrap:anywhere;font-size:11px}
+.rpg-ui .rpg-quest-tracker>button{margin:0 10px 9px;padding:5px 8px;font-size:10px}
 .rpg-ui .rpg-portrait{position:relative;align-self:flex-start;width:61px;height:70px;display:grid;place-items:center;background:#2f4b3b;border:2px solid var(--gold);border-radius:8px}
 .rpg-ui .rpg-level{position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:bold;background:var(--gold);color:#172a20;padding:3px 7px;border-radius:5px}
 .rpg-ui .rpg-meters{flex:1;min-width:0}.rpg-ui .rpg-name{font-weight:bold;margin-bottom:7px;font-size:14px}
@@ -115,7 +130,7 @@
 .rpg-ui .rpg-shop-buy{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#f6d67f}.rpg-ui .rpg-shop-item button{font-size:12px}
 .rpg-ui .rpg-toast{position:absolute;left:50%;top:145px;transform:translateX(-50%);max-width:90%;padding:11px 18px;border:1px solid #b59c65;background:#10271ff5;border-radius:8px;text-align:center;z-index:2;box-shadow:0 3px 12px #0005}
 /* Màn hình nhỏ: đổi số cột, không thu nhỏ vật phẩm. */
-@media(max-width:740px){.rpg-ui .rpg-bag-layout{grid-template-columns:1fr}.rpg-ui .rpg-modal.rpg-inventory-modal{width:min(460px,100%)}.rpg-ui .rpg-status{width:274px;left:10px;top:10px;padding:9px;gap:9px}.rpg-ui .rpg-location{top:10px;right:10px;max-width:35%;font-size:11px}.rpg-ui .rpg-nav{left:10px;bottom:12px;gap:4px}.rpg-ui .rpg-nav button{min-width:49px;padding:7px;font-size:11px}.rpg-ui .rpg-toast{top:125px}}
+@media(max-width:740px){.rpg-ui .rpg-bag-layout{grid-template-columns:1fr}.rpg-ui .rpg-modal.rpg-inventory-modal{width:min(460px,100%)}.rpg-ui .rpg-status{width:274px;left:10px;top:10px;padding:9px;gap:9px}.rpg-ui .rpg-quest-tracker{width:274px;left:10px;top:118px}.rpg-ui .rpg-quest-tracker-card{padding:9px 10px}.rpg-ui .rpg-quest-tracker-card p{margin:4px 0 7px}.rpg-ui .rpg-location{top:10px;right:10px;max-width:35%;font-size:11px}.rpg-ui .rpg-nav{left:10px;bottom:12px;gap:4px}.rpg-ui .rpg-nav button{min-width:49px;padding:7px;font-size:11px}.rpg-ui .rpg-toast{top:125px}}
 @media(max-width:400px){.rpg-ui .rpg-modal{padding:12px}.rpg-ui .rpg-grid{grid-template-columns:repeat(auto-fit,44px)}.rpg-ui .rpg-location-name{display:none}.rpg-ui .rpg-status{width:265px}.rpg-ui .rpg-gold{padding:7px}.rpg-ui .rpg-potential-card{padding:12px}.rpg-ui .rpg-potential-card>strong{font-size:22px}.rpg-ui .rpg-potential-card em{font-size:14px}}
 
 /* ================= BẢN 3: Ô KHO THẲNG HÀNG + TIỀN TỆ ================= */
@@ -139,6 +154,15 @@
 .rpg-ui .rpg-potential-exp .rpg-exp-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
 .rpg-ui .rpg-potential-exp .rpg-exp-track{display:block;width:100%;height:9px;border-radius:10px}
 .rpg-ui .rpg-quests-modal .rpg-quest{margin-top:2px}
+.rpg-ui .rpg-quest-list{display:grid;gap:10px}
+.rpg-ui .rpg-quest{padding:12px;background:linear-gradient(160deg,#19362b,#0d211b);border:1px solid #486551;border-radius:9px}
+.rpg-ui .rpg-quest.done{border-color:#b99b61}
+.rpg-ui .rpg-quest .rpg-subtle{margin:6px 0 10px}
+.rpg-ui .rpg-quest-progress,.rpg-ui .rpg-rewards{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rpg-ui .rpg-quest-progress{font-size:12px;margin-bottom:10px;color:var(--muted)}
+.rpg-ui .rpg-quest-progress strong{color:#f3ebd4}
+.rpg-ui .rpg-rewards{font-size:12px;color:#f6d67f}
+.rpg-ui .rpg-rewards button{font-size:11px;padding:6px 9px}
 @media(max-width:400px){.rpg-ui .rpg-wallet-card{padding:9px 8px;gap:7px}.rpg-ui .rpg-wallet-card strong{font-size:17px}}
 
 /* ================= BẢN 4: TIỀN TỆ DƯỚI BALO, THÊM CỘT Ô ĐỒ ================= */

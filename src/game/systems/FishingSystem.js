@@ -124,6 +124,7 @@ export class FishingSystem {
       const result = await fishingApi.finish(this.attemptId, this.position());
       if (this.alive) {
         this.data = { ...this.data, ...result.inventory }; this.syncFishingItems(result.inventory); this.ui.inventory(result.inventory);
+        if (Array.isArray(result.quests)) this.scene.rpgState.setQuests(result.quests);
         this.ui.toast(`Bạn câu được ${result.fish.name} ×1! Cá đã vào túi đồ.`);
       }
     } catch (error) {
@@ -135,6 +136,8 @@ export class FishingSystem {
           if (this.alive && recovered.result) this.ui.toast(`Đã nhận ${recovered.result.fish.name} ×1. Kết quả đã lưu.`);
         } catch { /* Mất mạng: lần đăng nhập sau sẽ đồng bộ lại cá đã lưu. */ }
         if (this.alive) await this.load();
+        try { await this.scene.questSystem?.refresh(); }
+        catch (questError) { if (this.alive) this.ui.toast(questError.message); }
       }
     }
     finally { if (this.alive) this.reset(); }

@@ -107,7 +107,10 @@ export class RPGState {
             ),
 
             visited: [],
-            explorationClaimed: false
+            explorationClaimed: false,
+            quests: [],
+            questLoadStatus: 'loading',
+            questLoadError: ''
         };
 
         this.restore();
@@ -221,6 +224,19 @@ export class RPGState {
         for (const fn of this.listeners) {
             fn(this.data);
         }
+    }
+
+    setQuests(quests) {
+        this.data.quests = Array.isArray(quests) ? quests : [];
+        this.data.questLoadStatus = 'ready';
+        this.data.questLoadError = '';
+        this.changed();
+    }
+
+    setQuestLoadError(message) {
+        this.data.questLoadStatus = 'error';
+        this.data.questLoadError = String(message || 'Không tải được nhiệm vụ.');
+        this.changed();
     }
 
     visit(id) {
