@@ -13,7 +13,8 @@ const art={
  shop:()=>base(`<path d="M12 25h40v30H12z" fill="#e8c792" stroke="#4d4631" stroke-width="2"/><path d="M7 25l8-16h34l8 16z" fill="#eee1b9"/><path d="M15 9h8l-3 16H7zm17 0h8l4 16H31zm17 0 8 16H44L40 9z" fill="#b56346"/><path d="M9 25c0 9 12 9 12 0 0 9 11 9 11 0 0 9 11 9 11 0 0 9 12 9 12 0" fill="#ae6545" stroke="#f9d794"/><path d="M20 55V37h15v18M40 36h8v9h-8" fill="#52634c"/><circle cx="30" cy="46" r="1.5" fill="#ffdc89"/>`,'#f0c18b'),
  fish:()=>base(`<path d="M12 55L37 8" stroke="#57412d" stroke-width="7"/><path d="M12 55L37 8" stroke="#e2b975" stroke-width="4"/><path d="M37 8c16 5 17 14 14 28v10c0 12-14 12-14 2l5 5" fill="none" stroke="#e4f3de" stroke-width="2"/><circle cx="27" cy="30" r="5" fill="#b38b54" stroke="#ffe6a2"/><path d="M39 38l9-1-4 8z" fill="#ef8c70"/>`,'#80cacf'),
  cancel:()=>base('<path d="M17 17l30 30m0-30L17 47" stroke="#f4b591" stroke-width="8"/><path d="M17 17l30 30m0-30L17 47" stroke="#ffe7b9" stroke-width="3"/>','#e69c77'),
- next:()=>base('<path d="M10 26h26V14l20 18-20 18V38H10z" fill="url(#gold)" stroke="#fff0b3" stroke-width="2"/>','#d5d994')
+ next:()=>base('<path d="M10 26h26V14l20 18-20 18V38H10z" fill="url(#gold)" stroke="#fff0b3" stroke-width="2"/>','#d5d994'),
+ auto:()=>base(`<path d="M48 23A18 18 0 0 0 18 17l-5 6m0 0V12m0 11h11M16 41a18 18 0 0 0 30 6l5-6m0 0v11m0-11H40" fill="none" stroke="#ffe7a5" stroke-width="5"/><path d="M32 20l-9 14h8l-2 11 12-17h-8l2-8z" fill="url(#gold)" stroke="#fff2c1" stroke-width="1.5"/>`,'#98d99c')
 };
 export function actionIcon(id){
  // Dùng đúng atlas và frame như icon bình trong shop/túi đồ.

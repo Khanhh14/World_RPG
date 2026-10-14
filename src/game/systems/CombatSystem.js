@@ -19,7 +19,7 @@ export function segmentHitsRect(a,b,r) {
 }
 export class CombatSystem {
   constructor(scene, notify=()=>{}) {
-    this.scene=scene;this.notify=notify;this.targets=new Map();this.shots=[];this.effects=[];this.facing={x:0,y:1};this.alive=true;
+    this.scene=scene;this.notify=notify;this.targets=new Map();this.shots=[];this.effects=[];this.facing={x:0,y:1};this.alive=true;this.autoAttack=false;
     this.graphics=scene.add.graphics().setDepth(9500);
     this.potions=new PotionLoadout(()=>this.state);this.vfx=new CombatVFX(scene);this.uiBlocked=false;
     this.tick=(time,delta)=>this.update(time,delta);
@@ -73,19 +73,41 @@ export class CombatSystem {
   }
   attack(){
     if(this.busy||this.remaining('basic'))return false;
+    const mage=this.state.data.classCode==='mage';
+    const target=this.nearestTarget(mage?320:92);
+    if(!target)return false;
     this.runtime.cooldowns.basic=this.clock+550;
-    const staff=/staff|wand|trượng/i.test(this.state.data.equipment?.weapon??'');
-    if(staff)this.projectile(this.state.attack,260,0xe7cfff);
-    else {this.melee(this.state.attack,92,false);this.flash(this.origin(),88,0xf8dd99,'slash');}
+    if(mage)this.projectile(this.state.attack,320,0xe7cfff,target);
+    else {
+      const player=this.scene.player.sprite,point=this.targetPoint(target);
+      this.facing={x:point.x-player.x,y:point.y-player.y};
+      const length=Math.hypot(this.facing.x,this.facing.y)||1;
+      this.facing.x/=length;this.facing.y/=length;
+      player.setFlipX(this.facing.x<0);
+      this.flash(this.origin(),78,0xffd990,'slash');
+      this.hit(target,this.state.attack);
+      this.flash(point,28,0xf8dd99,'impact');
+    }
     return true;
+  }
+  nearestTarget(range){
+    const origin=this.origin();
+    if(!origin)return null;
+    return [...this.targets.values()]
+      .filter(target=>target.hp>0&&target.entity.sprite.active&&this.clearLine(origin,this.targetPoint(target)))
+      .map(target=>({target,distance:distance(origin,this.targetPoint(target))}))
+      .filter(entry=>entry.distance<=range)
+      .sort((a,b)=>a.distance-b.distance)[0]?.target??null;
   }
   potion(kind){
     if(this.busy||this.remaining(kind))return false;
     const selection=this.potions.selected(kind),id=selection?.id;
     if(!id){this.notify('Chưa gán bình. Nhấn nút chọn cạnh ô bình để gán.');return false;}
     if(selection.quantity<=0){this.notify(`${selection.name} đã hết. Hãy mua thêm hoặc gán cấp khác.`);return false;}
-    const count=this.state.data.inventory[id];this.notify(this.state.useItem(id));
-    if(this.state.data.inventory[id]<count){this.runtime.cooldowns[kind]=this.clock+900;this.flash(this.origin(),45,kind==='hp'?0xf88996:0x77d9ff,'potion');return true;}return false;
+    const count=this.state.data.inventory[id],message=this.state.useItem(id);
+    if(this.state.data.inventory[id]<count){this.runtime.cooldowns[kind]=this.clock+900;this.flash(this.origin(),45,kind==='hp'?0xf88996:0x77d9ff,'potion');return true;}
+    this.notify(message);
+    return false;
   }
   potionCount(kind){return this.potions.selected(kind)?.quantity??0;}
   melee(damage,range,all){
@@ -97,7 +119,16 @@ export class CombatSystem {
     }).sort((a,b)=>Math.hypot(this.targetPoint(a).x-p.x,this.targetPoint(a).y-p.y)-Math.hypot(this.targetPoint(b).x-p.x,this.targetPoint(b).y-p.y));
     for(const t of (all?hits:hits.slice(0,1)))this.hit(t,damage);
   }
-  projectile(damage,range,color){const p=this.origin();if(p)this.shots.push({...p,dx:this.facing.x,dy:this.facing.y,damage,left:range,color,trail:[]});}
+  projectile(damage,range,color,target=null){
+    const p=this.origin();
+    if(!p)return;
+    const shot={...p,dx:this.facing.x,dy:this.facing.y,damage,left:range,color,trail:[],target};
+    if(target){
+      const point=this.targetPoint(target),dx=point.x-p.x,dy=point.y-p.y,length=Math.hypot(dx,dy)||1;
+      shot.dx=dx/length;shot.dy=dy/length;
+    }
+    this.shots.push(shot);
+  }
   hit(t,damage){
     if(t.hp<=0)return;t.hp=Math.max(0,t.hp-Math.round(damage));t.aggro=true;t.chaseUntil=this.now+6000;t.visibleUntil=this.now+4500;
     this.float(this.targetPoint(t),`−${Math.round(damage)}`,'#ffe0ad');
@@ -194,6 +225,19 @@ export class CombatSystem {
       const hp=entity.data.hp??60;
       this.targets.set(entity,{entity,hp,maxHP:hp,damage:entity.data.damage??10,aggro:false,nextHit:0,chaseUntil:0});
     }
+    this.autoMoveDirection=null;
+    if(this.autoAttack&&!this.busy){
+      const target=this.nearestTarget(320);
+      if(target){
+        const point=this.targetPoint(target),player=this.origin(),mage=this.state.data.classCode==='mage';
+        const attackRange=mage?320:78;
+        const dx=point.x-player.x,dy=point.y-player.y,targetDistance=Math.hypot(dx,dy);
+        if(!mage&&targetDistance>attackRange){
+          this.autoMoveDirection={x:dx/targetDistance,y:dy/targetDistance};
+        }
+        if(targetDistance<=attackRange&&this.remaining('basic')<=0)this.attack();
+      }
+    }
     const g=this.graphics;g.clear();
     for(const t of this.targets.values()){
       if(!t.entity.sprite.active)continue;
@@ -213,9 +257,17 @@ export class CombatSystem {
     // Không gây sát thương trong lúc menu/hội thoại/câu cá đang mở.
     if(this.busy)this.shots=[];
     for(let i=this.shots.length-1;i>=0;i--){
-      const shot=this.shots[i],step=Math.min(shot.left,420*Math.min(delta,50)/1000),a={x:shot.x,y:shot.y},b={x:shot.x+shot.dx*step,y:shot.y+shot.dy*step};
+      const shot=this.shots[i];
+      if(shot.target){
+        if(shot.target.hp<=0||shot.target.entity.sprite.active===false){this.shots.splice(i,1);continue;}
+        const point=this.targetPoint(shot.target),dx=point.x-shot.x,dy=point.y-shot.y,length=Math.hypot(dx,dy)||1;
+        shot.dx=dx/length;shot.dy=dy/length;
+      }
+      const step=Math.min(shot.left,420*Math.min(delta,50)/1000),a={x:shot.x,y:shot.y},b={x:shot.x+shot.dx*step,y:shot.y+shot.dy*step};
       if(!this.clearLine(a,b)){this.flash(a,20,shot.color,'impact');this.shots.splice(i,1);continue;}
-      const target=[...this.targets.values()].find(t=>t.hp>0&&t.entity.sprite.active&&segmentDistance(this.targetPoint(t),a,b)<24);
+      const target=shot.target
+        ? segmentDistance(this.targetPoint(shot.target),a,b)<24?shot.target:null
+        : [...this.targets.values()].find(t=>t.hp>0&&t.entity.sprite.active&&segmentDistance(this.targetPoint(t),a,b)<24);
       if(target){this.hit(target,shot.damage);this.shots.splice(i,1);continue;}
       shot.trail.push(a);if(shot.trail.length>10)shot.trail.shift();
       shot.x=b.x;shot.y=b.y;shot.left-=step;

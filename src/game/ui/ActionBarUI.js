@@ -5,15 +5,16 @@ export { actionIcon } from './actionIcons.js';
 export class ActionBarUI {
   constructor(scene){
     this.scene=scene;this.managesInput=true;this.visible=true;this.alive=true;this.npc=null;
-    if(!document.getElementById('rpg-action-style')){const link=document.createElement('link');link.id='rpg-action-style';link.rel='stylesheet';link.href=`${import.meta.env?.BASE_URL??'/'}assets/style/actionBar.css?v=4`;document.head.appendChild(link);}
+    if(!document.getElementById('rpg-action-style')){const link=document.createElement('link');link.id='rpg-action-style';link.rel='stylesheet';link.href=`${import.meta.env?.BASE_URL??'/'}assets/style/actionBar.css?v=5`;document.head.appendChild(link);}
     this.root=document.createElement('section');this.root.className='rpg-actions';this.root.setAttribute('aria-label','Kỹ năng và tương tác');
-    this.root.innerHTML=`<div class="ra-notice" role="status" hidden></div><div class="ra-skills">${COMBAT_SKILLS.map(s=>this.button(s.id,s.name,s.key,s.icon,'skill')).join('')}</div><div class="ra-orbit">${this.button('hp','Bình HP','Q','hp','utility')}${this.button('mp','Bình Mana','R','mp','utility')}${this.button('special','Vũ khí','F','special','utility')}${this.button('interact','Đánh thường','E','sword','main')}</div><div class="ra-tooltip" role="tooltip" hidden></div><section class="ra-picker" role="dialog" aria-label="Gán bình vào ô nhanh" hidden></section>`;
+    this.root.innerHTML=`<div class="ra-notice" role="status" hidden></div><div class="ra-skills">${COMBAT_SKILLS.map(s=>this.button(s.id,s.name,s.key,s.icon,'skill')).join('')}</div><div class="ra-orbit">${this.button('hp','Bình HP','Q','hp','utility')}${this.button('auto','Tự động đánh','AUTO','auto','utility')}${this.button('mp','Bình Mana','R','mp','utility')}${this.button('special','Vũ khí','F','special','utility')}${this.button('interact','Đánh thường','E','sword','main')}</div><div class="ra-tooltip" role="tooltip" hidden></div><section class="ra-picker" role="dialog" aria-label="Gán bình vào ô nhanh" hidden></section>`;
     document.body.appendChild(this.root);this.buttons=new Map([...this.root.querySelectorAll('button[data-id]')].map(b=>[b.dataset.id,b]));
     this.picker=this.root.querySelector('.ra-picker');this.pickerKind=null;
     this.tooltip=this.root.querySelector('.ra-tooltip');this.notice=this.root.querySelector('.ra-notice');
     this.combat=new CombatSystem(scene,text=>this.toast(text));scene.combat=this.combat;
     this.onClick=e=>{const b=e.target.closest('button');if(!b)return;
-      if(b.dataset.choose)this.openPicker(b.dataset.choose);
+      if(b.dataset.id==='auto'){this.combat.autoAttack=!this.combat.autoAttack;this.refresh();}
+      else if(b.dataset.choose)this.openPicker(b.dataset.choose);
       else if(b.dataset.potion){if(this.combat.potions.assign(this.pickerKind,b.dataset.potion)){this.toast('Đã gán '+this.combat.potions.selected(this.pickerKind).name);this.closePicker();}}
       else if(b.hasAttribute('data-picker-close'))this.closePicker();
       else if(!this.pickerKind)this.invoke(b.dataset.id);
@@ -47,7 +48,7 @@ export class ActionBarUI {
     this.onUpdate=()=>this.refresh();scene.events.on('postupdate',this.onUpdate);
     scene.events.once('shutdown',()=>this.destroy());this.resize(scene.scale.width,scene.scale.height);this.refresh();
   }
-  button(id,label,key,icon,kind){return `<button type="button" class="ra-button ra-${kind}" data-id="${id}" aria-label="${label} (${key})"><span class="ra-icon">${actionIcon(icon)}</span><span class="ra-label">${label}</span><kbd>${key}</kbd><span class="ra-count"></span><span class="ra-level"></span><span class="ra-cooldown" hidden></span></button>${kind==='utility'&&id!=='special'?`<button type="button" class="ra-assign ra-assign-${id}" data-choose="${id}" aria-label="Chọn cấp bình ${id==='hp'?'HP':'Mana'}">⌄</button>`:''}`;}
+  button(id,label,key,icon,kind){return `<button type="button" class="ra-button ra-${kind}" data-id="${id}" aria-label="${label} (${key})"><span class="ra-icon">${actionIcon(icon)}</span><span class="ra-label">${label}</span><kbd>${key}</kbd><span class="ra-count"></span><span class="ra-level"></span><span class="ra-cooldown" hidden></span></button>${['hp','mp'].includes(id)?`<button type="button" class="ra-assign ra-assign-${id}" data-choose="${id}" aria-label="Chọn cấp bình ${id==='hp'?'HP':'Mana'}">⌄</button>`:''}`;}
   context(){
     const f=this.scene.fishingSystem;
     if(this.scene.dialogue?.isOpen)return {icon:'next',label:'Tiếp tục',kind:'dialogue'};
@@ -80,6 +81,11 @@ export class ActionBarUI {
     const focused=this.root.contains(document.activeElement)?document.activeElement.closest('button'):null;
     if(focused?.dataset.id==='interact'&&!this.tooltip.hidden)this.tooltip.textContent=main.dataset.tooltip;
     main.disabled=!scene.rpgState||scene.rpgState.data.hp<=0||f?.phase==='finishing';
+    const auto=this.buttons.get('auto');
+    auto.classList.toggle('ra-auto-on',this.combat.autoAttack);
+    auto.setAttribute('aria-pressed',String(this.combat.autoAttack));
+    auto.dataset.tooltip=`Tự động đánh · Bấm để ${this.combat.autoAttack?'tắt':'bật'}.`;
+    auto.disabled=!scene.rpgState||scene.rpgState.data.hp<=0||!!scene.hud?.blocked||!!scene.dialogue?.isOpen||!!f?.basketOpen||!!(f?.phase&&f.phase!=='idle');
     for(const skill of COMBAT_SKILLS){
       const b=this.buttons.get(skill.id),remaining=this.combat.remaining(skill.id),error=this.combat.ready(skill);
       b.disabled=!!error;b.dataset.tooltip=`${skill.name} · ${skill.mana} MP · Hồi ${skill.cooldown/1000}s\n${skill.description}${error?'\n'+error:''}`;
@@ -135,7 +141,10 @@ export class ActionBarUI {
     if(focus&&kind)this.root.querySelector(`[data-choose="${kind}"]`)?.focus();
   }
   cooldown(button,left,total){const shade=button.querySelector('.ra-cooldown');shade.hidden=left<=0;shade.textContent=left>0?(left/1000).toFixed(1):'';button.style.setProperty('--cooldown',`${Math.min(100,left/total*100)}%`);}
-  toast(text){this.notice.textContent=text;this.notice.hidden=false;this.noticeUntil=performance.now()+3000;}
+  toast(text){
+    if(this.scene.hud){this.scene.hud.toast(text);return;}
+    this.notice.textContent=text;this.notice.hidden=false;this.noticeUntil=performance.now()+3000;
+  }
   selectPotion(kind,id){
     if(!this.combat.potions.assign(kind,id))return false;
     this.toast(`Đã gán ${this.combat.potions.selected(kind).name} vào ô ${kind==='hp'?'Q':'R'}.`);

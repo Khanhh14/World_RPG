@@ -35,6 +35,13 @@ export class Player {
             if (this.cursors.up.isDown || this.keys.W.isDown) y--;
             if (this.cursors.down.isDown || this.keys.S.isDown) y++;
         }
+        const autoMove = !blocked && x === 0 && y === 0
+            ? this.scene.combat?.autoMoveDirection
+            : null;
+        if (autoMove) {
+            x = autoMove.x;
+            y = autoMove.y;
+        }
         const length = Math.hypot(x, y);
         this.sprite.setVelocity(
             length ? x / length * this.speed : 0,
