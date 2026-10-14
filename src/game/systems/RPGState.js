@@ -1,3 +1,4 @@
+import { purchaseItem } from '../../api/shopApi.js';
 import {
     createCharacterState,
     getCharacterProfile,
@@ -78,6 +79,7 @@ export class RPGState {
         this.userId = String(userId);
         this.saveKey = `${SAVE_KEY}:${encodeURIComponent(this.userId)}`;
         this.listeners = new Set();
+        this.serverRevision = -1;
 
         try {
             this.storage =
@@ -94,6 +96,9 @@ export class RPGState {
             hp: 100,
             mp: 50,
             gold: 50,
+            gems: 0,
+            pendingPurchase: null,
+            pendingKills: [],
 
             inventory: {
                 health_potion: 5,
@@ -168,6 +173,8 @@ export class RPGState {
 
             this.data.mp = integer(saved.mp, 0, this.maxMP, this.maxMP);
             this.data.gold = integer(saved.gold, 0, 9999999, 50);
+            this.data.pendingPurchase = saved.pendingPurchase || null;
+            this.data.pendingKills = Array.isArray(saved.pendingKills) ? saved.pendingKills.filter(id => typeof id === 'string' && /^[a-f0-9-]{36}$/i.test(id)) : [];
 
             for (const id of Object.keys(ITEMS)) {
                 this.data.inventory[id] = integer(
@@ -271,37 +278,25 @@ export class RPGState {
         return true;
     }
 
-    addGold(amount) {
-        this.data.gold = Math.min(
-            9999999,
-            this.data.gold + integer(amount, 0, 9999999, 0)
-        );
-
-        this.changed();
-    }
-
-    addExperience(amount) {
-        this.data.exp += integer(amount, 0, 1000000, 0);
-
-        while (
-            this.data.level < 100 &&
-            this.data.exp >= this.expNeeded
-        ) {
-            this.data.exp -= this.expNeeded;
-            this.data.level++;
-
-            this.data.hp = this.maxHP;
-            this.data.mp = this.maxMP;
+    // Tiền/EXP chỉ thay đổi khi nhận phản hồi đã lưu thành công từ backend.
+    applyServerCharacter(character) {
+        if (!character || String(character.id) !== String(this.data.characterId)) return false;
+        const revision = Number(character.revision);
+        if (!Number.isSafeInteger(revision) || revision < this.serverRevision) return false;
+        const previousLevel = this.data.level;
+        this.serverRevision = revision;
+        for (const field of ['level', 'exp', 'gold', 'gems']) {
+            const value = Number(character[field]);
+            if (Number.isSafeInteger(value) && value >= 0) this.data[field] = value;
         }
-
-        if (this.data.level === 100) {
-            this.data.exp = Math.min(
-                this.data.exp,
-                this.expNeeded - 1
-            );
+        // Không ghi đè HP/MP đang chiến đấu bằng snapshot HP cũ từ DB.
+        if (this.data.level > previousLevel) {
+            this.data.hp = this.maxHP; this.data.mp = this.maxMP;
         }
-
+        this.data.hp = Math.min(this.data.hp, this.maxHP);
+        this.data.mp = Math.min(this.data.mp, this.maxMP);
         this.changed();
+        return true;
     }
 
     canAdd(id, quantity = 1) {
@@ -348,22 +343,45 @@ export class RPGState {
         return { ok: true, message: '' };
     }
 
-    buyItem(id, quantity = 1) {
+    async buyItem(id, quantity = 1) {
+        if (this.buying) return { ok: false, message: 'Đang xử lý giao dịch…' };
+        if (this.data.pendingPurchase) {
+            const recovered = await this.recoverPurchase();
+            return { ...recovered, message: recovered.ok ? 'Đã khôi phục giao dịch trước. Hãy chọn món tiếp theo.' : recovered.message };
+        }
         const check = this.canBuy(id, quantity);
-
         if (!check.ok) return check;
+        this.data.pendingPurchase = { requestId: crypto.randomUUID(), itemId: id, quantity };
+        // Lưu yêu cầu trước khi trừ vàng. Nếu storage bị chặn thì không gửi mua hàng.
+        try {
+            if (!this.storage) throw new Error();
+            this.storage.setItem(this.saveKey, JSON.stringify(this.data));
+            const saved = JSON.parse(this.storage.getItem(this.saveKey));
+            if (saved.pendingPurchase?.requestId !== this.data.pendingPurchase.requestId) throw new Error();
+        } catch {
+            this.data.pendingPurchase = null;
+            return { ok: false, message: 'Hãy cho phép lưu dữ liệu trình duyệt để mua đồ an toàn.' };
+        }
+        return this.recoverPurchase();
+    }
 
-        this.data.gold -= ITEMS[id].price * quantity;
-
-        this.data.inventory[id] =
-            (this.data.inventory[id] ?? 0) + quantity;
-
-        this.changed();
-
-        return {
-            ok: true,
-            message: `Đã mua ${quantity} ${ITEMS[id].name.toLowerCase()}.`
-        };
+    async recoverPurchase() {
+        if (this.buying || !this.data.pendingPurchase) return { ok: false, message: 'Đang xử lý giao dịch…' };
+        this.buying = true;
+        try {
+            const result = await purchaseItem(this.data.pendingPurchase);
+            const { itemId, quantity } = result.purchase;
+            this.data.inventory[itemId] = (this.data.inventory[itemId] || 0) + quantity;
+            this.data.pendingPurchase = null;
+            this.applyServerCharacter(result.character);
+            this.changed();
+            return { ok: true, message: `Đã mua ${quantity} ${ITEMS[itemId]?.name || itemId}.` };
+        } catch (error) {
+            if (error.status === 400 || error.status === 409) {
+                this.data.pendingPurchase = null; this.changed();
+            }
+            return { ok: false, message: error.message || 'Chưa xác nhận mua đồ. Mở lại game hoặc bấm mua để kiểm tra giao dịch cũ.' };
+        } finally { this.buying = false; }
     }
 
     addItem(id, quantity = 1) {
@@ -466,19 +484,6 @@ export class RPGState {
     }
 
     claimExploration() {
-        if (this.data.explorationClaimed) {
-            return 'Bạn đã nhận thưởng nhiệm vụ này.';
-        }
-
-        if (!this.explorationReady) {
-            return 'Hãy ghé thăm đủ ba khu vực.';
-        }
-
-        this.data.explorationClaimed = true;
-        this.data.gold = Math.min(9999999, this.data.gold + 30);
-
-        this.addExperience(120);
-
-        return 'Hoàn thành khám phá! +120 EXP · +30 vàng';
+        return 'Hãy nhận thưởng trong bảng nhiệm vụ để lưu vào MySQL.';
     }
 }

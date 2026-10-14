@@ -13,7 +13,7 @@ export function createCharacterState(StateClass, userId) {
   if (String(userId) !== accountId) throw new Error("Nhân vật không thuộc phiên đăng nhập hiện tại.");
   const state = new StateClass(null, userId);
   const seed = JSON.parse(JSON.stringify(state.data));
-  Object.assign(seed, { level: profile.level, exp: profile.exp, gold: profile.gold, hp: profile.hp, mp: profile.mana, gems: 0, inventory: {}, visited: [], explorationClaimed: false });
+  Object.assign(seed, { level: profile.level, exp: profile.exp, gold: profile.gold, hp: profile.hp, mp: profile.mana, gems: Number(profile.gems || 0), inventory: {}, visited: [], explorationClaimed: false });
   for (const slot of Object.keys(seed.equipment || {})) seed.equipment[slot] = null;
   for (const item of profile.items || []) {
     if (!ITEMS[item.id]) continue;
@@ -31,7 +31,10 @@ export function createCharacterState(StateClass, userId) {
   };
   state.restore();
   Object.assign(state.data, { characterId: profile.id, name: profile.name, classCode: profile.classCode, className: profile.class.name, playerFrame: profile.class.frame });
+  // MySQL là nguồn chính cho kinh tế; localStorage chỉ giữ giao diện/túi đồ hiện có.
+  state.applyServerCharacter(profile);
   state.changed();
+  if (state.data.pendingPurchase) void state.recoverPurchase();
   return state;
 }
 // Gắn ngoại hình và tên sau khi Scene đã tạo player + HUD.

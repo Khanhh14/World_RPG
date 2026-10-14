@@ -50,7 +50,7 @@ export class FishingSystem {
   async load(cancelOld = false) {
     try {
       const data = await fishingApi.bootstrap(); if (!this.alive) return;
-      this.data = data; this.syncFishingItems(data); this.syncGold(data.gold); this.ui.inventory(data);
+      this.data = data; this.syncFishingItems(data); this.syncGold(data); this.ui.inventory(data);
       if (cancelOld && data.activeId) await fishingApi.cancel(data.activeId);
     } catch (error) { if (this.alive) { this.ui.shopStatus(error.message); this.ui.toast(error.message); } }
   }
@@ -78,17 +78,16 @@ export class FishingSystem {
     }
     if (changed) state.changed();
   }
-  syncGold(gold) {
-    if (!Number.isFinite(Number(gold)) || !this.scene.rpgState?.data) return;
-    this.scene.rpgState.data.gold = Number(gold);
-    this.scene.rpgState.changed();
+  syncGold(data) {
+    this.scene.rpgState?.applyServerCharacter(data.character);
   }
   async buyRod() {
     if (this.granting || !this.merchantOpen) return; this.granting = true;
     try {
       const data = await fishingApi.buyRod(this.position());
+      this.syncGold(data);
       if (this.alive) {
-        this.data = { ...this.data, ...data }; this.syncFishingItems(data); this.ui.inventory(this.data); this.syncGold(data.gold);
+        this.data = { ...this.data, ...data }; this.syncFishingItems(data); this.ui.inventory(this.data); this.syncGold(data);
         this.ui.toast(data.hasRod ? 'Bạn đã có cần câu.' : 'Đã mua cần câu với giá 50 vàng.');
       }
     }
@@ -99,8 +98,9 @@ export class FishingSystem {
     if (this.selling || !this.merchantOpen) return; this.selling = true;
     try {
       const data = await fishingApi.sell(fishId, this.position());
+      this.syncGold(data);
       if (this.alive) {
-        this.data = { ...this.data, ...data }; this.syncFishingItems(data); this.ui.inventory(this.data); this.syncGold(data.gold);
+        this.data = { ...this.data, ...data }; this.syncFishingItems(data); this.ui.inventory(this.data); this.syncGold(data);
         this.ui.toast(`Đã bán ${data.sold.name} ×${data.sold.quantity}, nhận ${data.sold.total} vàng.`);
       }
     } catch (error) { if (this.alive) this.ui.shopStatus(error.message); }
@@ -122,6 +122,7 @@ export class FishingSystem {
     this.phase = 'finishing'; this.ui.setProgress(100, true);
     try {
       const result = await fishingApi.finish(this.attemptId, this.position());
+      this.syncGold(result.inventory);
       if (this.alive) {
         this.data = { ...this.data, ...result.inventory }; this.syncFishingItems(result.inventory); this.ui.inventory(result.inventory);
         if (Array.isArray(result.quests)) this.scene.rpgState.setQuests(result.quests);

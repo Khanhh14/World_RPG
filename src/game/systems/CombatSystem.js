@@ -139,8 +139,7 @@ export class CombatSystem {
       for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(false);
       const forestReward=this.scene.mapData.id==='west-forest';
       if(forestReward){
-        this.state.addExperience(30);
-        this.state.addGold(10);
+        // Thưởng 30 EXP + 10 vàng được backend lưu qua recordKill().
       }
       const drop=ITEMS[t.entity.data.dropItem];
       if(drop&&Math.random()<0.25){
@@ -148,7 +147,7 @@ export class CombatSystem {
           this.scene.hud?.toast(`Nhặt được ${drop.name}.`);
         }
       }
-      void this.scene.questSystem?.recordKill();
+      if (this.scene.mapData.id === 'west-forest') void this.scene.questSystem?.recordKill();
     }
   }
   damagePlayer(amount){

@@ -33,7 +33,7 @@ export class RPGHUD {
         document.body.appendChild(this.root);
         this.overlay = this.root.querySelector('.rpg-overlay');
         this.modal = this.root.querySelector('.rpg-modal');
-        this.onClick = event => {
+        this.onClick = async event => {
             const button = event.target.closest('button[data-action]');
             if (!button || !this.root.contains(button) || button.disabled) return;
             const { action, id } = button.dataset;
@@ -45,7 +45,8 @@ export class RPGHUD {
             if (action === 'preview-turn') { this.previewLeft = !this.previewLeft; this.drawCharacterPreview(); }
             if (action === 'use') { this.previewId = null; this.toast(this.state.useItem(this.selected)); this.render(); }
             if (action === 'buy' && this.shopNPC && this.scene.dialogue?.nearest() === this.shopNPC) {
-                const result = this.state.buyItem(id);
+                const result = await this.state.buyItem(id);
+                if (this.destroyed) return;
                 this.toast(result.message);
                 const item = ITEMS[id];
                 if (result.ok && item?.type === 'consumable' && ['hp','mp'].includes(item.category)) {

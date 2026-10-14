@@ -1,5 +1,5 @@
 const local = ['localhost', '127.0.0.1'].includes(location.hostname);
-const base = (import.meta.env.VITE_API_BASE || (local ? `${location.protocol}//${location.hostname}:3001/api` : '/api')).replace(/\/$/, '');
+const base = (import.meta.env?.VITE_API_BASE || (local ? `${location.protocol}//${location.hostname}:3001/api` : '/api')).replace(/\/$/, '');
 
 async function request(path, body) {
   const controller = new AbortController();
@@ -25,8 +25,18 @@ async function request(path, body) {
   }
 }
 
+export async function retryRequest(operation) {
+  // Mỗi lần thử lại dùng CÙNG requestId; backend không cộng/trừ lần hai.
+  for (let attempt = 0; ; attempt++) {
+    try { return await operation(); }
+    catch (error) {
+      if (attempt >= 2 || (error.status && error.status < 500)) throw error;
+      await new Promise(resolve => setTimeout(resolve, 400 * (attempt + 1)));
+    }
+  }
+}
 export const questApi = {
   list: () => request('', null),
-  progress: (eventType, mapId, eventId) => request('/progress', { eventType, mapId, eventId }),
-  claim: questId => request(`/${encodeURIComponent(questId)}/claim`, {}),
+  progress: (eventType, mapId, eventId) => retryRequest(() => request('/progress', { eventType, mapId, eventId })),
+  claim: questId => retryRequest(() => request(`/${encodeURIComponent(questId)}/claim`, {})),
 };
