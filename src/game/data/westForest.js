@@ -76,6 +76,10 @@ export const westForest = {
         ])
     ],
     portals: [{
+        x: 288, feetY: 1104,
+        label: 'Ngoại ô thành YuNa', target: 'YunaOutskirts',
+        spawn: { x: 2280, y: 888 }
+    }, {
         x: 2592, feetY: 1104,
         label: 'Về Làng Khởi Đầu',
         target: 'Game',

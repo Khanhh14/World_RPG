@@ -14,7 +14,7 @@ export class QuestSystem {
       await this.refresh();
       if (!this.alive) return;
       for (const id of [...this.state.data.pendingKills]) await this.record('monster_kill', 'west-forest', id);
-      await this.record('visit', this.scene.mapData.id);
+      if (['village','west-forest','atlast-lake'].includes(this.scene.mapData.id)) await this.record('visit', this.scene.mapData.id);
     } catch (error) {
       if (this.alive) this.scene.rpgState.setQuestLoadError(error.message);
     }

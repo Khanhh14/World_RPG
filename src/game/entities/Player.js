@@ -1,3 +1,4 @@
+import { wingTexture } from '../world/WingTextures.js';
 // Logic nhân vật được dùng lại ở làng, rừng và các khu vực tiếp theo.
 export class Player {
     constructor(scene, config) {
@@ -60,6 +61,13 @@ export class Player {
         .setPosition(this.x, this.sprite.y + 22)
         .setDepth(playerDepth - 1);
 
+    if (this.wingSprite) {
+        const flutter = Math.sin(this.scene.time.now / 280) * 0.035;
+        this.wingSprite.setPosition(this.x, this.sprite.y - 8)
+            .setDepth(playerDepth - 0.5).setFlipX(facingLeft)
+            .setScale(3 * (1 + flutter), 3);
+    }
+
     // Vũ khí: cách nhân vật 14px, thấp hơn một chút.
     if (this.weaponSprite) {
         this.weaponSprite
@@ -120,6 +128,16 @@ export class Player {
         this.updateAppearance();
     }
 
+    updateWings(data) {
+        const selected = data?.collection?.find(item => item.id === data.equipped);
+        const key = selected ? `${selected.id}:${selected.level}` : null;
+        if (this.wingKey === key) return;
+        this.wingSprite?.destroy(); this.wingSprite = null; this.wingKey = key;
+        if (selected) this.wingSprite = this.scene.add.image(this.x, this.sprite.y - 8,
+            wingTexture(this.scene, selected.id, selected.level)).setOrigin(0.5, 0.5).setScale(3);
+        this.updateAppearance();
+    }
+
     getWeaponFrame(weaponId) {
         // Kiếm: frames 103-107, Rìu: frame 118, Gậy: frame 129
         const weaponFrames = {
@@ -140,6 +158,7 @@ export class Player {
     }
 
     destroy() {
+        this.wingSprite?.destroy();
         if (this.weaponSprite) this.weaponSprite.destroy();
         if (this.shieldSprite) this.shieldSprite.destroy();
         this.sprite.destroy();

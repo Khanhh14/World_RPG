@@ -1,3 +1,4 @@
+import { WingsSystem } from '../systems/WingsSystem.js';
 import { applyCharacterToScene } from '../systems/characterSession.js';
 import { Scene } from 'phaser';
 import { loadWorldAssets } from '../config/assets.js';
@@ -48,6 +49,7 @@ export class BaseWorldScene extends Scene {
         this.cameras.main.roundPixels = true;
         this.rpgState = RPGState.forScene(this);
         this.rpgState.visit(map.id);
+        this.wingsSystem = new WingsSystem(this, this.rpgState);
         this.hud = new RPGHUD(this, this.rpgState, map.title);
         this.questSystem = new QuestSystem(this);
         applyCharacterToScene(this);
@@ -80,6 +82,7 @@ export class BaseWorldScene extends Scene {
         if (!this.player || !this.rpgState) return;
         const equipment = this.rpgState.data.equipment;
         this.player.updateEquipment(equipment.weapon, equipment.shield);
+        this.player.updateWings(this.rpgState.data.wings);
     }
 
     update() {

@@ -1,3 +1,4 @@
+import { wingStats } from '../data/wings.js';
 import { purchaseItem } from '../../api/shopApi.js';
 import {
     createCharacterState,
@@ -97,6 +98,8 @@ export class RPGState {
             mp: 50,
             gold: 50,
             gems: 0,
+            wings: null,
+            pendingWingAction: null,
             pendingPurchase: null,
             pendingKills: [],
 
@@ -126,7 +129,13 @@ export class RPGState {
         return Object.values(this.data.equipment).reduce(
             (sum, id) => sum + (ITEMS[id]?.[stat] ?? 0),
             0
-        );
+        ) + this.wingBonus(stat);
+    }
+
+    wingBonus(stat) {
+        const wings = this.data.wings;
+        const owned = wings?.collection?.find(item => item.id === wings.equipped);
+        return owned ? (wingStats(owned.id, owned.level)[stat] || 0) : 0;
     }
 
     get maxHP() {
@@ -174,6 +183,7 @@ export class RPGState {
             this.data.mp = integer(saved.mp, 0, this.maxMP, this.maxMP);
             this.data.gold = integer(saved.gold, 0, 9999999, 50);
             this.data.pendingPurchase = saved.pendingPurchase || null;
+            this.data.pendingWingAction = saved.pendingWingAction || null;
             this.data.pendingKills = Array.isArray(saved.pendingKills) ? saved.pendingKills.filter(id => typeof id === 'string' && /^[a-f0-9-]{36}$/i.test(id)) : [];
 
             for (const id of Object.keys(ITEMS)) {

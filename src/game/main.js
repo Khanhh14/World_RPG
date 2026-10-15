@@ -3,6 +3,7 @@ import { AUTO, Game as PhaserGame, Scale } from 'phaser';
 
 import { Game as VillageGame } from './scenes/Game.js';
 import { WestForest } from './scenes/WestForest.js';
+import { YunaOutskirts } from './scenes/YunaOutskirts.js';
 import { AtlastLake } from './scenes/AtlastLake.js';
 
 // Hàm này chỉ được withAuth gọi sau khi xác thực thành công.
@@ -40,6 +41,7 @@ function StartGame(user, parent = 'game-container') {
             VillageGame,
             WestForest,
             AtlastLake,
+            YunaOutskirts,
         ],
     };
 

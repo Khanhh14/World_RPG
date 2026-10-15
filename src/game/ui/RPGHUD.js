@@ -1,3 +1,5 @@
+import { renderWingsPanel, renderWingShop, wingEquipmentCard } from './WingsPanel.js';
+import { drawWingPixels } from '../world/WingTextures.js';
 import { EQUIPMENT_SLOTS, SHOP_ITEMS, MONSTER_MATERIALS, gearIcon } from '../data/items.js';
 import { ITEMS } from '../systems/RPGState.js';
 import { renderQuestJournal } from './QuestJournal.js';
@@ -15,6 +17,10 @@ export class RPGHUD {
         if (!Number.isFinite(Number(state.data.gems)) || Number(state.data.gems) < 0) state.data.gems = 0;
         else state.data.gems = Math.floor(Number(state.data.gems));
         this.previewId = null; this.previewLeft = false;
+        if (!document.querySelector('link[data-yuna-wings]')) {
+            const wingCSS = document.createElement('link'); wingCSS.rel = 'stylesheet';
+            wingCSS.href = '/assets/style/wings.css?v=yuna-1'; wingCSS.dataset.yunaWings = 'true'; document.head.appendChild(wingCSS);
+        }
         this.tab = null; this.selected = 'health_potion'; this.destroyed = false;
         // CSS đặt trong public/assets/style, tự nạp nếu index.html chưa nạp.
         const stylesheet = '/assets/style/RPGHUD.css';
@@ -39,6 +45,15 @@ export class RPGHUD {
             const { action, id } = button.dataset;
             if (action === 'tab' && !(button.closest('.rpg-tabs') && this.tab === id)) this.toggle(id);
             if (action === 'close') this.close();
+            if (action === 'wing-select') { this.wingSelected = id; this.renderModal(); }
+            if (action === 'wing-retry') await this.scene.wingsSystem?.load();
+            if (action === 'wing-buy' && this.wingNPC && this.scene.dialogue?.nearest() === this.wingNPC) await this.scene.wingsSystem?.perform('buy', { itemId: id });
+            if (action === 'wing-equip') await this.scene.wingsSystem?.perform('equip', { wingId: id });
+            if (action === 'wing-unequip') await this.scene.wingsSystem?.perform('equip', { wingId: null });
+            if (action === 'wing-upgrade') {
+                const owned = this.state.data.wings?.collection?.find(item => item.id === id);
+                if (owned) await this.scene.wingsSystem?.perform('upgrade', { wingId: id, expectedLevel: owned.level });
+            }
             if (action === 'select') { this.selected = id; this.previewId = null; this.renderModal(); }
             if (action === 'preview') { this.previewId = this.selected; this.renderModal(); }
             if (action === 'preview-reset') { this.previewId = null; this.renderModal(); }
@@ -71,7 +86,7 @@ export class RPGHUD {
         this.onKey = event => {
             if (this.destroyed || event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
             const key = event.key.toLowerCase();
-            const tabs = { b: 'inventory', c: 'potential', j: 'quests' };
+            const tabs = { b: 'inventory', c: 'potential', h: 'wings', j: 'quests' };
             if (tabs[key]) { event.preventDefault(); this.toggle(tabs[key]); }
             else if (key === 'escape' && this.tab) { event.preventDefault(); this.close(); }
             else if (key === 'tab' && this.tab) {
@@ -114,7 +129,7 @@ export class RPGHUD {
         })() : `<p class="rpg-quest-tracker-message">${escape(d.questLoadStatus === 'error' ? d.questLoadError : 'Đang tải nhiệm vụ…')}</p>${d.questLoadStatus === 'error' ? '<button type="button" data-action="quest-retry">Tải lại</button>' : ''}`;
         const tracker = `<section class="rpg-quest-tracker" aria-label="Nhiệm vụ và tiến độ">${trackerContent}</section>`;
         this.root.querySelector('.rpg-overview').innerHTML = `<div class="rpg-status"><div class="rpg-portrait">${icon(96,48)}<span class="rpg-level">LV ${d.level}</span></div><div class="rpg-meters"><div class="rpg-name">${escape(d.name || 'Lữ khách')}</div>${this.bar('hp','HP',d.hp,s.maxHP)}${this.bar('mp','MP',d.mp,s.maxMP)}${this.bar('xp','EXP',d.exp,s.expNeeded)}</div></div>${tracker}<div class="rpg-location"><span class="rpg-location-name">${escape(this.mapTitle)}</span><span class="rpg-gold">● ${d.gold.toLocaleString('vi-VN')} vàng</span></div>`;
-        this.root.querySelector('.rpg-nav').innerHTML = [['inventory','Túi đồ','B'],['potential','Tiềm Năng','C'],['quests','Nhiệm vụ','J']].map(([id,name,key]) => `<button type="button" data-action="tab" data-id="${id}" aria-label="${name} (${key})"><span>${name}</span><kbd>${key}</kbd>${id==='quests' && d.quests?.some(quest => quest.status === 'completed')?'<i class="rpg-dot"></i>':''}</button>`).join('');
+        this.root.querySelector('.rpg-nav').innerHTML = [['inventory','Túi đồ','B'],['potential','Tiềm Năng','C'],['wings','Cánh','H'],['quests','Nhiệm vụ','J']].map(([id,name,key]) => `<button type="button" data-action="tab" data-id="${id}" aria-label="${name} (${key})"><span>${name}</span><kbd>${key}</kbd>${id==='quests' && d.quests?.some(quest => quest.status === 'completed')?'<i class="rpg-dot"></i>':''}</button>`).join('');
         if (this.tab) this.renderModal();
     }
     async claimQuest(questId) {
@@ -129,12 +144,18 @@ export class RPGHUD {
         this.shopNPC = npc; this.shopCategory = 'all'; this.shopLevel = 0;
         this.toggle('shop');
     }
+    openWingShop(npc) {
+        if (npc?.role !== 'wing-merchant' || this.scene.dialogue?.nearest() !== npc) return;
+        this.wingNPC = npc; this.toggle('wing-shop');
+        void this.scene.wingsSystem?.load();
+    }
     openExchange(npc) {
         if (npc?.role !== 'monster-material-exchange' || this.scene.dialogue?.nearest() !== npc) return;
         this.exchangeNPC = npc;
         this.toggle('exchange');
     }
     toggle(tab) {
+        if (tab === 'wing-shop' && (!this.wingNPC || this.scene.dialogue?.nearest() !== this.wingNPC)) return;
         if (tab === 'shop' && (!this.shopNPC || this.scene.dialogue?.nearest() !== this.shopNPC)) return;
         if (tab === 'exchange' && (!this.exchangeNPC || this.scene.dialogue?.nearest() !== this.exchangeNPC)) return;
         if (this.scene.dialogue?.isOpen) { this.toast('Kết thúc hội thoại để mở menu.'); return; }
@@ -152,7 +173,7 @@ export class RPGHUD {
     }
     close() {
         if (!this.tab) return;
-        this.previewId = null; this.tab = null; this.shopNPC = null; this.exchangeNPC = null; this.overlay.hidden = true;
+        this.previewId = null; this.tab = null; this.shopNPC = null; this.exchangeNPC = null; this.wingNPC = null; this.overlay.hidden = true;
         this.scene.input.keyboard.resetKeys();
         this.scene.input.keyboard.enabled = this.keyboardWasEnabled;
         if (!this.scene.dialogue?.isOpen) this.scene.dialogueUI?.actionBar?.setVisible(true);
@@ -165,10 +186,13 @@ export class RPGHUD {
         const focusAction = focus?.dataset.action, focusId = focus?.dataset.id;
         const names = this.tab === 'quests'
             ? { quests: 'Nhật ký nhiệm vụ' }
-            : { inventory: 'Túi đồ & Trang bị', potential: 'Tiềm Năng' };
+            : { inventory: 'Túi đồ & Trang bị', potential: 'Tiềm Năng', wings: 'Nâng cấp cánh' };
+        if (this.wingNPC && this.tab !== 'quests') names['wing-shop'] = 'Đá nâng cấp cánh';
         if (this.shopNPC && this.tab !== 'quests') names.shop = 'Cửa hàng';
         if (this.exchangeNPC && this.tab === 'exchange') names.exchange = 'Đổi vật phẩm quái';
         const tabs = this.tab === 'quests' ? '' : `<div class="rpg-tabs">${Object.entries(names).map(([id, name]) => `<button type="button" data-action="tab" data-id="${id}" class="${id === this.tab ? 'active' : ''}">${name}</button>`).join('')}</div>`;
+        this.modal.classList.toggle('rpg-wing-modal', this.tab === 'wings');
+        this.modal.classList.toggle('rpg-wing-shop-modal', this.tab === 'wing-shop');
         this.modal.classList.toggle('rpg-shop-modal', this.tab === 'shop');
         this.modal.classList.toggle('rpg-inventory-modal', this.tab === 'inventory');
         this.modal.classList.toggle('rpg-potential-modal', this.tab === 'potential');
@@ -183,6 +207,8 @@ export class RPGHUD {
     }
     content() {
         const s = this.state, d = s.data;
+        if (this.tab === 'wings') return renderWingsPanel(this);
+        if (this.tab === 'wing-shop') return renderWingShop(this);
         if (this.tab === 'shop') return this.shopContent();
         if (this.tab === 'exchange') return this.exchangeContent();
         if (this.tab === 'inventory') {
@@ -231,7 +257,7 @@ export class RPGHUD {
                     <div class="rpg-model-controls"><button type="button" data-action="preview-turn">Đổi hướng</button>${previewItem ? '<button type="button" data-action="preview-reset">Hủy thử</button>' : ''}</div>
                 </div>
                 ${previewItem ? `<p class="rpg-subtle">Đang thử: ${escape(previewItem.name)}. Bấm Trang bị để mặc.</p>` : ''}
-                <div class="rpg-equipment-grid">${gear}</div>
+                <div class="rpg-equipment-grid">${gear}${wingEquipmentCard(this.state)}</div>
             </section>
             <div class="rpg-bag-column">
             <section class="rpg-bag-panel"><div class="rpg-section-heading"><h3>Ba lô</h3><span>${ids.length} / ${capacity} ô</span></div>
@@ -288,6 +314,15 @@ export class RPGHUD {
         const weapon = () => draw(getFrame(wf), x + direction * gap, y + 6 * scale / worldScale, scale, this.previewLeft);
         const shield = () => draw(getFrame(sf), x - direction * gap, y + scale / worldScale, scale, this.previewLeft);
         ctx.fillStyle = '#00000044'; ctx.beginPath(); ctx.ellipse(x, y + 60, 65, 15, 0, 0, Math.PI * 2); ctx.fill();
+        const wingData = this.state.data.wings;
+        const wingId = this.tab === 'wings' ? this.wingSelected : wingData?.equipped;
+        const wing = wingData?.collection?.find(item => item.id === wingId);
+        if (wing) {
+            ctx.save(); ctx.translate(x, y - 8 * scale / worldScale);
+            if (this.previewLeft) ctx.scale(-1, 1);
+            ctx.scale(scale, scale); ctx.translate(-24, -16);
+            drawWingPixels(ctx, wing.id, wing.level); ctx.restore();
+        }
         if (this.previewLeft) weapon(); else shield();
         const rendered = draw(sprite?.frame ?? getFrame(96), x, y, scale, this.previewLeft);
         if (this.previewLeft) shield(); else weapon();
