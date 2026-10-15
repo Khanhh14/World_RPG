@@ -133,9 +133,9 @@ export class RPGState {
     }
 
     wingBonus(stat) {
-        const wings = this.data.wings;
-        const owned = wings?.collection?.find(item => item.id === wings.equipped);
-        return owned ? (wingStats(owned.id, owned.level)[stat] || 0) : 0;
+        // Chỉ số bộ sưu tập luôn có hiệu lực, không phụ thuộc cánh đang hiển thị.
+        return (this.data.wings?.collection ?? []).reduce((total, owned) =>
+            total + (wingStats(owned.id, owned.level)[stat] || 0), 0);
     }
 
     get maxHP() {
