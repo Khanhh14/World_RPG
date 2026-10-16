@@ -1,3 +1,4 @@
+import { MAX_ENHANCEMENT, enhancedItem } from '../data/enhancement.js';
 import { renderSkillsPanel, renderSkillShop } from './SkillsPanel.js';
 import { renderWingsPanel, renderWingShop, wingEquipmentCard } from './WingsPanel.js';
 import { drawWingPixels } from '../world/WingTextures.js';
@@ -18,6 +19,9 @@ export class RPGHUD {
         if (!Number.isFinite(Number(state.data.gems)) || Number(state.data.gems) < 0) state.data.gems = 0;
         else state.data.gems = Math.floor(Number(state.data.gems));
         this.previewId = null; this.previewLeft = false;
+        if (!document.querySelector('link[data-enhancement]')) {
+            const css=document.createElement('link');css.rel='stylesheet';css.href='/assets/style/enhancement.css?v=1';css.dataset.enhancement='true';document.head.appendChild(css);
+        }
         if (!document.querySelector('link[data-skill-books]')) {
             const link = document.createElement('link'); link.rel = 'stylesheet';
             link.href = '/assets/style/skills.css?v=1'; link.dataset.skillBooks = 'true'; document.head.appendChild(link);
@@ -82,6 +86,10 @@ export class RPGHUD {
             }
             if (action === 'exchange-materials' && this.exchangeNPC && this.scene.dialogue?.nearest() === this.exchangeNPC) {
                 this.toast(this.state.exchangeMonsterMaterials().message);
+            }
+            if (action === 'enhance') {
+                const result=this.state.upgradeEquipment(id, Number(button.dataset.level));
+                this.toast(result.message);this.render();
             }
             if (action === 'unequip') {
                 const slot = ITEMS[id]?.type;
@@ -257,11 +265,15 @@ export class RPGHUD {
         const previewItem = ITEMS[this.previewId];
         const gear = EQUIPMENT_SLOTS.map(([slot, name, frame]) => {
             const id = d.equipment[slot], value = ITEMS[id];
-            const stats = value ? this.gearStats(value) : '';
+            const level=s.enhancementLevel(slot), check=s.enhancementCheck(slot);
+            const stats = value ? this.gearStats(s.equippedStats(slot)) : '';
+            const nextStats=value?this.gearStats(enhancedItem(value,level+1)):'';
             return `<div class="rpg-equipment-slot ${value ? 'equipped' : ''}">
                 <div class="rpg-equipment-header">${itemIcon(value ?? (frame === null ? { icon:slot, level:1 } : { frame }), 44)}
-                    <div><div class="rpg-equipment-title">${escape(name)}</div><div class="rpg-equipment-name ${value ? '' : 'rpg-equipment-empty'}">${escape(value?.name ?? 'Chưa trang bị')}</div></div>
-                </div>${value ? `<div class="rpg-equipment-stats">${stats}</div><div class="rpg-equipment-footer"><span class="rpg-tier">CẤP ${value.level ?? 1}</span><button type="button" data-action="unequip" data-id="${escape(id)}">Tháo</button></div>` : ''}
+                    <div><div class="rpg-equipment-title">${escape(name)}</div><div class="rpg-equipment-name ${value ? '' : 'rpg-equipment-empty'}">${escape(value?.name ?? 'Chưa trang bị')} <span class="enhance-level">+${level}</span></div></div>
+                </div>${value ? `<div class="rpg-equipment-stats">${stats}</div>
+                <div class="enhance-info">${level>=MAX_ENHANCEMENT?'Đã cường hóa tối đa':`Lên +${level+1}: <b>${level+1} đá</b> · Có ${d.inventory.upgrade_stone??0}`}</div>
+                <div class="rpg-equipment-footer"><span class="rpg-tier">CẤP ${value.level ?? 1}</span><div class="enhance-actions"><button type="button" data-action="unequip" data-id="${escape(id)}">Tháo</button><button type="button" class="enhance-button" data-action="enhance" data-id="${slot}" data-level="${level}" ${check.ok?'':'disabled'} title="${escape(check.ok?`Sau nâng: ${nextStats}. Giữ cấp khi đổi trang bị.`:check.message)}">Nâng cấp</button></div></div>` : `<div class="enhance-info">Cấp +${level} được giữ cho món mặc tiếp theo.</div>`}
             </div>`;
         }).join('');
         // Bảy cột, bốn hàng: thêm một cột vào phần trống bên phải.

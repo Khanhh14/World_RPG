@@ -1,0 +1,9 @@
+.rpg-equipment-name .enhance-level{display:inline-block;color:#ffe29b;font-size:12px;background:#655324;padding:1px 5px;border:1px solid #b99b58;border-radius:5px;margin-left:3px;white-space:nowrap}
+.rpg-equipment-slot .enhance-info{color:#bad0bc;font-size:11px;line-height:1.5;margin:4px 0 7px}
+.rpg-equipment-slot .enhance-info b{color:#ffe29b}
+.rpg-equipment-slot .rpg-equipment-footer{flex-wrap:wrap;gap:5px}
+.rpg-equipment-slot .enhance-actions{display:flex;flex-wrap:wrap;gap:5px;margin-left:auto}
+.rpg-equipment-slot .enhance-actions button{font-size:11px;padding:4px 7px;line-height:1.2;min-height:25px}
+.rpg-equipment-slot .enhance-button{background:#b79a59;color:#14291d;border:1px solid #e4ce8c;font-weight:700}
+.rpg-equipment-slot .enhance-button:disabled{opacity:.4;cursor:not-allowed}
+.rpg-equipment-slot .enhance-button:not(:disabled):hover{background:#d1b571}

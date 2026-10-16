@@ -1,3 +1,4 @@
+import { MAX_ENHANCEMENT, enhancementLevel, enhancedItem } from '../data/enhancement.js';
 import { wingStats } from '../data/wings.js';
 import { purchaseItem } from '../../api/shopApi.js';
 import {
@@ -113,6 +114,7 @@ export class RPGState {
                 round_shield: 1
             },
 
+            enhancements: Object.fromEntries(EQUIPMENT_SLOTS.map(([slot]) => [slot, 0])),
             equipment: Object.fromEntries(
                 EQUIPMENT_SLOTS.map(([slot]) => [slot, null])
             ),
@@ -128,10 +130,45 @@ export class RPGState {
     }
 
     bonus(stat) {
-        return Object.values(this.data.equipment).reduce(
-            (sum, id) => sum + (ITEMS[id]?.[stat] ?? 0),
+        return EQUIPMENT_SLOTS.reduce(
+            (sum, [slot]) => sum + (this.equippedStats(slot)?.[stat] ?? 0),
             0
         ) + this.wingBonus(stat);
+    }
+
+    enhancementLevel(slot) { return enhancementLevel(this.data.enhancements?.[slot]); }
+
+    equippedStats(slot) {
+        return enhancedItem(ITEMS[this.data.equipment[slot]], this.enhancementLevel(slot));
+    }
+
+    enhancementCheck(slot) {
+        if (!EQUIPMENT_SLOTS.some(([key]) => key === slot)) return { ok:false, message:'Ô trang bị không hợp lệ.' };
+        if (!ITEMS[this.data.equipment[slot]]) return { ok:false, message:'Hãy mặc trang bị vào ô này trước.' };
+        const level = this.enhancementLevel(slot), cost = level + 1;
+        if (level >= MAX_ENHANCEMENT) return { ok:false, level, cost:0, message:'Ô này đã đạt cấp cường hóa tối đa.' };
+        const stones = this.data.inventory.upgrade_stone ?? 0;
+        if (!Number.isSafeInteger(stones) || stones < cost) return { ok:false, level, cost, message:`Cần ${cost} đá nâng cấp trang bị để lên +${cost}.` };
+        return { ok:true, level, cost, message:'' };
+    }
+
+    upgradeEquipment(slot, expectedLevel) {
+        const check = this.enhancementCheck(slot);
+        if (!check.ok) return check;
+        if (expectedLevel !== check.level) return { ok:false, message:'Cấp nâng đã thay đổi. Hãy kiểm tra lại.' };
+        const next = { ...this.data,
+            inventory: { ...this.data.inventory, upgrade_stone:this.data.inventory.upgrade_stone-check.cost },
+            enhancements: { ...this.data.enhancements, [slot]:check.level+1 }
+        };
+        // Lưu cả đá lẫn cấp trong một bản ghi trước khi cập nhật UI. Không mất đá nếu lưu thất bại.
+        try {
+            this.storage?.setItem(this.saveKey, JSON.stringify(next));
+            const stored = JSON.parse(this.storage?.getItem(this.saveKey) || 'null');
+            if (stored?.enhancements?.[slot] !== check.level+1 || stored?.inventory?.upgrade_stone !== next.inventory.upgrade_stone) throw new Error();
+        } catch { return { ok:false, message:'Không lưu được cường hóa. Hãy cho phép lưu dữ liệu trình duyệt; chưa trừ đá.' }; }
+        this.data.inventory = next.inventory; this.data.enhancements = next.enhancements;
+        this.changed();
+        return { ok:true, message:`Cường hóa ${EQUIPMENT_SLOTS.find(([key])=>key===slot)[1].toLowerCase()} lên +${check.level+1} · −${check.cost} đá.` };
     }
 
     wingBonus(stat) {
@@ -199,6 +236,7 @@ export class RPGState {
             }
 
             for (const [slot] of EQUIPMENT_SLOTS) {
+                this.data.enhancements[slot] = enhancementLevel(saved.enhancements?.[slot]);
                 const id = saved.equipment?.[slot];
 
                 if (
