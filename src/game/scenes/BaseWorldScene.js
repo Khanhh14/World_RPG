@@ -1,3 +1,4 @@
+import { SkillsSystem } from '../systems/SkillsSystem.js';
 import { WingsSystem } from '../systems/WingsSystem.js';
 import { applyCharacterToScene } from '../systems/characterSession.js';
 import { Scene } from 'phaser';
@@ -50,6 +51,7 @@ export class BaseWorldScene extends Scene {
         this.rpgState = RPGState.forScene(this);
         this.rpgState.visit(map.id);
         this.wingsSystem = new WingsSystem(this, this.rpgState);
+        this.skillsSystem = new SkillsSystem(this, this.rpgState);
         this.hud = new RPGHUD(this, this.rpgState, map.title);
         this.questSystem = new QuestSystem(this);
         applyCharacterToScene(this);

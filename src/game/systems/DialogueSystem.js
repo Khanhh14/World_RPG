@@ -43,6 +43,10 @@ export class DialogueSystem {
             return;
         }
         const npc = this.nearest();
+        if (npc?.role === 'skill-merchant') {
+            this.player.stop(); npc.facePlayer(this.player);
+            this.scene.hud?.openSkillShop(npc); return;
+        }
         if (npc?.role === 'wing-merchant') {
             this.player.stop(); npc.facePlayer(this.player);
             this.scene.hud?.openWingShop(npc); return;

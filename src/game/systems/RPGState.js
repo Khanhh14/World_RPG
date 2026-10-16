@@ -100,6 +100,8 @@ export class RPGState {
             gems: 0,
             wings: null,
             pendingWingAction: null,
+            skills: null,
+            pendingSkillAction: null,
             pendingPurchase: null,
             pendingKills: [],
 
@@ -184,6 +186,7 @@ export class RPGState {
             this.data.gold = integer(saved.gold, 0, 9999999, 50);
             this.data.pendingPurchase = saved.pendingPurchase || null;
             this.data.pendingWingAction = saved.pendingWingAction || null;
+            this.data.pendingSkillAction = saved.pendingSkillAction || null;
             this.data.pendingKills = Array.isArray(saved.pendingKills) ? saved.pendingKills.filter(id => typeof id === 'string' && /^[a-f0-9-]{36}$/i.test(id)) : [];
 
             for (const id of Object.keys(ITEMS)) {

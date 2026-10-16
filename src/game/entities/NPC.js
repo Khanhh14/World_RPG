@@ -4,7 +4,7 @@ export class NPC {
         this.id = data.id ?? data.name;
         this.name = data.name;
         this.role = data.role;
-        this.isMerchant = data.role === 'wing-merchant' || data.role === 'merchant' || data.id === 'merchant' || data.shop === 'general' || String(data.name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('thuong nhan');
+        this.isMerchant = data.role === 'skill-merchant' || data.role === 'wing-merchant' || data.role === 'merchant' || data.id === 'merchant' || data.shop === 'general' || String(data.name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('thuong nhan');
         this.lines = data.lines;
         this.x = data.col * world.tileSize;
         this.feetY = data.row * world.tileSize;

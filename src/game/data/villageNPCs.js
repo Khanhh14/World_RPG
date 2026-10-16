@@ -17,6 +17,7 @@ export const villageNPCs = [
     },
     {
         id: 'mage',
+        role: 'skill-merchant',
         name: 'Pháp sư',
         frame: 84,
 

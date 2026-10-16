@@ -1,3 +1,4 @@
+import { findSkill, skillSlots } from '../data/skillBooks.js';
 import { CombatSystem } from '../systems/CombatSystem.js';
 import { COMBAT_SKILLS } from '../data/combatSkills.js';
 import { actionIcon } from './actionIcons.js';
@@ -68,7 +69,11 @@ export class ActionBarUI {
       else this.combat.attack();
     }else if(id==='special')this.toast('Kỹ năng riêng của vũ khí sẽ được bổ sung sau.');
     else if(id==='hp'||id==='mp')this.combat.potion(id);
-    else this.combat.cast(id);
+    else {
+      const slot=COMBAT_SKILLS.findIndex(skill=>skill.id===id);
+      const selected=skillSlots(this.scene.rpgState)[slot];
+      if(selected)this.combat.cast(selected);else this.toast('Ô trống. Nhấn C để gán kỹ năng.');
+    }
     this.refresh();
   }
   refresh(){
@@ -86,10 +91,21 @@ export class ActionBarUI {
     auto.setAttribute('aria-pressed',String(this.combat.autoAttack));
     auto.dataset.tooltip=`Tự động đánh · Bấm để ${this.combat.autoAttack?'tắt':'bật'}.`;
     auto.disabled=!scene.rpgState||scene.rpgState.data.hp<=0||!!scene.hud?.blocked||!!scene.dialogue?.isOpen||!!f?.basketOpen||!!(f?.phase&&f.phase!=='idle');
-    for(const skill of COMBAT_SKILLS){
-      const b=this.buttons.get(skill.id),remaining=this.combat.remaining(skill.id),error=this.combat.ready(skill);
-      b.disabled=!!error;b.dataset.tooltip=`${skill.name} · ${skill.mana} MP · Hồi ${skill.cooldown/1000}s\n${skill.description}${error?'\n'+error:''}`;
-      b.querySelector('.ra-count').textContent=`${skill.mana} MP`;this.cooldown(b,remaining,skill.cooldown);
+    for(const [slot,base] of COMBAT_SKILLS.entries()){
+      const skill=findSkill(skillSlots(scene.rpgState)[slot]), b=this.buttons.get(base.id);
+      const signature=skill?.id || 'empty';
+      if(b.dataset.skill!==signature){
+        b.dataset.skill=signature;
+        b.querySelector('.ra-icon').innerHTML=skill?actionIcon(skill.icon):'<span>＋</span>';
+        b.querySelector('.ra-label').textContent=skill?.name || 'Ô trống';
+        b.setAttribute('aria-label',`${skill?.name || 'Ô trống'} (${slot+1})`);
+        b.style.setProperty('--skill-color',skill?.color ? '#'+skill.color.toString(16).padStart(6,'0') : '#8edbff');
+      }
+      const remaining=skill?this.combat.remaining(skill.id):0,error=this.combat.ready(skill);
+      b.disabled=!!error;b.dataset.tooltip=skill?`${skill.name} · ${skill.mana} MP · Hồi ${skill.cooldown/1000}s
+${skill.description}${error?'\n'+error:''}`:'Nhấn C để gán kỹ năng vào ô này.';
+      b.querySelector('.ra-count').textContent=skill?`${skill.mana} MP`:'';
+      this.cooldown(b,remaining,skill?.cooldown || 1);
     }
     for(const kind of ['hp','mp']){
       const button=this.buttons.get(kind),item=this.combat.potions.selected(kind);

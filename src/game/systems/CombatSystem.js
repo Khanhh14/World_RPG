@@ -1,7 +1,7 @@
 import { PotionLoadout } from './PotionLoadout.js';
 import { CombatVFX } from './CombatVFX.js';
 import { ITEMS } from '../data/items.js';
-import { COMBAT_SKILLS } from '../data/combatSkills.js';
+import { findSkill, STARTER_SKILLS, skillSlots } from '../data/skillBooks.js';
 const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
 const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
 export function segmentDistance(p,a,b) {
@@ -48,26 +48,41 @@ export class CombatSystem {
     });
   }
   ready(skill){
+    if(!skill)return 'Ô này chưa gán kỹ năng.';
+    if(!(this.state?.data.skills?.owned ?? STARTER_SKILLS).includes(skill.id))return 'Bạn chưa học kỹ năng này.';
+    if(!skillSlots(this.state).includes(skill.id))return 'Kỹ năng chưa được gán vào ô.';
     if(this.busy)return 'Đóng menu/hội thoại hoặc kết thúc câu cá trước.';
     if(this.remaining(skill.id)>0)return 'Kỹ năng đang hồi.';
     if(skill.weapon&&!this.weapon)return 'Mở Balo và trang bị vũ khí trước.';
     if(this.state.data.mp<skill.mana)return 'Không đủ mana.';
-    if(skill.id==='heal'&&this.state.data.hp>=this.state.maxHP)return 'Máu đã đầy.';
+    if((skill.effect || skill.id)==='heal'&&this.state.data.hp>=this.state.maxHP)return 'Máu đã đầy.';
     return '';
   }
   cast(id){
-    const skill=COMBAT_SKILLS.find(s=>s.id===id);if(!skill)return false;
+    const skill=findSkill(id);if(!skill)return false;
     const error=this.ready(skill);if(error){this.notify(error);return false;}
     if(!this.state.spendMana(skill.mana))return false;
     this.runtime.cooldowns[id]=this.clock+skill.cooldown;
     const damage=Math.max(1,this.state.attack),p=this.origin();
-    if(id==='power'){this.melee(damage*1.6,112,false);this.flash(p,112,0xffd37a,'power');}
-    if(id==='bolt')this.projectile(damage*1.2,320,0x86d9ff);
-    if(id==='whirl'){this.melee(damage,125,true);this.flash(p,125,0x7ce1d0,'whirl');}
-    if(id==='guard'){this.runtime.guardUntil=this.clock+5000;this.flash(p,50,0x9cbaff);}
-    if(id==='heal'){
-      const amount=Math.min(30,this.state.maxHP-this.state.data.hp);this.state.data.hp+=amount;this.state.changed();
-      this.float(p,`+${amount} HP`,'#a5f6b2');this.flash(p,48,0x89efa9,'heal');
+    const effect=skill.effect || id, color=skill.color;
+    if(effect==='power'){this.melee(damage*(skill.multiplier ?? 1.6),skill.range ?? 112,false);this.flash(p,skill.range ?? 112,color ?? 0xffd37a,'power');}
+    if(effect==='bolt')this.projectile(damage*(skill.multiplier ?? 1.2),skill.range ?? 320,color ?? 0x86d9ff);
+    if(effect==='whirl'){this.melee(damage*(skill.multiplier ?? 1),skill.range ?? 125,true);this.flash(p,skill.range ?? 125,color ?? 0x7ce1d0,'whirl');}
+    if(effect==='guard'){
+      this.runtime.guardUntil=this.clock+(skill.duration ?? 5000);
+      this.runtime.guardReduction=skill.reduction ?? 0.5;
+      this.flash(p,60,color ?? 0x9cbaff,'ring');
+    }
+    if(effect==='heal'){
+      const amount=Math.min(skill.heal ?? 30,this.state.maxHP-this.state.data.hp);
+      this.state.data.hp+=amount;this.state.changed();
+      this.float(p,`+${amount} HP`,'#a5f6b2');this.flash(p,48,color ?? 0x89efa9,'heal');
+    }
+    if(effect==='drain'){
+      const dealt=this.melee(damage*skill.multiplier,skill.range,true) || 0;
+      const amount=Math.min(Math.floor(dealt*skill.lifesteal),this.state.maxHP-this.state.data.hp);
+      if(amount>0){this.state.data.hp+=amount;this.state.changed();this.float(p,`+${amount} HP`,'#f6a5ce');}
+      this.flash(p,skill.range,color,'whirl');
     }
     return true;
   }
@@ -117,7 +132,9 @@ export class CombatSystem {
       const q=this.targetPoint(t),dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy);
       return d<=range&&(all||d<20||(dx*this.facing.x+dy*this.facing.y)/d>=0.15)&&this.clearLine(p,q);
     }).sort((a,b)=>Math.hypot(this.targetPoint(a).x-p.x,this.targetPoint(a).y-p.y)-Math.hypot(this.targetPoint(b).x-p.x,this.targetPoint(b).y-p.y));
-    for(const t of (all?hits:hits.slice(0,1)))this.hit(t,damage);
+    let dealt=0;
+    for(const t of (all?hits:hits.slice(0,1)))dealt+=this.hit(t,damage) || 0;
+    return dealt;
   }
   projectile(damage,range,color,target=null){
     const p=this.origin();
@@ -130,7 +147,7 @@ export class CombatSystem {
     this.shots.push(shot);
   }
   hit(t,damage){
-    if(t.hp<=0)return;t.hp=Math.max(0,t.hp-Math.round(damage));t.aggro=true;t.chaseUntil=this.now+6000;t.visibleUntil=this.now+4500;
+    if(t.hp<=0)return 0;const previousHP=t.hp;t.hp=Math.max(0,t.hp-Math.round(damage));t.aggro=true;t.chaseUntil=this.now+6000;t.visibleUntil=this.now+4500;
     this.float(this.targetPoint(t),`−${Math.round(damage)}`,'#ffe0ad');
     this.flash(this.targetPoint(t),34,0xffd397,'impact');
     if(t.hp===0){
@@ -149,10 +166,11 @@ export class CombatSystem {
       }
       if (this.scene.mapData.id === 'west-forest') void this.scene.questSystem?.recordKill();
     }
+    return previousHP-t.hp;
   }
   damagePlayer(amount){
     if(this.state.data.hp<=0)return;
-    const reduced=this.runtime.guardUntil>this.clock?Math.ceil(amount/2):amount;
+    const reduced=this.runtime.guardUntil>this.clock?Math.ceil(amount*(1-(this.runtime.guardReduction ?? .5))):amount;
     this.state.takeDamage(reduced);this.float(this.origin(),`−${reduced}`,'#ff9b8e');
     if(this.state.data.hp<=0){this.scene.player.stop();this.deathAt=this.now+1600;this.notify('Bạn bị hạ. Đang trở về điểm vào map…');}
   }
