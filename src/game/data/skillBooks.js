@@ -8,12 +8,13 @@ export const BOOK_SKILLS = [
     "icon": "bolt",
     "mana": 14,
     "cooldown": 6000,
-    "multiplier": 1.8,
+    "multiplier": 0.9,
     "range": 400,
     "color": 16770466,
-    "description": "Phóng ánh sáng theo hướng nhìn, gây 180% công. Tầm 400px.",
+    "description": "Phóng 3 cầu thánh quang tự tìm quái gần trong 400px. Mỗi cầu gây 90% công; ưu tiên chia mục tiêu.",
     "goldPrice": 2000,
-    "gemPrice": 10
+    "gemPrice": 10,
+    "projectiles": 3
   },
   {
     "id": "holy_aegis",
@@ -34,15 +35,18 @@ export const BOOK_SKILLS = [
     "id": "holy_grace",
     "name": "Thiên Ân",
     "school": "god",
-    "effect": "heal",
+    "effect": "healingField",
     "icon": "heal",
     "mana": 20,
     "cooldown": 12000,
-    "heal": 60,
+    "heal": 15,
     "color": 16770466,
-    "description": "Hồi 60 HP, không vượt HP tối đa. Không tiêu mana khi máu đầy.",
+    "description": "Tạo thánh địa cố định bán kính 135px trong 6 giây. Đứng trong vùng hồi 15 HP mỗi giây, tối đa 90 HP; ra ngoài ngừng hồi.",
     "goldPrice": 2000,
-    "gemPrice": 10
+    "gemPrice": 10,
+    "radius": 135,
+    "duration": 6000,
+    "interval": 1000
   },
   {
     "id": "human_slash",
@@ -84,13 +88,14 @@ export const BOOK_SKILLS = [
     "icon": "bolt",
     "mana": 18,
     "cooldown": 9000,
-    "multiplier": 2.4,
+    "multiplier": 0.8,
     "range": 480,
     "color": 9362431,
     "weapon": true,
-    "description": "Bắn luồng khí theo hướng nhìn, gây 240% công lên quái đầu tiên trúng. Tầm 480px. Cần vũ khí.",
+    "description": "Phóng 4 cầu khí truy đuổi quái gần trong 480px. Mỗi cầu gây 80% công. Cần vũ khí.",
     "goldPrice": 2000,
-    "gemPrice": 10
+    "gemPrice": 10,
+    "projectiles": 4
   },
   {
     "id": "demon_flame",
@@ -100,12 +105,13 @@ export const BOOK_SKILLS = [
     "icon": "bolt",
     "mana": 20,
     "cooldown": 8000,
-    "multiplier": 2.6,
+    "multiplier": 0.7,
     "range": 380,
     "color": 14060799,
-    "description": "Phóng hắc hỏa theo hướng nhìn, gây 260% công. Tầm 380px.",
+    "description": "Phóng 5 cầu hắc hỏa truy đuổi quái gần trong 380px. Mỗi cầu gây 70% công.",
     "goldPrice": 2000,
-    "gemPrice": 10
+    "gemPrice": 10,
+    "projectiles": 5
   },
   {
     "id": "demon_abyss",

@@ -19,7 +19,7 @@ export function segmentHitsRect(a,b,r) {
 }
 export class CombatSystem {
   constructor(scene, notify=()=>{}) {
-    this.scene=scene;this.notify=notify;this.targets=new Map();this.shots=[];this.effects=[];this.facing={x:0,y:1};this.alive=true;this.autoAttack=false;
+    this.scene=scene;this.notify=notify;this.targets=new Map();this.shots=[];this.effects=[];this.fields=[];this.facing={x:0,y:1};this.alive=true;this.autoAttack=false;
     this.graphics=scene.add.graphics().setDepth(9500);
     this.potions=new PotionLoadout(()=>this.state);this.vfx=new CombatVFX(scene);this.uiBlocked=false;
     this.tick=(time,delta)=>this.update(time,delta);
@@ -66,12 +66,17 @@ export class CombatSystem {
     const damage=Math.max(1,this.state.attack),p=this.origin();
     const effect=skill.effect || id, color=skill.color;
     if(effect==='power'){this.melee(damage*(skill.multiplier ?? 1.6),skill.range ?? 112,false);this.flash(p,skill.range ?? 112,color ?? 0xffd37a,'power');}
-    if(effect==='bolt')this.projectile(damage*(skill.multiplier ?? 1.2),skill.range ?? 320,color ?? 0x86d9ff);
+    if(effect==='bolt')this.volley(skill,damage);
     if(effect==='whirl'){this.melee(damage*(skill.multiplier ?? 1),skill.range ?? 125,true);this.flash(p,skill.range ?? 125,color ?? 0x7ce1d0,'whirl');}
     if(effect==='guard'){
       this.runtime.guardUntil=this.clock+(skill.duration ?? 5000);
       this.runtime.guardReduction=skill.reduction ?? 0.5;
       this.flash(p,60,color ?? 0x9cbaff,'ring');
+    }
+    if(effect==='healingField' && p){
+      this.fields=this.fields.filter(f=>f.skillId!==id);
+      this.fields.push({...p,skillId:id,radius:skill.radius,color:color??0xffdf99,start:this.now,end:this.now+skill.duration,next:this.now+skill.interval,interval:skill.interval,heal:skill.heal});
+      this.flash(p,skill.radius,color??0xffdf99,'sanctuary');
     }
     if(effect==='heal'){
       const amount=Math.min(skill.heal ?? 30,this.state.maxHP-this.state.data.hp);
@@ -136,6 +141,39 @@ export class CombatSystem {
     for(const t of (all?hits:hits.slice(0,1)))dealt+=this.hit(t,damage) || 0;
     return dealt;
   }
+  nearbyTargets(point,range){
+    return [...this.targets.values()].filter(t=>t.hp>0&&t.entity.sprite.active&&distance(point,this.targetPoint(t))<=range&&this.clearLine(point,this.targetPoint(t)))
+      .sort((a,b)=>distance(point,this.targetPoint(a))-distance(point,this.targetPoint(b)));
+  }
+  volley(skill,damage){
+    const p=this.origin();if(!p)return;
+    const range=skill.range??320,color=skill.color??0x86d9ff,count=skill.projectiles??3;
+    const targets=this.nearbyTargets(p,range);
+    this.flash(p,64,color,'cast');
+    for(let i=0;i<count;i++){
+      const target=targets.length?targets[i%targets.length]:null;
+      const a=Math.atan2(this.facing.y,this.facing.x)+(i-(count-1)/2)*.24;
+      const shot=this.projectile(damage*(skill.multiplier??.5),range,color,target);
+      Object.assign(shot,{dx:Math.cos(a),dy:Math.sin(a),homing:true,launchAt:this.now+i*95,expires:this.now+2600+i*95,speed:380+i*22});
+    }
+    // Giới hạn số cầu còn sống để tránh tích lũy khi chỉnh hồi chiêu trong lúc phát triển.
+    if(this.shots.length>60)this.shots.splice(0,this.shots.length-60);
+  }
+  updateFields(){
+    if(this.state.data.hp<=0){this.fields=[];return;}
+    const p=this.origin();
+    for(const f of this.fields){
+      // Mỗi tick xét vị trí hiện tại. Không bù nhiều tick sau khi tab bị treo.
+      if(this.now>=f.next&&f.next<=f.end&&this.now<=f.end+100){
+        f.next=f.start+(Math.floor((this.now-f.start)/f.interval)+1)*f.interval;
+        if(!this.busy&&p&&distance(p,f)<=f.radius){
+          const amount=Math.max(0,Math.min(f.heal,this.state.maxHP-this.state.data.hp));
+          if(amount){this.state.data.hp+=amount;this.state.changed();this.float(p,`+${amount} HP`,'#baffcb');this.flash(p,45,0xb5ffbc,'heal');}
+        }
+      }
+    }
+    this.fields=this.fields.filter(f=>this.now<=f.end);
+  }
   projectile(damage,range,color,target=null){
     const p=this.origin();
     if(!p)return;
@@ -144,7 +182,7 @@ export class CombatSystem {
       const point=this.targetPoint(target),dx=point.x-p.x,dy=point.y-p.y,length=Math.hypot(dx,dy)||1;
       shot.dx=dx/length;shot.dy=dy/length;
     }
-    this.shots.push(shot);
+    this.shots.push(shot);return shot;
   }
   hit(t,damage){
     if(t.hp<=0)return 0;const previousHP=t.hp;t.hp=Math.max(0,t.hp-Math.round(damage));t.aggro=true;t.chaseUntil=this.now+6000;t.visibleUntil=this.now+4500;
@@ -255,6 +293,7 @@ export class CombatSystem {
         if(targetDistance<=attackRange&&this.remaining('basic')<=0)this.attack();
       }
     }
+    this.updateFields();
     const g=this.graphics;g.clear();
     for(const t of this.targets.values()){
       if(!t.entity.sprite.active)continue;
@@ -275,23 +314,28 @@ export class CombatSystem {
     if(this.busy)this.shots=[];
     for(let i=this.shots.length-1;i>=0;i--){
       const shot=this.shots[i];
+      if(shot.launchAt>this.now)continue;
+      if(shot.expires&&this.now>shot.expires){this.shots.splice(i,1);continue;}
+      if(shot.homing && (!shot.target || shot.target.hp<=0 || !shot.target.entity.sprite.active || !this.clearLine(shot,this.targetPoint(shot.target)))){
+        shot.target=this.nearbyTargets(shot,shot.left)[0]??null;
+      }
       if(shot.target){
         if(shot.target.hp<=0||shot.target.entity.sprite.active===false){this.shots.splice(i,1);continue;}
         const point=this.targetPoint(shot.target),dx=point.x-shot.x,dy=point.y-shot.y,length=Math.hypot(dx,dy)||1;
         shot.dx=dx/length;shot.dy=dy/length;
       }
-      const step=Math.min(shot.left,420*Math.min(delta,50)/1000),a={x:shot.x,y:shot.y},b={x:shot.x+shot.dx*step,y:shot.y+shot.dy*step};
+      const step=Math.min(shot.left,(shot.speed??420)*Math.min(delta,50)/1000),a={x:shot.x,y:shot.y},b={x:shot.x+shot.dx*step,y:shot.y+shot.dy*step};
       if(!this.clearLine(a,b)){this.flash(a,20,shot.color,'impact');this.shots.splice(i,1);continue;}
       const target=shot.target
         ? segmentDistance(this.targetPoint(shot.target),a,b)<24?shot.target:null
         : [...this.targets.values()].find(t=>t.hp>0&&t.entity.sprite.active&&segmentDistance(this.targetPoint(t),a,b)<24);
-      if(target){this.hit(target,shot.damage);this.shots.splice(i,1);continue;}
+      if(target){this.hit(target,shot.damage);this.flash(this.targetPoint(target),42,shot.color,'nova');this.shots.splice(i,1);continue;}
       shot.trail.push(a);if(shot.trail.length>10)shot.trail.shift();
       shot.x=b.x;shot.y=b.y;shot.left-=step;
       if(shot.left<=0){this.shots.splice(i,1);continue;}
       
     }
-    this.vfx.update(this.now,this.origin(),this.shots,this.runtime.guardUntil>this.clock);
+    this.vfx.update(this.now,this.origin(),this.shots.filter(s=>!s.launchAt||s.launchAt<=this.now),this.runtime.guardUntil>this.clock,this.fields);
     for(let i=this.effects.length-1;i>=0;i--){
       const e=this.effects[i],k=clamp((this.now-e.at)/(e.end-e.at),0,1);
       if(k>=1){e.text?.destroy();this.effects.splice(i,1);continue;}
@@ -301,5 +345,5 @@ export class CombatSystem {
       else g.strokeCircle(e.x,e.y,e.radius*(.2+k*.8));
     }
   }
-  destroy(){if(!this.alive)return;this.alive=false;this.scene.events.off('postupdate',this.tick);this.graphics.destroy();this.vfx.destroy();for(const e of this.effects)e.text?.destroy();this.effects=[];this.shots=[];this.targets.clear();}
+  destroy(){if(!this.alive)return;this.alive=false;this.scene.events.off('postupdate',this.tick);this.graphics.destroy();this.vfx.destroy();for(const e of this.effects)e.text?.destroy();this.effects=[];this.shots=[];this.fields=[];this.targets.clear();}
 }
