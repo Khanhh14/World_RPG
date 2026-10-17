@@ -82,7 +82,7 @@ export function gearIcon(kind, level=1, size=40) {
 // Vũ khí khởi đầu của Đấu sĩ.
 ITEMS.starter_axe = {name:'Rìu tập sự',frame:118,type:'weapon',category:'weapon',level:1,price:35,maxStack:1,attack:6,description:'+6 công. Vũ khí khởi đầu của Đấu sĩ.'};
 ITEMS.starter_fishing_rod = {name:'Cần câu tập sự',type:'material',category:'fishing',level:1,price:50,maxStack:1,emoji:'🎣',description:'Dụng cụ câu cá tại Hồ Nước Atlast.'};
-ITEMS.fish_perch = {name:'Cá rô',type:'material',category:'fishing',level:1,price:5,maxStack:99,emoji:'🐟',description:'Cá rô câu được ở Hồ Nước Atlast. Cần thủ thu mua với giá 5 vàng/con.'};
-ITEMS.fish_carp = {name:'Cá chép',type:'material',category:'fishing',level:1,price:7,maxStack:99,emoji:'🐠',description:'Cá chép câu được ở Hồ Nước Atlast. Cần thủ thu mua với giá 7 vàng/con.'};
-ITEMS.fish_catfish = {name:'Cá trê',type:'material',category:'fishing',level:1,price:9,maxStack:99,emoji:'🐟',description:'Cá trê câu được ở Hồ Nước Atlast. Cần thủ thu mua với giá 9 vàng/con.'};
-ITEMS.fish_gold = {name:'Cá vàng',type:'material',category:'fishing',level:1,price:100,maxStack:99,emoji:'🐠',description:'Cá vàng quý hiếm ở Hồ Nước Atlast. Cần thủ thu mua với giá 100 vàng/con.'};
+ITEMS.fish_perch = {name:'Cá rô',type:'material',category:'fishing',level:1,price:30,maxStack:99,emoji:'🐟',description:'Cá rô câu được ở Hồ Nước Atlast. Cần thủ thu mua với giá 30 vàng/con.'};
+ITEMS.fish_carp = {name:'Cá chép',type:'material',category:'fishing',level:1,price:40,maxStack:99,emoji:'🐠',description:'Cá chép câu được ở Hồ Nước Atlast. Cần thủ thu mua với giá 40 vàng/con.'};
+ITEMS.fish_catfish = {name:'Cá trê',type:'material',category:'fishing',level:1,price:50,maxStack:99,emoji:'🐟',description:'Cá trê câu được ở Hồ Nước Atlast. Cần thủ thu mua với giá 50 vàng/con.'};
+ITEMS.fish_gold = {name:'Cá vàng',type:'material',category:'fishing',level:1,price:1000,maxStack:99,emoji:'🐠',description:'Cá vàng quý hiếm ở Hồ Nước Atlast. Cần thủ thu mua với giá 1000 vàng/con.'};
