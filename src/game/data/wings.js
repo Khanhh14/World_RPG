@@ -70,9 +70,16 @@ export const WING_CATALOG = {
       "name": "Đá nâng cấp cánh cấp 3",
       "price": 1000,
       "color": "#d6a0ff"
+    },
+    {
+      "id": "wing_stone_4",
+      "tier": 4,
+      "name": "Đá nâng cấp cánh cấp 4",
+      "price": 1000,
+      "color": "#ffcc71"
     }
   ],
-  "maxLevel": 9,
+  "maxLevel": 2147483647,
   "perLevel": {
     "attack": 2,
     "defense": 1,
@@ -90,4 +97,4 @@ export function wingStats(id, level = 0) {
  const style = wingStyle(id); if (!style) return { attack:0, defense:0, maxHP:0 };
  return Object.fromEntries(Object.entries(style.base).map(([key, base]) => [key, base + WING_CATALOG.perLevel[key] * level]));
 }
-export const nextStone = level => WING_CATALOG.stones[Math.floor(level / 3)] || null;
+export const nextStone = level => WING_CATALOG.stones[Math.min(3, Math.floor(level / 3))] || null;

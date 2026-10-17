@@ -21,7 +21,7 @@ export function renderWingsPanel(hud) {
  const own=w?.collection?.find(x=>x.id===selected.id), level=own?.level || 0;
  const equipped=w?.equipped===selected.id, max=level>=WING_CATALOG.maxLevel;
  const stone=nextStone(level), count=w?.materials?.[stone?.id] || 0;
- const current=wingStats(selected.id,level), next=wingStats(selected.id,Math.min(level+1,9));
+ const current=wingStats(selected.id,level), next=wingStats(selected.id,Math.min(level+1,WING_CATALOG.maxLevel));
  const busy=s.wingBusy, disabled=busy || !own || !s.wingsLoaded || Boolean(s.data.pendingWingAction);
  const canUpgrade=!disabled && !max && count>0;
  return `${status(s)}<div class="yw-layout">
@@ -33,10 +33,10 @@ export function renderWingsPanel(hud) {
   <section class="yw-upgrade"><div class="yw-eyebrow">NÂNG CẤP CÁNH</div><h3>${max?'Đã đạt sức mạnh tối đa':`Thức tỉnh cấp +${level+1}`}</h3><p class="yw-muted">${esc(selected.subtitle)}. Chỉ số của mẫu cánh này luôn có hiệu lực, kể cả khi tháo. Các mẫu đã sở hữu cộng dồn chỉ số.</p>
    <div class="yw-stats"><div class="yw-stat-label"><span>MẪU CÁNH NÀY</span><span>HIỆN TẠI</span><span>${max?'TỐI ĐA':'SAU NÂNG'}</span></div>${[['attack','Tấn công'],['defense','Phòng thủ'],['maxHP','HP tối đa']].map(([key,label])=>`<div class="yw-stat"><span>${label}</span><strong>+${current[key]}</strong><strong class="yw-next">${max?'—':'+'+next[key]}</strong></div>`).join('')}</div>
    <p class="yw-muted">Tổng bộ sưu tập: <strong>+${s.wingBonus('attack')} công · +${s.wingBonus('defense')} thủ · +${s.wingBonus('maxHP')} HP</strong>. Trang bị chỉ thay đổi ngoại hình.</p>
-   <div class="yw-progress" aria-label="Cấp nâng ${level} trên 9">${Array.from({length:9},(_,i)=>`<span class="${i<level?'filled':''}"></span>`).join('')}</div>
-   ${max?'<div class="yw-requirement"><strong>✦ Cánh +9</strong><p>Đôi cánh đã được nâng cấp hoàn chỉnh.</p></div>':`<div class="yw-requirement">${stoneIcon(stone,56)}<div><strong>${esc(stone.name)}</strong><p>Cần 1 viên · Đang có <b>${count}</b></p></div><span class="yw-chance">100%<small>THÀNH CÔNG</small></span></div>`}
+   <div class="yw-progress" aria-label="Cấp cánh hiện tại ${level}; từ +10 dùng đá cấp 4">${Array.from({length:9},(_,i)=>`<span class="${i<level?'filled':''}"></span>`).join('')}</div>
+   ${max?`<div class="yw-requirement"><strong>✦ Cánh +${level}</strong><p>Đã đạt giới hạn số cấp hỗ trợ.</p></div>`:`<div class="yw-requirement">${stoneIcon(stone,56)}<div><strong>${esc(stone.name)}</strong><p>Cần 1 viên · Đang có <b>${count}</b></p></div><span class="yw-chance">100%<small>THÀNH CÔNG</small></span></div>`}
    <button class="rpg-primary yw-upgrade-button" data-action="wing-upgrade" data-id="${selected.id}" ${canUpgrade?'':'disabled'}>${busy?'Đang lưu…':max?'Đã nâng tối đa':count<1?'Chưa đủ đá nâng cấp':`Nâng cấp lên +${level+1}`}</button>
-   <p class="yw-muted yw-rule">+1–3: đá cấp 1 · +4–6: đá cấp 2 · +7–9: đá cấp 3.<br>Mỗi lần dùng 1 viên, không thu thêm vàng, không mất cấp.</p>
+   <p class="yw-muted yw-rule">+1–3: đá cấp 1 · +4–6: đá cấp 2 · +7–9: đá cấp 3 · +10 trở lên: đá cấp 4.<br>Mỗi lần dùng 1 viên, không thu thêm vàng, không mất cấp.</p>
    <div class="yw-materials">${WING_CATALOG.stones.map(st=>`<div>${stoneIcon(st,32)}<span>Cấp ${st.tier}<strong>×${w?.materials?.[st.id]||0}</strong></span></div>`).join('')}</div>
    <p class="yw-footnote">Mua đá từ Vũ sư Airi trước nhà phía Tây Ngoại ô thành YuNa.</p>
   </section></div>`;
@@ -44,6 +44,6 @@ export function renderWingsPanel(hud) {
 export function renderWingShop(hud) {
  const s=hud.state, w=s.data.wings;
  return `${status(s)}<header class="yw-shop-intro"><div><span class="yw-eyebrow">XƯỞNG CÁNH • NGOẠI Ô YuNa</span><h3>Vũ sư Airi</h3><p>Chọn viên đá phù hợp với cấp cánh bạn muốn nâng.</p></div><span class="yw-gold">● ${fmt(s.data.gold)} vàng</span></header>
- <div class="yw-shop-grid">${WING_CATALOG.stones.map((stone,i)=>{const owned=w?.materials?.[stone.id]||0;const disabled=s.wingBusy||!s.wingsLoaded||s.data.pendingWingAction||s.data.gold<stone.price||owned>=999;return `<article class="yw-shop-card" style="--stone-color:${stone.color}"><div class="yw-shop-art">${stoneIcon(stone,96)}</div><span class="yw-eyebrow">NGUYÊN LIỆU CẤP ${stone.tier}</span><h3>${esc(stone.name)}</h3><p>Dùng cho cánh +${i*3+1} đến +${i*3+3}.<br>Tiêu hao 1 viên mỗi lần nâng.</p><div class="yw-shop-owned">Trong kho: <strong>${owned} / 999</strong></div><div class="yw-shop-buy"><strong>● ${fmt(stone.price)}</strong><button class="rpg-primary" data-action="wing-buy" data-id="${stone.id}" ${disabled?'disabled':''}>${s.wingBusy?'Đang lưu…':s.data.gold<stone.price?'Thiếu vàng':'Mua 1 viên'}</button></div></article>`;}).join('')}</div>
+ <div class="yw-shop-grid">${WING_CATALOG.stones.map((stone,i)=>{const owned=w?.materials?.[stone.id]||0;const disabled=s.wingBusy||!s.wingsLoaded||s.data.pendingWingAction||s.data.gold<stone.price||owned>=999;return `<article class="yw-shop-card" style="--stone-color:${stone.color}"><div class="yw-shop-art">${stoneIcon(stone,96)}</div><span class="yw-eyebrow">NGUYÊN LIỆU CẤP ${stone.tier}</span><h3>${esc(stone.name)}</h3><p>Dùng cho cánh ${stone.tier===4?'+10 trở lên':`+${i*3+1} đến +${i*3+3}`}.<br>Tiêu hao 1 viên mỗi lần nâng.</p><div class="yw-shop-owned">Trong kho: <strong>${owned} / 999</strong></div><div class="yw-shop-buy"><strong>● ${fmt(stone.price)}</strong><button class="rpg-primary" data-action="wing-buy" data-id="${stone.id}" ${disabled?'disabled':''}>${s.wingBusy?'Đang lưu…':s.data.gold<stone.price?'Thiếu vàng':'Mua 1 viên'}</button></div></article>`;}).join('')}</div>
  <div class="yw-shop-bottom"><span>Đá mua được lưu vào kho nguyên liệu cánh.</span><button data-action="tab" data-id="wings">Mở nâng cấp cánh →</button></div>`;
 }

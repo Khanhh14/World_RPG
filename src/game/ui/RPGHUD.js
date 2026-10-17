@@ -272,7 +272,7 @@ export class RPGHUD {
                 <div class="rpg-equipment-header">${itemIcon(value ?? (frame === null ? { icon:slot, level:1 } : { frame }), 44)}
                     <div><div class="rpg-equipment-title">${escape(name)}</div><div class="rpg-equipment-name ${value ? '' : 'rpg-equipment-empty'}">${escape(value?.name ?? 'Chưa trang bị')} <span class="enhance-level">+${level}</span></div></div>
                 </div>${value ? `<div class="rpg-equipment-stats">${stats}</div>
-                <div class="enhance-info">${level>=MAX_ENHANCEMENT?'Đã cường hóa tối đa':`Lên +${level+1}: <b>${level+1} đá</b> · Có ${d.inventory.upgrade_stone??0}`}</div>
+                <div class="enhance-info">${level>=MAX_ENHANCEMENT?'Đã cường hóa tối đa':`Lên +${level+1}: <b>${Math.min(level+1,10)} đá</b> · Có ${d.inventory.upgrade_stone??0}`}</div>
                 <div class="rpg-equipment-footer"><span class="rpg-tier">CẤP ${value.level ?? 1}</span><div class="enhance-actions"><button type="button" data-action="unequip" data-id="${escape(id)}">Tháo</button><button type="button" class="enhance-button" data-action="enhance" data-id="${slot}" data-level="${level}" ${check.ok?'':'disabled'} title="${escape(check.ok?`Sau nâng: ${nextStats}. Giữ cấp khi đổi trang bị.`:check.message)}">Nâng cấp</button></div></div>` : `<div class="enhance-info">Cấp +${level} được giữ cho món mặc tiếp theo.</div>`}
             </div>`;
         }).join('');

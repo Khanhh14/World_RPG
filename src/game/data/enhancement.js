@@ -1,5 +1,5 @@
-// Cấp nâng thuộc ô, không thuộc ID món đồ. 99 tương ứng giới hạn đá một chồng.
-export const MAX_ENHANCEMENT = 99;
+// Cấp nâng thuộc ô. Giới hạn kỹ thuật, không còn chặn ở +99.
+export const MAX_ENHANCEMENT = 2147483647;
 export const ENHANCEMENT_STATS = ['attack', 'defense', 'maxHP', 'maxMP'];
 export const enhancementLevel = value => Number.isSafeInteger(value) && value >= 0 ? Math.min(value, MAX_ENHANCEMENT) : 0;
 export function enhancedItem(item, level = 0) {

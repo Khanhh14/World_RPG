@@ -145,10 +145,10 @@ export class RPGState {
     enhancementCheck(slot) {
         if (!EQUIPMENT_SLOTS.some(([key]) => key === slot)) return { ok:false, message:'Ô trang bị không hợp lệ.' };
         if (!ITEMS[this.data.equipment[slot]]) return { ok:false, message:'Hãy mặc trang bị vào ô này trước.' };
-        const level = this.enhancementLevel(slot), cost = level + 1;
+        const level = this.enhancementLevel(slot), cost = Math.min(level + 1, 10);
         if (level >= MAX_ENHANCEMENT) return { ok:false, level, cost:0, message:'Ô này đã đạt cấp cường hóa tối đa.' };
         const stones = this.data.inventory.upgrade_stone ?? 0;
-        if (!Number.isSafeInteger(stones) || stones < cost) return { ok:false, level, cost, message:`Cần ${cost} đá nâng cấp trang bị để lên +${cost}.` };
+        if (!Number.isSafeInteger(stones) || stones < cost) return { ok:false, level, cost, message:`Cần ${cost} đá nâng cấp trang bị để lên +${level+1}.` };
         return { ok:true, level, cost, message:'' };
     }
 

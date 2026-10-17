@@ -33,7 +33,7 @@ export function drawWingPixels(ctx, id, level = 0) {
 }
 const icons = new Map();
 export function wingIconURL(id, level = 0) {
- const key = id + ':' + level;
+ const key = id + ':' + Math.min(9,level);
  if (!icons.has(key)) {
   const canvas = document.createElement('canvas'); canvas.width=48; canvas.height=32;
   drawWingPixels(canvas.getContext('2d'),id,level); icons.set(key,canvas.toDataURL());
@@ -41,7 +41,7 @@ export function wingIconURL(id, level = 0) {
  return icons.get(key);
 }
 export function wingTexture(scene, id, level) {
- const key = `yuna-wing-${id}-${level}`;
+ const key = `yuna-wing-${id}-${Math.min(9,level)}`;
  if (!scene.textures.exists(key)) {
   const texture=scene.textures.createCanvas(key,48,32);
   drawWingPixels(texture.context,id,level); texture.refresh();
