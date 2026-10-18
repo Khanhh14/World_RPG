@@ -176,3 +176,8 @@
 @container(max-width:343px){.rpg-ui .rpg-bag-panel .rpg-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
 @container(max-width:293px){.rpg-ui .rpg-bag-panel .rpg-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
 @container(max-width:243px){.rpg-ui .rpg-bag-panel .rpg-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* HUD xuyên chuột để di chuyển, riêng nút nhiệm vụ phải nhận click. */
+.rpg-ui .rpg-quest-tracker button { pointer-events: auto; cursor: pointer; }
+.rpg-ui .rpg-quest-tracker button:disabled { cursor: wait; }
+.rpg-ui .rpg-quest-tracker button:focus-visible { outline: 2px solid #fff0b6; outline-offset: 3px; }

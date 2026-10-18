@@ -1,3 +1,4 @@
+import { BossRewards } from '../systems/BossRewards.js';
 import { SkillsSystem } from '../systems/SkillsSystem.js';
 import { WingsSystem } from '../systems/WingsSystem.js';
 import { applyCharacterToScene } from '../systems/characterSession.js';
@@ -54,6 +55,7 @@ export class BaseWorldScene extends Scene {
         this.skillsSystem = new SkillsSystem(this, this.rpgState);
         this.hud = new RPGHUD(this, this.rpgState, map.title);
         this.questSystem = new QuestSystem(this);
+        this.bossRewards = new BossRewards(this);
         applyCharacterToScene(this);
 
         // Cập nhật trang bị ban đầu và lắng nghe thay đổi

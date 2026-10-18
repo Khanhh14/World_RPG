@@ -45,7 +45,7 @@ export class NagaBoss {
  reset(){this.target.hp=1500;this.target.aggro=false;this.entity.sprite.body.reset(864,650);this.warning=null;this.bullets=[];this.nextCast=this.elapsed+2000;}
  update(delta=16){
   const s=this.scene,c=s.combat,p=c.origin(),sprite=this.entity.sprite,g=this.fx;g.clear();
-  if(this.target.hp<=0){if(!this.defeated){this.defeated=true;this.warning=null;this.bullets=[];sprite.body.stop();this.updateHUD('Đã đánh bại NaGa · Cổng trở về ở phía Nam');s.hud?.toast('Đã đánh bại NaGa!');}return;}
+  if(this.target.hp<=0){if(!this.defeated){this.defeated=true;this.warning=null;this.bullets=[];sprite.body.stop();this.updateHUD('Đã đánh bại NaGa · Cổng trở về ở phía Nam');s.hud?.toast('Đã đánh bại NaGa! Đang nhận thưởng…');void s.bossRewards?.queue();}return;}
   if(s.rpgState.data.hp<=0){this.reset();this.updateHUD('NaGa trở về tổ');return;}
   if(c.busy){sprite.body.stop();this.warning=null;this.bullets=[];this.nextCast=Math.max(this.nextCast,this.elapsed+1000);this.updateHUD('Tạm dừng');return;}
   this.elapsed+=Math.min(delta,50);const now=this.elapsed;

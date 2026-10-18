@@ -2,7 +2,7 @@ import { MAX_ENHANCEMENT, enhancedItem } from '../data/enhancement.js';
 import { renderSkillsPanel, renderSkillShop } from './SkillsPanel.js';
 import { renderWingsPanel, renderWingShop, wingEquipmentCard } from './WingsPanel.js';
 import { drawWingPixels } from '../world/WingTextures.js';
-import { EQUIPMENT_SLOTS, SHOP_ITEMS, MONSTER_MATERIALS, gearIcon } from '../data/items.js';
+import { canShopItem, EQUIPMENT_SLOTS, SHOP_ITEMS, MONSTER_MATERIALS, gearIcon } from '../data/items.js';
 import { ITEMS } from '../systems/RPGState.js';
 import { renderQuestJournal } from './QuestJournal.js';
 
@@ -87,6 +87,8 @@ export class RPGHUD {
             if (action === 'exchange-materials' && this.exchangeNPC && this.scene.dialogue?.nearest() === this.exchangeNPC) {
                 this.toast(this.state.exchangeMonsterMaterials().message);
             }
+            if (action === 'boss-retry') await this.scene.bossRewards?.flush();
+            if (action === 'boss-stones') this.scene.bossRewards?.collect();
             if (action === 'enhance') {
                 const result=this.state.upgradeEquipment(id, Number(button.dataset.level));
                 this.toast(result.message);this.render();
@@ -286,6 +288,8 @@ export class RPGHUD {
         }).join('');
         return `<div class="rpg-bag-layout">
             <section class="rpg-equipment-panel">
+                ${(d.pendingBossRewards?.length||this.state.bossRewardError)?`<p>Thưởng NaGa đang chờ đồng bộ. <button data-action="boss-retry">Thử nhận lại</button></p>`:''}
+                ${d.bossStoneInbox?`<p>Đá cường hóa thưởng đang chờ: ${d.bossStoneInbox} <button data-action="boss-stones">Nhận đá vào túi</button></p>`:''}
                 <div class="rpg-section-heading"><h3>Lữ khách</h3><span>Trang bị hiện tại</span></div>
                 <div class="rpg-model-stage"><span class="rpg-model-caption">${previewItem ? 'ĐANG THỬ ĐỒ' : 'NHÂN VẬT CỦA BẠN'}</span><span class="rpg-model-level">LV ${d.level}</span>
                     <canvas class="rpg-character-preview" width="480" height="360" role="img" aria-label="Mô hình nhân vật với vũ khí và khiên ${previewItem ? 'đang thử' : 'đang trang bị'}"></canvas>
@@ -392,7 +396,7 @@ export class RPGHUD {
     }
     shopContent() {
         const s = this.state, d = s.data;
-        const ids = SHOP_ITEMS.filter(id => (this.shopCategory === 'all' || ITEMS[id].category === this.shopCategory) && (!this.shopLevel || ITEMS[id].level === this.shopLevel));
+        const ids = SHOP_ITEMS.filter(id => canShopItem(id,this.state.data.classCode) && (this.shopCategory === 'all' || ITEMS[id].category === this.shopCategory) && (!this.shopLevel || ITEMS[id].level === this.shopLevel));
         return `<div class="rpg-shop-gold"><strong>${escape(this.shopNPC?.name ?? 'Thương nhân')}</strong><span>● ${d.gold.toLocaleString('vi-VN')} vàng</span></div>
         <div class="rpg-shop-filters" aria-label="Loại vật phẩm">${[['all','Tất cả'],['weapon','Vũ khí'],['gear','Khiên & giáp'],['hp','Bình máu'],['mp','Bình mana']].map(([id,label])=>`<button data-action="filter" data-id="${id}" class="${this.shopCategory===id?'active':''}">${label}</button>`).join('')}</div>
         <div class="rpg-shop-filters" aria-label="Cấp vật phẩm">${[0,1,2,3,4,5].map(level=>`<button data-action="tier" data-id="${level}" class="${this.shopLevel===level?'active':''}">${level?'Cấp '+level:'Mọi cấp'}</button>`).join('')}</div>

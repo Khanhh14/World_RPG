@@ -104,6 +104,8 @@ export class RPGState {
             skills: null,
             pendingSkillAction: null,
             pendingPurchase: null,
+            pendingBossRewards: [],
+            bossStoneInbox: 0,
             pendingKills: [],
 
             inventory: {
@@ -221,6 +223,8 @@ export class RPGState {
 
             this.data.mp = integer(saved.mp, 0, this.maxMP, this.maxMP);
             this.data.gold = integer(saved.gold, 0, 9999999, 50);
+            this.data.pendingBossRewards = Array.isArray(saved.pendingBossRewards) ? [...new Set(saved.pendingBossRewards.filter(id=>typeof id==='string'&&/^[a-f0-9-]{36}$/i.test(id)))] : [];
+            this.data.bossStoneInbox = integer(saved.bossStoneInbox,0,999999,0);
             this.data.pendingPurchase = saved.pendingPurchase || null;
             this.data.pendingWingAction = saved.pendingWingAction || null;
             this.data.pendingSkillAction = saved.pendingSkillAction || null;

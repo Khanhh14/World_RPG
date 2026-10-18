@@ -86,3 +86,16 @@ ITEMS.fish_perch = {name:'Cá rô',type:'material',category:'fishing',level:1,pr
 ITEMS.fish_carp = {name:'Cá chép',type:'material',category:'fishing',level:1,price:40,maxStack:99,emoji:'🐠',description:'Cá chép câu được ở Hồ Nước Atlast. Cần thủ thu mua với giá 40 vàng/con.'};
 ITEMS.fish_catfish = {name:'Cá trê',type:'material',category:'fishing',level:1,price:50,maxStack:99,emoji:'🐟',description:'Cá trê câu được ở Hồ Nước Atlast. Cần thủ thu mua với giá 50 vàng/con.'};
 ITEMS.fish_gold = {name:'Cá vàng',type:'material',category:'fishing',level:1,price:1000,maxStack:99,emoji:'🐠',description:'Cá vàng quý hiếm ở Hồ Nước Atlast. Cần thủ thu mua với giá 1000 vàng/con.'};
+
+// Vũ khí thương nhân theo class; giữ ID đồ cũ và cấp cường hóa theo ô.
+for (const [base,name,frame,owner] of [['wood_staff','Trượng',129,'mage'],['starter_axe','Rìu',118,'fighter']]) {
+    for(let i=0;i<5;i++){
+        const id=i?`${base}_${i+1}`:base;
+        ITEMS[id]={...ITEMS[base],name:`${name} cấp ${i+1}`,level:i+1,frame,type:'weapon',category:'weapon',classCode:owner,
+            attack:[base==='wood_staff'?3:6,10,18,30,48][i],price:[base==='wood_staff'?28:35,100,260,600,1300][i],maxStack:1,
+            description:`+${[base==='wood_staff'?3:6,10,18,30,48][i]} công. Vũ khí dành cho ${owner==='mage'?'Pháp sư':'Đấu sĩ'}.`};
+        if(!SHOP_ITEMS.includes(id))SHOP_ITEMS.push(id);
+    }
+}
+for(const [id,item] of Object.entries(ITEMS))if(id.startsWith('iron_sword'))item.classCode='swordsman';
+export const canShopItem = (id,classCode) => ITEMS[id]?.type!=='weapon' || ITEMS[id]?.classCode===classCode;

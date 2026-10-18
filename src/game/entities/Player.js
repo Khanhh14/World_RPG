@@ -139,6 +139,8 @@ export class Player {
     }
 
     getWeaponFrame(weaponId) {
+        if (/^wood_staff(?:_[2-5])?$/.test(weaponId)) return 129;
+        if (/^starter_axe(?:_[2-5])?$/.test(weaponId)) return 118;
         // Kiếm: frames 103-107, Rìu: frame 118, Gậy: frame 129
         const weaponFrames = {
             'iron_sword': 103, 'iron_sword_2': 104, 'iron_sword_3': 105,
