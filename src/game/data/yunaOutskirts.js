@@ -20,5 +20,5 @@ export const yunaOutskirts = {
     lines:['Bạn đã tới Ngoại ô thành YuNa.', 'Phía Đông là đường trở lại Khu Rừng Phía Tây. Airi ở căn nhà bên cạnh chuyên bán đá nâng cấp cánh.'] }
  ],
  monsters: [],
- portals: [{x:2400,feetY:912,label:'Về Khu Rừng Phía Tây',target:'WestForest',spawn:{x:216,y:1080}}]
+ portals: [{x:120,feetY:912,label:'Thành Yuna',target:'YunaCity',spawn:{x:2352,y:984}}, {x:2400,feetY:912,label:'Về Khu Rừng Phía Tây',target:'WestForest',spawn:{x:216,y:1080}}]
 };

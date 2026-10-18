@@ -17,6 +17,5 @@ export class NagaWorld extends WorldBuilder {
    this.blocker(x,y-8,85,35);
    if(i%3===0){rock.fillStyle(0x6fe6be).fillTriangle(x+20,y-5,x+35,y-68,x+48,y-12);rock.fillStyle(0xd0ffe2).fillTriangle(x+35,y-68,x+35,y-8,x+41,y-21);}
   }
-  s.add.text(864,1090,'ĐẤU TRƯỜNG NAGA\nTránh vùng đỏ trước khi kỹ năng nổ',{fontFamily:'Arial',fontSize:'16px',align:'center',color:'#a5c5b2'}).setOrigin(.5).setDepth(10);
  }
 }

@@ -15,3 +15,5 @@ async function request(path, body) {
  } finally{clearTimeout(timer);}
 }
 export const claimBossReward=input=>retryRequest(()=>request('/claim',input));
+
+export const getNagaStatus=()=>request('/status',null);

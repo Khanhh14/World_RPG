@@ -1,7 +1,8 @@
+import { getNagaStatus } from '../../api/bossRewardApi.js';
 // Boss riêng, dùng chung hệ nhận sát thương và kỹ năng của người chơi.
 export class NagaBoss {
  constructor(scene){
-  this.scene=scene;this.elapsed=0;this.nextCast=1800;this.nextMelee=0;this.castCount=0;this.warning=null;this.bullets=[];this.defeated=false;
+  this.alive=true;this.statusReady=false;this.checking=false;this.checkAt=0;this.waitUntil=0;this.scene=scene;this.elapsed=0;this.nextCast=1800;this.nextMelee=0;this.castCount=0;this.warning=null;this.bullets=[];this.defeated=false;
   this.makeTextures();
   const sprite=scene.physics.add.sprite(864,650,'naga-walk-0').setOrigin(.5,1).setScale(2).setDepth(750);
   sprite.body.setSize(32,18).setOffset(16,59).setAllowGravity(false).setCollideWorldBounds(true);
@@ -16,7 +17,19 @@ export class NagaBoss {
   this.root.innerHTML='<div class="naga-boss-name">NAGA · CHÚA TỂ HANG ĐỘNG</div><div class="naga-boss-track" role="progressbar" aria-label="Máu NaGa" aria-valuemin="0" aria-valuemax="1500"><div class="naga-boss-fill"></div><span class="naga-boss-value"></span></div><div class="naga-boss-status"></div>';
   document.body.appendChild(this.root);
   if(!document.getElementById('naga-boss-css')){const css=document.createElement('link');css.id='naga-boss-css';css.rel='stylesheet';css.href='/assets/style/nagaBoss.css';document.head.appendChild(css);}
-  this.tick=(time,delta)=>this.update(delta);scene.events.on('postupdate',this.tick);scene.events.once('shutdown',()=>this.destroy());this.updateHUD('Tiến vào đấu trường để khiêu chiến');
+  this.tick=(time,delta)=>this.update(delta);scene.events.on('postupdate',this.tick);scene.events.once('shutdown',()=>this.destroy());this.hideBoss();this.updateHUD('Đang kiểm tra hồi sinh…');void this.refreshStatus();
+ }
+ hideBoss(){this.entity.sprite.setVisible(false);this.entity.shadow.setVisible(false);this.entity.sprite.body.stop();this.target.hp=0;this.target.respawnAt=Infinity;}
+ async refreshStatus(){
+  if(this.checking||!this.alive)return;this.checking=true;
+  try{
+   const {remainingMs}=await getNagaStatus();if(!this.alive)return;
+   this.statusReady=true;this.waitUntil=performance.now()+Math.max(0,remainingMs);this.checkAt=this.waitUntil;
+   if(remainingMs>0){this.hideBoss();this.defeated=true;}
+   else if(this.scene.rpgState.data.pendingBossRewards?.length){this.hideBoss();this.checkAt=performance.now()+5000;this.statusReady=false;}
+   else {this.defeated=false;this.reset();this.entity.sprite.setVisible(true);this.entity.shadow.setVisible(true);}
+  }catch{if(this.alive){this.statusReady=false;this.checkAt=performance.now()+5000;this.hideBoss();this.updateHUD('Chưa xác nhận được hồi sinh · Đang thử lại…');}}
+  finally{this.checking=false;}
  }
  makeTextures(){
   const s=this.scene;
@@ -45,7 +58,12 @@ export class NagaBoss {
  reset(){this.target.hp=1500;this.target.aggro=false;this.entity.sprite.body.reset(864,650);this.warning=null;this.bullets=[];this.nextCast=this.elapsed+2000;}
  update(delta=16){
   const s=this.scene,c=s.combat,p=c.origin(),sprite=this.entity.sprite,g=this.fx;g.clear();
-  if(this.target.hp<=0){if(!this.defeated){this.defeated=true;this.warning=null;this.bullets=[];sprite.body.stop();this.updateHUD('Đã đánh bại NaGa · Cổng trở về ở phía Nam');s.hud?.toast('Đã đánh bại NaGa! Đang nhận thưởng…');void s.bossRewards?.queue();}return;}
+  if(!this.statusReady){if(performance.now()>=this.checkAt)void this.refreshStatus();return;}
+  if(this.waitUntil>performance.now()){
+   const seconds=Math.ceil((this.waitUntil-performance.now())/1000);this.updateHUD(`NaGa hồi sinh sau ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`);return;
+  }
+  if(this.defeated){if(performance.now()>=this.checkAt)void this.refreshStatus();return;}
+  if(this.target.hp<=0){if(!this.defeated){this.defeated=true;this.warning=null;this.bullets=[];sprite.body.stop();this.updateHUD('Đã đánh bại NaGa · Cổng trở về ở phía Nam');s.hud?.toast('Đã đánh bại NaGa! Đang nhận thưởng…');this.checkAt=Infinity;void s.bossRewards?.queue().then(()=>{if(this.alive)void this.refreshStatus();});}return;}
   if(s.rpgState.data.hp<=0){this.reset();this.updateHUD('NaGa trở về tổ');return;}
   if(c.busy){sprite.body.stop();this.warning=null;this.bullets=[];this.nextCast=Math.max(this.nextCast,this.elapsed+1000);this.updateHUD('Tạm dừng');return;}
   this.elapsed+=Math.min(delta,50);const now=this.elapsed;
@@ -70,5 +88,5 @@ export class NagaBoss {
    if(hit||b.life<=0||!c.clearLine(old,b)){this.bullets.splice(i,1);continue;}g.fillStyle(0x9de966,.15).fillCircle(b.x,b.y,18);g.fillStyle(0x93d95e,.85).fillCircle(b.x,b.y,8);g.fillStyle(0xe9ffd4).fillCircle(b.x-2,b.y-2,3);
   }
  }
- destroy(){this.scene.events.off('postupdate',this.tick);this.root.remove();this.fx.destroy();this.bullets=[];this.warning=null;}
+ destroy(){this.alive=false;this.scene.events.off('postupdate',this.tick);this.root.remove();this.fx.destroy();this.bullets=[];this.warning=null;}
 }
