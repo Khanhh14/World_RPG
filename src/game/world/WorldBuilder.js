@@ -20,7 +20,7 @@ export class WorldBuilder {
         for (let y = 0; y < data.rows; y++) {
             for (let x = 0; x < data.cols; x++) {
                 const value = (x * 17 + y * 31) % 43;
-                this.tile(x, y, value === 0 ? 2 : value < 7 ? 1 : 0);
+                this.tile(x, y, data.groundFrame ?? (value === 0 ? 2 : value < 7 ? 1 : 0));
             }
         }
         for (const rect of data.paths ?? []) this.pathRect(...rect);

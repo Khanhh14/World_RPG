@@ -1,15 +1,11 @@
 // Nền, nhà, đường, cây: tiny-town; nhân vật: tiny-dungeon. Ô 16px phóng 3 lần.
 export const yunaCity={
- id:'yuna-city',title:'THÀNH YUNA',tileSize:48,cols:54,rows:42,tileset:'town',backgroundColor:'#83c46a',
+ id:'yuna-city',title:'THÀNH YUNA',tileSize:48,cols:54,rows:42,tileset:'town',backgroundColor:'#bbc5d2',
  player:{x:2352,y:984,texture:'dungeon',frame:96,scale:3,speed:200},
- paths:[[1,19,52,4],[9,12,3,23],[25,10,3,26],[40,12,3,23],[8,14,36,3],[8,33,36,3]],
- paving:[{x:19,y:16,width:15,height:10,frame:43},{x:23,y:10,width:7,height:6,frame:43}],
+ groundFrame:109,paths:[],paving:[],
  houses:[[8,8,'red'],[24,5,'blue'],[39,8,'red'],[8,28,'blue'],[24,28,'red'],[39,28,'blue'],[16,3,'red'],[32,3,'blue']],
  props:[],solidTiles:[],
- fences:[[4,4,9],[37,4,11],[4,38,17],[33,38,16]],
- gardens:[[15,29,3,4],[34,29,3,4],[16,10,3,3],[34,10,3,3]],
- trees:[[0,0],[5,0],[10,0],[45,0],[50,0],[0,6],[0,11],[0,26],[0,32],[0,37],[50,5],[50,10],[50,28],[50,34],[50,38],[6,36],[17,36],[30,36],[42,36],[16,24],[34,24]],
- decorations:[[6,17,17],[16,18,17],[35,18,17],[46,17,17],[20,28,28],[31,28,28],[16,34,17],[35,34,17]],
+ fences:[],gardens:[],trees:[],decorations:[],
  monsters:[],
  npcs:[
   {id:'yuna-city-guard',name:'Đội trưởng Kael',frame:96,col:9.5,row:14,lines:['Chào mừng đến Thành Yuna.','Cổng phía Đông dẫn ra Ngoại ô YuNa.']},

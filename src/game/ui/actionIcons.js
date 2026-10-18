@@ -2,6 +2,7 @@ let serial=0;
 const base=(inside,color)=>`<circle cx="32" cy="32" r="25" fill="${color}" opacity=".17"/><g stroke-linejoin="round" stroke-linecap="round">${inside}</g>`;
 const sword=`<path d="M22 40L43 9l10-2-2 12-25 25z" fill="url(#metal)" stroke="#243b47" stroke-width="2"/><path d="M26 38L48 13" stroke="#fff9d1" stroke-width="2"/><path d="M18 36l13 12-4 4-14-12z" fill="url(#gold)" stroke="#4c3826" stroke-width="1.5"/><path d="M19 44l-8 10 4 4 9-10" fill="#985433" stroke="#432f29" stroke-width="2"/><path d="M9 54l5 5" stroke="#ffe5a2" stroke-width="4"/>`;
 const art={
+ mushroom:()=>base('<path d="M26 30h12l5 25H21z" fill="#ffe9b4" stroke="#563f35" stroke-width="2"/><path d="M7 32C7 1 57 1 57 32Z" fill="#df564c" stroke="#5e3436" stroke-width="3"/><g fill="#fff1ce"><circle cx="21" cy="21" r="4"/><circle cx="37" cy="14" r="4"/><circle cx="46" cy="26" r="3"/></g>','#dd9d66'),
  sword:()=>base(sword,'#edd398'),
  power:()=>base(`<path d="M9 38C8 22 17 12 31 9L23 18C37 11 46 16 54 24L39 21 48 33 34 28 35 41 24 34 18 50z" fill="url(#fire)" opacity=".95"/>${sword}<path d="M9 14l4 3m39 27 5 2M23 5v5" stroke="#ffe9a7" stroke-width="2"/>`,'#fc9e41'),
  bolt:()=>base(`<path d="M5 39l15-4-7-8 17-7-4-9 15 6 10-7-5 15 12 7-14 7 6 14-17-8-9 13-3-15z" fill="#288ed0" opacity=".5"/><path d="M35 6L15 35h15l-5 23 25-33H35l7-19z" fill="url(#ice)" stroke="#b6f7ff" stroke-width="1.5"/><path d="M13 16l-5 9 8 3M48 41l7 3-5 10" fill="none" stroke="#7edbff" stroke-width="2"/>`,'#43baff'),

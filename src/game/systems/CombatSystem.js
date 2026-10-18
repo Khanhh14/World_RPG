@@ -36,7 +36,7 @@ export class CombatSystem {
   // Cooldowns dùng đồng hồ game chung để không reset khi đổi map.
   get clock(){return this.scene.game.loop.time;}
   get weapon(){return ITEMS[this.state?.data.equipment?.weapon];}
-  get busy(){const f=this.scene.fishingSystem;return this.uiBlocked || !this.state || this.state.data.hp<=0 || this.scene.hud?.blocked || this.scene.dialogue?.isOpen || f?.basketOpen || (f?.phase && f.phase!=='idle');}
+  get busy(){const f=this.scene.fishingSystem;return this.scene.mushroomSystem?.blocked || this.uiBlocked || !this.state || this.state.data.hp<=0 || this.scene.hud?.blocked || this.scene.dialogue?.isOpen || f?.basketOpen || (f?.phase && f.phase!=='idle');}
   remaining(id){return Math.max(0,(this.runtime.cooldowns[id]||0)-this.clock);}
   origin(){const s=this.scene.player?.sprite;return s?{x:s.x,y:s.y}:null;}
   targetPoint(t){const s=t.entity.sprite;return {x:s.x,y:s.y-s.displayHeight*(s.originY??0.5)+s.displayHeight/2};}

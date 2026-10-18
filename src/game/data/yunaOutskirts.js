@@ -11,9 +11,10 @@ export const yunaOutskirts = {
  trees: [[0,0],[5,0],[10,0],[15,0],[20,0],[25,0],[30,0],[35,0],[40,0],[45,0],[48,4],
          [0,7],[0,11],[21,7],[25,11],[23,19],[26,24],[0,24],[1,29],[22,29],[28,28],
          [34,27],[40,28],[46,27],[47,20],[47,10],[39,5],[33,6],[29,7]],
- decorations: [[32,14,17],[42,16,17],[37,22,28],[44,21,28],[30,26,17],
+ decorations: [[42,16,17],[37,22,28],[44,21,28],[30,26,17],
                [22,12,28],[11,28,28],[19,12,17],[3,21,17]],
  npcs: [
+  {id:'mushroom-nami',name:'Người hái nấm Nami',role:'mushroom-merchant',frame:85,col:31,row:11,lines:['Mang rổ để hái nấm. Đổi 20 nấm lấy 1 đá cường hóa.']},
   { id:'yuna-wing-merchant', name:'Vũ sư Airi', role:'wing-merchant', frame:86, col:14.5,row:13,
     lines:['Chào mừng đến YuNa. Đá nâng cấp giúp đôi cánh của bạn mạnh hơn.'] },
   { id:'yuna-guard', name:'Vệ binh Ren', frame:96, col:6.5,row:13,

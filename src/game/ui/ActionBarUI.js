@@ -56,14 +56,19 @@ export class ActionBarUI {
     if(f?.phase&&f.phase!=='idle')return {icon:'cancel',label:f.phase==='finishing'?'Nhận cá…':'Hủy câu',kind:'cancel'};
     const npc=this.scene.dialogue?.nearest?.()??this.npc;
     if(npc)return {icon:npc.isMerchant?'shop':'talk',label:npc.isMerchant?'Mua bán':'Nói chuyện',kind:'npc'};
+    const m=this.scene.mushroomSystem;
+    if(m?.harvesting)return {icon:'cancel',label:'Hủy hái',kind:'harvest-cancel'};
+    if(m?.near())return {icon:'mushroom',label:'Hái nấm',kind:'mushroom'};
     if(f?.alive&&f.near())return {icon:'fish',label:'Câu cá',kind:'fish'};
     return {icon:'sword',label:'Đánh thường',kind:'attack'};
   }
   invoke(id){
-    if(!this.alive||this.pickerKind||!this.scene.rpgState||this.scene.hud?.blocked||this.scene.fishingSystem?.basketOpen)return;
+    if(!this.alive||this.pickerKind||!this.scene.rpgState||this.scene.hud?.blocked||this.scene.mushroomSystem?.shopOpen||this.scene.fishingSystem?.basketOpen)return;
     if(id==='interact'){
       const c=this.context(),f=this.scene.fishingSystem;
       if(c.kind==='dialogue'||c.kind==='npc')this.scene.dialogue?.interact();
+      else if(c.kind==='mushroom')this.scene.mushroomSystem.start();
+      else if(c.kind==='harvest-cancel')this.scene.mushroomSystem.cancel();
       else if(c.kind==='fish')void f.start();
       else if(c.kind==='cancel')void f.cancel();
       else this.combat.attack();
@@ -78,7 +83,7 @@ export class ActionBarUI {
   }
   refresh(){
     if(!this.alive)return;const scene=this.scene,c=this.context(),f=scene.fishingSystem;
-    this.root.hidden=!!scene.hud?.blocked||!!f?.basketOpen||(!this.visible&&!scene.dialogue?.isOpen);
+    this.root.hidden=!!scene.mushroomSystem?.shopOpen||!!scene.hud?.blocked||!!f?.basketOpen||(!this.visible&&!scene.dialogue?.isOpen);
     this.root.classList.toggle('ra-dialogue',!!scene.dialogue?.isOpen);
     const main=this.buttons.get('interact');
     if(main.dataset.context!==c.kind){main.dataset.context=c.kind;main.querySelector('.ra-icon').innerHTML=actionIcon(c.icon);}

@@ -99,3 +99,6 @@ for (const [base,name,frame,owner] of [['wood_staff','Trượng',129,'mage'],['s
 }
 for(const [id,item] of Object.entries(ITEMS))if(id.startsWith('iron_sword'))item.classCode='swordsman';
 export const canShopItem = (id,classCode) => ITEMS[id]?.type!=='weapon' || ITEMS[id]?.classCode===classCode;
+
+ITEMS.mushroom_basket = { name:'Rổ hái nấm', type:'material', category:'gathering', maxStack:1, price:200, emoji:'🧺', description:'Có rổ trong túi mới hái được nấm. Không tiêu hao khi hái.' };
+ITEMS.yuna_mushroom = { name:'Nấm YuNa', type:'material', category:'gathering', maxStack:99, emoji:'🍄', description:'Đổi 20 nấm lấy 1 đá cường hóa tại Người hái nấm Nami ở Ngoại ô YuNa.' };

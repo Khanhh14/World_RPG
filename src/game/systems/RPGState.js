@@ -107,6 +107,7 @@ export class RPGState {
             pendingBossRewards: [],
             bossStoneInbox: 0,
             pendingKills: [],
+            mushroomHarvest: {},
 
             inventory: {
                 health_potion: 5,
@@ -225,6 +226,7 @@ export class RPGState {
             this.data.gold = integer(saved.gold, 0, 9999999, 50);
             this.data.pendingBossRewards = Array.isArray(saved.pendingBossRewards) ? [...new Set(saved.pendingBossRewards.filter(id=>typeof id==='string'&&/^[a-f0-9-]{36}$/i.test(id)))] : [];
             this.data.bossStoneInbox = integer(saved.bossStoneInbox,0,999999,0);
+            this.data.mushroomHarvest = Object.fromEntries(Object.entries(saved.mushroomHarvest || {}).filter(([k,v]) => /^patch-\d+$/.test(k) && Number.isFinite(v)));
             this.data.pendingPurchase = saved.pendingPurchase || null;
             this.data.pendingWingAction = saved.pendingWingAction || null;
             this.data.pendingSkillAction = saved.pendingSkillAction || null;
@@ -439,6 +441,35 @@ export class RPGState {
         } finally { this.buying = false; }
     }
 
+    commitGathering(next) {
+        try {
+            if (!this.storage) throw new Error();
+            const value = JSON.stringify(next);
+            this.storage.setItem(this.saveKey, value);
+            if (this.storage.getItem(this.saveKey) !== value) throw new Error();
+        } catch { return {ok:false,message:'Không lưu được túi đồ. Hãy cho phép lưu dữ liệu trình duyệt.'}; }
+        this.data = next;
+        for (const fn of this.listeners) fn(this.data);
+        return {ok:true};
+    }
+    harvestMushroom(id, now = Date.now()) {
+        if (!/^patch-\d+$/.test(id)) return {ok:false,message:'Cụm nấm không hợp lệ.'};
+        if (!this.data.inventory.mushroom_basket) return {ok:false,message:'Cần mua rổ hái nấm từ Nami (200 vàng).'};
+        if ((this.data.mushroomHarvest[id] || 0) > now) return {ok:false,message:'Nấm chưa mọc lại.'};
+        const error = this.canAdd('yuna_mushroom');
+        if (error) return {ok:false,message:error};
+        const result = this.commitGathering({...this.data, inventory:{...this.data.inventory,yuna_mushroom:(this.data.inventory.yuna_mushroom||0)+1}, mushroomHarvest:{...this.data.mushroomHarvest,[id]:now+30000}});
+        return {...result,message:result.ok?'+1 Nấm YuNa':result.message};
+    }
+    exchangeMushrooms() {
+        const inventory = this.data.inventory;
+        if ((inventory.yuna_mushroom||0)<20) return {ok:false,message:'Cần đủ 20 nấm để đổi 1 đá.'};
+        const error = this.canAdd('upgrade_stone');
+        const freesSlot = inventory.yuna_mushroom===20 && !inventory.upgrade_stone;
+        if (error && !(error==='Ba lô đã đầy.' && freesSlot)) return {ok:false,message:error};
+        const result = this.commitGathering({...this.data,inventory:{...inventory,yuna_mushroom:inventory.yuna_mushroom-20,upgrade_stone:(inventory.upgrade_stone||0)+1}});
+        return {...result,message:result.ok?'Đã đổi 20 nấm lấy 1 đá cường hóa.':result.message};
+    }
     addItem(id, quantity = 1) {
         if (this.canAdd(id, quantity)) return false;
 

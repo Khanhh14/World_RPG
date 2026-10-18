@@ -91,9 +91,9 @@ export class BaseWorldScene extends Scene {
 
     update() {
         if (!this.dialogue || !this.player) return;
-        const menuOpen = this.hud?.blocked ?? false;
+        const menuOpen = !!this.hud?.blocked || !!this.mushroomSystem?.blocked;
         if (!menuOpen) this.dialogue.update();
-        const blocked = (this.hud?.blocked ?? false) || this.dialogue.isOpen;
+        const blocked = (this.hud?.blocked ?? false) || this.dialogue.isOpen || !!this.mushroomSystem?.blocked;
         this.player.update(blocked);
         this.portals.update(this.player, blocked);
         this.hud?.syncDialogue(this.dialogue.isOpen);
