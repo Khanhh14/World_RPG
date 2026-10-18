@@ -2,6 +2,7 @@ import { withAuth } from '../auth/bootstrap.js';
 import { AUTO, Game as PhaserGame, Scale } from 'phaser';
 
 import { Game as VillageGame } from './scenes/Game.js';
+import { NagaCave } from './scenes/NagaCave.js';
 import { WestForest } from './scenes/WestForest.js';
 import { YunaOutskirts } from './scenes/YunaOutskirts.js';
 import { AtlastLake } from './scenes/AtlastLake.js';
@@ -42,6 +43,7 @@ function StartGame(user, parent = 'game-container') {
             WestForest,
             AtlastLake,
             YunaOutskirts,
+            NagaCave,
         ],
     };
 

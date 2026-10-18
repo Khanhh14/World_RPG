@@ -4,7 +4,7 @@ const tileSize = 48;
 const paths = [
     [0, 21, 56, 3],
     [11, 9, 3, 15],
-    [30, 13, 3, 20],
+    [30, 13, 3, 30],
     [39, 23, 3, 12]
 ];
 const clearings = [
@@ -76,6 +76,10 @@ export const westForest = {
         ])
     ],
     portals: [{
+        x: 1512, feetY: 2016,
+        label: 'Hang động NaGa', target: 'NagaCave',
+        spawn: { x: 864, y: 1270 }
+    }, {
         x: 120, feetY: 1104,
         label: 'Ngoại ô thành YuNa', target: 'YunaOutskirts',
         spawn: { x: 2280, y: 888 }

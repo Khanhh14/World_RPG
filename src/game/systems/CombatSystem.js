@@ -41,7 +41,8 @@ export class CombatSystem {
   origin(){const s=this.scene.player?.sprite;return s?{x:s.x,y:s.y}:null;}
   targetPoint(t){const s=t.entity.sprite;return {x:s.x,y:s.y-s.displayHeight*(s.originY??0.5)+s.displayHeight/2};}
   clearLine(a,b){
-    return !(this.scene.world?.blockers?.getChildren?.()||[]).some(o=>{
+    const blockers=this.scene.world?.blockers;
+    return !(Array.isArray(blockers)?blockers:(blockers?.getChildren?.()||[])).some(o=>{
       if(o.active===false||o.body?.enable===false)return false;
       const r=o.body?{x:o.body.x,y:o.body.y,width:o.body.width,height:o.body.height}:o.getBounds?.();
       return r&&segmentHitsRect(a,b,r);
@@ -189,7 +190,7 @@ export class CombatSystem {
     this.float(this.targetPoint(t),`−${Math.round(damage)}`,'#ffe0ad');
     this.flash(this.targetPoint(t),34,0xffd397,'impact');
     if(t.hp===0){
-      t.respawnAt=this.now+15000;t.aggro=false;
+      t.respawnAt=t.entity.data.boss?Infinity:this.now+15000;t.aggro=false;
       t.entity.sprite.body?.stop();
       for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(false);
       const forestReward=this.scene.mapData.id==='west-forest';
@@ -300,10 +301,10 @@ export class CombatSystem {
       if(t.hp<=0){if(this.now>=t.respawnAt){t.hp=t.maxHP;t.aggro=false;t.entity.sprite.setPosition(t.entity.home?.x??t.entity.sprite.x,t.entity.home?.y??t.entity.sprite.y);t.entity.sprite.body?.reset(t.entity.sprite.x,t.entity.sprite.y);for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(true);}else continue;}
       this.updateMonsterAI(t);
       const p=this.targetPoint(t),me=this.origin();
-      if(t.aggro&&!this.busy&&this.now>=t.nextHit&&Math.hypot(p.x-me.x,p.y-me.y)<95&&this.clearLine(p,me)){
+      if(!t.entity.data.boss&&t.aggro&&!this.busy&&this.now>=t.nextHit&&Math.hypot(p.x-me.x,p.y-me.y)<95&&this.clearLine(p,me)){
         t.nextHit=this.now+1300;this.damagePlayer(Math.max(2,t.damage-Math.floor(this.state.defense/2)));
       }
-      if(t.hp<t.maxHP){const y=p.y-t.entity.sprite.displayHeight/2-8;g.fillStyle(0x172b24,.95).fillRect(p.x-23,y,46,6);g.fillStyle(0xe9806e,1).fillRect(p.x-22,y+1,44*t.hp/t.maxHP,4);}
+      if(!t.entity.data.boss&&t.hp<t.maxHP){const y=p.y-t.entity.sprite.displayHeight/2-8;g.fillStyle(0x172b24,.95).fillRect(p.x-23,y,46,6);g.fillStyle(0xe9806e,1).fillRect(p.x-22,y+1,44*t.hp/t.maxHP,4);}
     }
     if(this.deathAt&&this.now>=this.deathAt){
       this.deathAt=0;const spawn={...this.scene.mapData.player,...this.scene.spawn};const s=this.scene.player.sprite;
