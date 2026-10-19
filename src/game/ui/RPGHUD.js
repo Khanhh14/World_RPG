@@ -58,7 +58,7 @@ export class RPGHUD {
             if (action === 'skill-school') { this.skillSchool = id; this.renderModal(); }
             if (action === 'book-school') { this.bookSchool = id; this.renderModal(); }
             if (action === 'skill-retry') await this.scene.skillsSystem?.load();
-            if (action === 'skill-buy' && this.skillNPC && this.scene.dialogue?.nearest() === this.skillNPC) await this.scene.skillsSystem?.perform('buy', {skillId:id});
+            if (action === 'skill-buy' && this.skillNPC && this.scene.dialogue?.nearest() === this.skillNPC) await this.scene.skillsSystem?.perform('buy', {skillId:id,merchantId:this.skillVendor});
             if (action === 'skill-assign') await this.scene.skillsSystem?.perform('assign', {skillId:id,slot:this.skillSlot ?? 0});
             if (action === 'skill-clear') await this.scene.skillsSystem?.perform('assign', {skillId:null,slot:Number(id)});
             if (action === 'wing-select') { this.wingSelected = id; this.renderModal(); }
@@ -175,7 +175,7 @@ export class RPGHUD {
     }
     openSkillShop(npc) {
         if (npc?.role !== 'skill-merchant' || this.scene.dialogue?.nearest() !== npc) return;
-        this.skillNPC = npc; this.bookSchool = 'demon'; this.toggle('skill-shop');
+        this.skillNPC = npc; this.skillVendor = npc.id === 'mage' ? 'mage' : 'sora'; this.bookSchool = 'demon'; this.toggle('skill-shop');
         void this.scene.skillsSystem?.load();
     }
     openFoodExchange(npc) {

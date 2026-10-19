@@ -1,4 +1,11 @@
 import { COMBAT_SKILLS } from './combatSkills.js';
+export const LEGACY_SKILLS = COMBAT_SKILLS.map(skill => ({
+ ...skill,
+ school:'mage',
+ effect:skill.effect || skill.id,
+ goldPrice:2000,
+ gemPrice:10
+}));
 export const BOOK_SKILLS = [
   {
     "id": "holy_spear",
@@ -150,7 +157,7 @@ export const BOOK_SKILLS = [
   }
 ];
 export const SCHOOLS = [{id:'demon',name:'Ma',color:'#d4a1ff'}, {id:'god',name:'Thần',color:'#f3d38a'}, {id:'human',name:'Nhân',color:'#8edbff'}];
-export const ALL_SKILLS = [...COMBAT_SKILLS, ...BOOK_SKILLS];
+export const ALL_SKILLS = [...BOOK_SKILLS, ...LEGACY_SKILLS];
 export const STARTER_SKILLS = [];
 export const findSkill = id => ALL_SKILLS.find(s => s.id === id);
 export function skillSlots(state) {
