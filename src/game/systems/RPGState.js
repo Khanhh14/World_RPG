@@ -108,6 +108,7 @@ export class RPGState {
             pendingSkillAction: null,
             pendingPurchase: null,
             pendingItemUse: null,
+            pendingEquipmentAction: null,
             pendingBossRewards: [],
             bossStoneInbox: 0,
             pendingKills: [],
@@ -243,6 +244,13 @@ export class RPGState {
             }
             this.data.pendingPurchase = saved.pendingPurchase || null;
             this.data.pendingItemUse = saved.pendingItemUse || null;
+            const equipmentAction = saved.pendingEquipmentAction;
+            if (equipmentAction && ['equip', 'unequip'].includes(equipmentAction.action)
+                && typeof equipmentAction.itemId === 'string'
+                && typeof equipmentAction.requestId === 'string'
+                && /^[a-f0-9-]{36}$/i.test(equipmentAction.requestId)) {
+                this.data.pendingEquipmentAction = equipmentAction;
+            }
             this.data.pendingWingAction = saved.pendingWingAction || null;
             this.data.pendingSkillAction = saved.pendingSkillAction || null;
             this.data.pendingKills = Array.isArray(saved.pendingKills) ? saved.pendingKills.filter(id => typeof id === 'string' && /^[a-f0-9-]{36}$/i.test(id)) : [];
@@ -516,6 +524,62 @@ export class RPGState {
         }
     }
 
+    async changeEquipment(id, action) {
+        if (this.usingItem) return 'Đang xử lý vật phẩm…';
+        if (this.data.pendingEquipmentAction) return await this.recoverEquipmentAction();
+        this.data.pendingEquipmentAction = { action, itemId:id, requestId:crypto.randomUUID() };
+        try {
+            if (!this.storage) throw new Error();
+            this.storage.setItem(this.saveKey, JSON.stringify(this.data));
+            const saved = JSON.parse(this.storage.getItem(this.saveKey));
+            if (saved.pendingEquipmentAction?.requestId !== this.data.pendingEquipmentAction.requestId) throw new Error();
+        } catch {
+            this.data.pendingEquipmentAction = null;
+            return 'Hãy cho phép lưu dữ liệu trình duyệt trước khi thay đổi trang bị.';
+        }
+        return await this.recoverEquipmentAction();
+    }
+
+    applyServerItems(items) {
+        const counts = new Map();
+        const equipment = Object.fromEntries(EQUIPMENT_SLOTS.map(([slot]) => [slot, null]));
+        for (const item of items) {
+            if (!ITEMS[item.id] || !Number.isSafeInteger(item.quantity) || item.quantity < 1) continue;
+            counts.set(item.id, (counts.get(item.id) || 0) + item.quantity);
+            const slot = item.slot || item.type;
+            if (item.location === 'equipment' && Object.hasOwn(equipment, slot)) equipment[slot] = item.id;
+        }
+        for (const [id, quantity] of counts) this.data.inventory[id] = quantity;
+        for (const [slot] of EQUIPMENT_SLOTS) this.data.equipment[slot] = equipment[slot];
+    }
+
+    async recoverEquipmentAction() {
+        const pending = this.data.pendingEquipmentAction;
+        if (!pending || this.usingItem) return 'Đang xử lý vật phẩm…';
+        this.usingItem = true;
+        try {
+            const result = await inventoryApi.equip(pending);
+            if (result.requestId !== pending.requestId || !Array.isArray(result.items)) {
+                throw new Error('Máy chủ trả về trạng thái trang bị không hợp lệ.');
+            }
+            this.applyServerItems(result.items);
+            this.data.pendingEquipmentAction = null;
+            this.data.hp = Math.min(this.data.hp, this.maxHP);
+            this.changed();
+            return pending.action === 'equip'
+                ? `Đã trang bị ${ITEMS[pending.itemId]?.name?.toLowerCase() || pending.itemId}.`
+                : `Đã tháo ${ITEMS[pending.itemId]?.name?.toLowerCase() || pending.itemId}.`;
+        } catch (error) {
+            if ([400, 403, 409].includes(error.status)) {
+                this.data.pendingEquipmentAction = null;
+                this.changed();
+            }
+            return error.message || 'Chưa xác nhận được thay đổi trang bị.';
+        } finally {
+            this.usingItem = false;
+        }
+    }
+
     commitGathering(next) {
         try {
             if (!this.storage) throw new Error();
@@ -647,6 +711,7 @@ export class RPGState {
     async useItem(id) {
         const item = ITEMS[id];
 
+        if (this.data.pendingEquipmentAction) return await this.recoverEquipmentAction();
         if (!item || !this.data.inventory[id]) {
             return 'Không có vật phẩm này.';
         }
@@ -663,13 +728,7 @@ export class RPGState {
         }
 
         const equipped = this.data.equipment[item.type] === id;
-
-        this.data.equipment[item.type] = equipped ? null : id;
-        this.data.hp = Math.min(this.data.hp, this.maxHP);
-
-        this.changed();
-
-        return `${equipped ? 'Đã tháo' : 'Đã trang bị'} ${item.name.toLowerCase()}.`;
+        return await this.changeEquipment(id, equipped ? 'unequip' : 'equip');
     }
 
     claimExploration() {

@@ -50,6 +50,7 @@ export function createCharacterState(StateClass, userId) {
   state.changed();
   if (state.data.pendingPurchase) void state.recoverPurchase();
   if (state.data.pendingItemUse) void state.recoverItemUse();
+  if (state.data.pendingEquipmentAction) void state.recoverEquipmentAction();
   return state;
 }
 // Gắn ngoại hình và tên sau khi Scene đã tạo player + HUD.

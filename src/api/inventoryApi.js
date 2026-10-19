@@ -3,11 +3,11 @@ import { retryRequest } from './questApi.js';
 const local = ['localhost', '127.0.0.1'].includes(location.hostname);
 const base = (import.meta.env?.VITE_API_BASE || (local ? `${location.protocol}//${location.hostname}:3001/api` : '/api')).replace(/\/$/, '');
 
-async function request(input) {
+async function request(input, action = 'use') {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 12000);
   try {
-    const response = await fetch(`${base}/inventory/use`, {
+    const response = await fetch(`${base}/inventory/${action}`, {
       method: 'POST',
       credentials: 'include',
       cache: 'no-store',
@@ -30,4 +30,5 @@ async function request(input) {
 
 export const inventoryApi = {
   use: input => retryRequest(() => request(input)),
+  equip: input => retryRequest(() => request(input, 'equipment')),
 };

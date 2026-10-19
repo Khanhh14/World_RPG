@@ -19,6 +19,7 @@ export const villageNPCs = [
     {
         id: 'mage',
         name: 'Pháp sư',
+        role: 'skill-merchant',
         frame: 84,
 
         // Bên trái nhà mái xanh phía dưới.
@@ -26,9 +27,8 @@ export const villageNPCs = [
         row: 23.7,
 
         lines: [
-            'Ta đang nghiên cứu những dấu tích trong hầm ngục.',
-            'Học giả Sora tại Thành Yuna lưu giữ sách kỹ năng của các hệ Ma, Thần và Nhân.',
-            'Muốn đi xa, cháu cần chuẩn bị trang bị và thuốc hồi phục.'
+            'Ta có thể bán sách kỹ năng của các hệ Ma, Thần và Nhân.',
+            'Mỗi cuốn sách cần 2.000 vàng và 10 đá quý. Hãy chọn kỹ năng phù hợp với mình.'
         ]
     },
     {
