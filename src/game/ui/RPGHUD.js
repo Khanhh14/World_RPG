@@ -74,7 +74,7 @@ export class RPGHUD {
             if (action === 'preview') { this.previewId = this.selected; this.renderModal(); }
             if (action === 'preview-reset') { this.previewId = null; this.renderModal(); }
             if (action === 'preview-turn') { this.previewLeft = !this.previewLeft; this.drawCharacterPreview(); }
-            if (action === 'use') { this.previewId = null; this.toast(this.state.useItem(this.selected)); this.render(); }
+            if (action === 'use') { this.previewId = null; this.toast(await this.state.useItem(this.selected)); this.render(); }
             if (action === 'buy' && this.shopNPC && this.scene.dialogue?.nearest() === this.shopNPC) {
                 const result = await this.state.buyItem(id);
                 if (this.destroyed) return;
@@ -100,7 +100,7 @@ export class RPGHUD {
                 const slot = ITEMS[id]?.type;
                 if (slot && this.state.data.equipment[slot] === id) {
                     this.previewId = null; this.selected = id;
-                    this.toast(this.state.useItem(id)); this.render();
+                    this.toast(await this.state.useItem(id)); this.render();
                 }
             }
             if (action === 'filter') { this.shopCategory = id; this.renderModal(); }

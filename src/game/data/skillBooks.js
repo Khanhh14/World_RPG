@@ -151,8 +151,8 @@ export const BOOK_SKILLS = [
 ];
 export const SCHOOLS = [{id:'demon',name:'Ma',color:'#d4a1ff'}, {id:'god',name:'Thần',color:'#f3d38a'}, {id:'human',name:'Nhân',color:'#8edbff'}];
 export const ALL_SKILLS = [...COMBAT_SKILLS, ...BOOK_SKILLS];
-export const STARTER_SKILLS = COMBAT_SKILLS.map(s => s.id);
+export const STARTER_SKILLS = [];
 export const findSkill = id => ALL_SKILLS.find(s => s.id === id);
 export function skillSlots(state) {
- return state?.data?.skills?.slots ?? STARTER_SKILLS;
+ return state?.data?.skills?.slots ?? Array(5).fill(null);
 }

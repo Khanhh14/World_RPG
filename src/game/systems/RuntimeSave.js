@@ -11,7 +11,7 @@ export async function loadRuntime(characterId){
 }
 export class RuntimeSave {
  constructor(game,initial){
-  this.game=game;this.current={...initial};this.inflight=null;this.stopped=false;this.error='';this.lastSample=0;
+  this.game=game;this.current={...initial};this.inflight=null;this.externalUpdates=0;this.stopped=false;this.error='';this.lastSample=0;
   this.tick=()=>{if(performance.now()-this.lastSample>250){this.lastSample=performance.now();this.capture();}};
   game.events.on('poststep',this.tick);
   this.timer=setInterval(()=>void this.flush(),5000);
@@ -30,6 +30,7 @@ export class RuntimeSave {
  }
  async flush(keepalive=false){
   this.capture();
+  if(this.externalUpdates)return;
   if(this.inflight){await this.inflight;if(!this.stopped&&this.current.dirty)return this.flush(keepalive);return;}
   if(this.stopped||!this.current.dirty)return;
   const payload={...this.current,requestId:crypto.randomUUID()};
@@ -41,6 +42,21 @@ export class RuntimeSave {
    }catch(e){this.error=e.status===401?'Phiên đăng nhập đã hết hạn.':'Chưa lưu được máy chủ; đã giữ bản dự phòng trên trình duyệt.';this.persist();if(e.status===401)window.dispatchEvent(new CustomEvent('rpg-session-expired'));}
   })();
   try{await this.inflight;}finally{this.inflight=null;}
+ }
+ async withExternalUpdate(operation,applyResult){
+  this.externalUpdates++;
+  try{
+   while(this.inflight)await this.inflight;
+   if(this.stopped)throw Object.assign(new Error('Phiên lưu nhân vật đã bị xung đột. Hãy tải lại game.'),{status:409});
+   const result=await operation();
+   if(Number.isSafeInteger(result.runtimeVersion))this.current.version=result.runtimeVersion;
+   applyResult(result);
+   this.capture();
+   return result;
+  }finally{
+   this.externalUpdates--;
+   if(!this.externalUpdates)setTimeout(()=>void this.flush(),0);
+  }
  }
  destroy(){clearInterval(this.timer);this.game.events.off('poststep',this.tick);window.removeEventListener('pagehide',this.leave);document.removeEventListener('visibilitychange',this.hidden);}
 }

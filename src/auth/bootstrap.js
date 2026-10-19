@@ -18,6 +18,8 @@ export function withAuth(startGame) {
       const game = await startGame(user, ...args);
       game?.registry?.set('auth-user', user);
       const saves = new RuntimeSave(game, runtime);
+      const state = game?.registry?.get('rpg-state-v1');
+      if (Number.isSafeInteger(state?.serverRuntimeVersion)) saves.current.version = state.serverRuntimeVersion;
       game.registry.set('runtime-save', saves);
       const panel = document.createElement('div'); panel.className = 'rpg-account-panel';
       const name = document.createElement('span'); name.textContent = character.name + ' · ' + character.class.name;

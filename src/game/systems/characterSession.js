@@ -31,6 +31,15 @@ export function createCharacterState(StateClass, userId) {
     removeItem(key) { try { storage?.removeItem(prefix + key); } catch {} },
   };
   state.restore();
+  seed.inventory = {};
+  for (const slot of Object.keys(seed.equipment || {})) seed.equipment[slot] = null;
+  for (const item of profile.items || []) {
+    if (!ITEMS[item.id]) continue;
+    seed.inventory[item.id] = (seed.inventory[item.id] || 0) + item.quantity;
+    if (item.location === 'equipment' && Object.hasOwn(seed.equipment || {}, item.slot)) seed.equipment[item.slot] = item.id;
+  }
+  state.data.inventory = seed.inventory;
+  state.data.equipment = seed.equipment;
   Object.assign(state.data, { characterId: profile.id, name: profile.name, classCode: profile.classCode, className: profile.class.name, playerFrame: profile.class.frame });
   // MySQL là nguồn chính cho kinh tế; localStorage chỉ giữ giao diện/túi đồ hiện có.
   state.applyServerCharacter(profile);
@@ -40,6 +49,7 @@ export function createCharacterState(StateClass, userId) {
   }
   state.changed();
   if (state.data.pendingPurchase) void state.recoverPurchase();
+  if (state.data.pendingItemUse) void state.recoverItemUse();
   return state;
 }
 // Gắn ngoại hình và tên sau khi Scene đã tạo player + HUD.

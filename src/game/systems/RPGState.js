@@ -1,6 +1,7 @@
 import { MAX_ENHANCEMENT, enhancementLevel, enhancedItem } from '../data/enhancement.js';
 import { wingStats } from '../data/wings.js';
 import { purchaseItem } from '../../api/shopApi.js';
+import { inventoryApi } from '../../api/inventoryApi.js';
 import {
     createCharacterState,
     getCharacterProfile,
@@ -65,6 +66,7 @@ export class RPGState {
             scene.registry.set('rpg-state-v1', state);
         }
 
+        state.scene = scene;
         return state;
     }
 
@@ -105,6 +107,7 @@ export class RPGState {
             skills: null,
             pendingSkillAction: null,
             pendingPurchase: null,
+            pendingItemUse: null,
             pendingBossRewards: [],
             bossStoneInbox: 0,
             pendingKills: [],
@@ -239,6 +242,7 @@ export class RPGState {
                 };
             }
             this.data.pendingPurchase = saved.pendingPurchase || null;
+            this.data.pendingItemUse = saved.pendingItemUse || null;
             this.data.pendingWingAction = saved.pendingWingAction || null;
             this.data.pendingSkillAction = saved.pendingSkillAction || null;
             this.data.pendingKills = Array.isArray(saved.pendingKills) ? saved.pendingKills.filter(id => typeof id === 'string' && /^[a-f0-9-]{36}$/i.test(id)) : [];
@@ -452,6 +456,66 @@ export class RPGState {
         } finally { this.buying = false; }
     }
 
+    async useConsumable(id) {
+        if (this.usingItem) return 'Đang xử lý vật phẩm…';
+        if (this.data.pendingItemUse) {
+            if (this.data.pendingItemUse.itemId !== id) {
+                return await this.recoverItemUse();
+            }
+            return await this.recoverItemUse();
+        }
+        if (!this.data.inventory[id]) return 'Không có vật phẩm này.';
+        this.data.pendingItemUse = { requestId:crypto.randomUUID(), itemId:id };
+        try {
+            if (!this.storage) throw new Error();
+            this.storage.setItem(this.saveKey, JSON.stringify(this.data));
+            const saved = JSON.parse(this.storage.getItem(this.saveKey));
+            if (saved.pendingItemUse?.requestId !== this.data.pendingItemUse.requestId) throw new Error();
+        } catch {
+            this.data.pendingItemUse = null;
+            return 'Hãy cho phép lưu dữ liệu trình duyệt trước khi dùng vật phẩm.';
+        }
+        return await this.recoverItemUse();
+    }
+
+    async recoverItemUse() {
+        const pending = this.data.pendingItemUse;
+        if (!pending || this.usingItem) return 'Đang xử lý vật phẩm…';
+        this.usingItem = true;
+        try {
+            const applyResult = result => {
+                if (result.itemId !== pending.itemId) throw new Error('Máy chủ trả về một giao dịch vật phẩm không khớp.');
+                if (Number.isSafeInteger(result.runtimeVersion)) {
+                    this.serverRuntimeVersion = result.runtimeVersion;
+                    const saves = this.scene?.registry?.get('runtime-save');
+                    if (saves?.current) saves.current.version = result.runtimeVersion;
+                }
+                if (result.quantity > 0) this.data.inventory[pending.itemId] = result.quantity;
+                else delete this.data.inventory[pending.itemId];
+                this.data.hp = Math.min(this.maxHP, Number(result.hp));
+                this.data.mp = Math.min(this.maxMP, Number(result.mana));
+                this.data.foodBuff = result.foodBuff || this.data.foodBuff;
+                this.data.pendingItemUse = null;
+                this.changed();
+            };
+            const runtimeSave = this.scene?.registry?.get('runtime-save');
+            if (runtimeSave?.withExternalUpdate) {
+                await runtimeSave.withExternalUpdate(() => inventoryApi.use(pending), applyResult);
+            } else {
+                applyResult(await inventoryApi.use(pending));
+            }
+            return `Đã sử dụng ${ITEMS[pending.itemId]?.name?.toLowerCase() || pending.itemId}.`;
+        } catch (error) {
+            if ([400, 403, 409].includes(error.status)) {
+                this.data.pendingItemUse = null;
+                this.changed();
+            }
+            return error.message || 'Chưa xác nhận được việc sử dụng vật phẩm.';
+        } finally {
+            this.usingItem = false;
+        }
+    }
+
     commitGathering(next) {
         try {
             if (!this.storage) throw new Error();
@@ -580,7 +644,7 @@ export class RPGState {
         return { ok: true, message: 'Đổi thành công 10 vật phẩm quái lấy 1 đá nâng cấp trang bị.' };
     }
 
-    useItem(id) {
+    async useItem(id) {
         const item = ITEMS[id];
 
         if (!item || !this.data.inventory[id]) {
@@ -588,39 +652,10 @@ export class RPGState {
         }
 
         if (item.type === 'consumable') {
-            if (item.category === 'food') {
-                const recipe = FOOD_RECIPES.find(value => value.id === id);
-                if (!recipe) return 'Món ăn này không hợp lệ.';
-                const now = Date.now();
-                this.data.foodBuff = {foodId:id,expiresAt:now+item.buffDuration,nextTickAt:now+1000};
-                this.data.inventory[id]--;
-                this.changed();
-                return `Đã ăn ${item.name.toLowerCase()}. Hồi HP và MP mỗi giây trong 3 phút.`;
-            }
-            if (item.heal) {
-                if (this.data.hp >= this.maxHP) {
-                    return 'Máu đã đầy, bình chưa bị sử dụng.';
-                }
-
-                this.data.hp = Math.min(
-                    this.maxHP,
-                    this.data.hp + item.heal
-                );
-            } else {
-                if (this.data.mp >= this.maxMP) {
-                    return 'Năng lượng đã đầy, bình chưa bị sử dụng.';
-                }
-
-                this.data.mp = Math.min(
-                    this.maxMP,
-                    this.data.mp + item.mana
-                );
-            }
-
-            this.data.inventory[id]--;
-            this.changed();
-
-            return `Đã dùng ${item.name.toLowerCase()}.`;
+            if (item.category === 'hp' && this.data.hp >= this.maxHP) return 'Máu đã đầy, bình chưa bị sử dụng.';
+            if (item.category === 'mp' && this.data.mp >= this.maxMP) return 'Năng lượng đã đầy, bình chưa bị sử dụng.';
+            if (item.category === 'food' && !FOOD_RECIPES.some(recipe => recipe.id === id)) return 'Món ăn này không hợp lệ.';
+            return await this.useConsumable(id);
         }
 
         if (!EQUIPMENT_SLOTS.some(([slot]) => slot === item.type)) {

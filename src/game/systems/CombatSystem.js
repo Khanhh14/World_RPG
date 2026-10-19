@@ -50,7 +50,7 @@ export class CombatSystem {
   }
   ready(skill){
     if(!skill)return 'Ô này chưa gán kỹ năng.';
-    if(!(this.state?.data.skills?.owned ?? STARTER_SKILLS).includes(skill.id))return 'Bạn chưa học kỹ năng này.';
+    if(!(this.state?.data.skills?.owned ?? STARTER_SKILLS).includes(skill.id))return 'Bạn chưa mua kỹ năng này.';
     if(!skillSlots(this.state).includes(skill.id))return 'Kỹ năng chưa được gán vào ô.';
     if(this.busy)return 'Đóng menu/hội thoại hoặc kết thúc câu cá trước.';
     if(this.remaining(skill.id)>0)return 'Kỹ năng đang hồi.';
@@ -163,15 +163,19 @@ export class CombatSystem {
       .filter(entry=>entry.distance<=range)
       .sort((a,b)=>a.distance-b.distance)[0]?.target??null;
   }
-  potion(kind){
+  async potion(kind){
     if(this.busy||this.remaining(kind))return false;
+    if(this.potionBusy)return false;
     const selection=this.potions.selected(kind),id=selection?.id;
     if(!id){this.notify('Chưa gán bình. Nhấn nút chọn cạnh ô bình để gán.');return false;}
     if(selection.quantity<=0){this.notify(`${selection.name} đã hết. Hãy mua thêm hoặc gán cấp khác.`);return false;}
-    const count=this.state.data.inventory[id],message=this.state.useItem(id);
-    if(this.state.data.inventory[id]<count){this.runtime.cooldowns[kind]=this.clock+900;this.flash(this.origin(),45,kind==='hp'?0xf88996:0x77d9ff,'potion');return true;}
-    this.notify(message);
-    return false;
+    this.potionBusy=true;
+    try {
+      const count=this.state.data.inventory[id],message=await this.state.useItem(id);
+      if((this.state.data.inventory[id]??0)<count){this.runtime.cooldowns[kind]=this.clock+900;this.flash(this.origin(),45,kind==='hp'?0xf88996:0x77d9ff,'potion');return true;}
+      this.notify(message);
+      return false;
+    } finally { this.potionBusy=false; }
   }
   potionCount(kind){return this.potions.selected(kind)?.quantity??0;}
   melee(damage,range,all){
