@@ -2,7 +2,7 @@ import { MAX_ENHANCEMENT, enhancedItem } from '../data/enhancement.js';
 import { renderSkillsPanel, renderSkillShop } from './SkillsPanel.js';
 import { renderWingsPanel, renderWingShop, wingEquipmentCard } from './WingsPanel.js';
 import { drawWingPixels } from '../world/WingTextures.js';
-import { canShopItem, EQUIPMENT_SLOTS, SHOP_ITEMS, MONSTER_MATERIALS, gearIcon } from '../data/items.js';
+import { canShopItem, EQUIPMENT_SLOTS, SHOP_ITEMS, MONSTER_MATERIALS, FOOD_RECIPES, gearIcon } from '../data/items.js';
 import { ITEMS } from '../systems/RPGState.js';
 import { renderQuestJournal } from './QuestJournal.js';
 
@@ -87,6 +87,9 @@ export class RPGHUD {
             if (action === 'exchange-materials' && this.exchangeNPC && this.scene.dialogue?.nearest() === this.exchangeNPC) {
                 this.toast(this.state.exchangeMonsterMaterials().message);
             }
+            if (action === 'food-exchange' && this.foodNPC && this.scene.dialogue?.nearest() === this.foodNPC) {
+                this.toast(this.state.exchangeFood(id).message);
+            }
             if (action === 'boss-retry') await this.scene.bossRewards?.flush();
             if (action === 'boss-stones') this.scene.bossRewards?.collect();
             if (action === 'enhance') {
@@ -150,7 +153,11 @@ export class RPGHUD {
             </div>`;
         })() : `<p class="rpg-quest-tracker-message">${escape(d.questLoadStatus === 'error' ? d.questLoadError : 'Đang tải nhiệm vụ…')}</p>${d.questLoadStatus === 'error' ? '<button type="button" data-action="quest-retry">Tải lại</button>' : ''}`;
         const tracker = `<section class="rpg-quest-tracker" aria-label="Nhiệm vụ và tiến độ">${trackerContent}</section>`;
-        this.root.querySelector('.rpg-overview').innerHTML = `<div class="rpg-status"><div class="rpg-portrait">${icon(96,48)}<span class="rpg-level">LV ${d.level}</span></div><div class="rpg-meters"><div class="rpg-name">${escape(d.name || 'Lữ khách')}</div>${this.bar('hp','HP',d.hp,s.maxHP)}${this.bar('mp','MP',d.mp,s.maxMP)}${this.bar('xp','EXP',d.exp,s.expNeeded)}</div></div>${tracker}<div class="rpg-location"><span class="rpg-location-name">${escape(this.mapTitle)}</span></div>`;
+        const buff = d.foodBuff && d.foodBuff.expiresAt > Date.now()
+            ? FOOD_RECIPES.find(recipe => recipe.id === d.foodBuff.foodId)
+            : null;
+        const buffStatus = buff ? `<div class="rpg-food-buff">${escape(buff.name)} · hiệu lực ${Math.ceil((d.foodBuff.expiresAt - Date.now()) / 60000)} phút</div>` : '';
+        this.root.querySelector('.rpg-overview').innerHTML = `<div class="rpg-status"><div class="rpg-portrait">${icon(96,48)}<span class="rpg-level">LV ${d.level}</span></div><div class="rpg-meters"><div class="rpg-name">${escape(d.name || 'Lữ khách')}</div>${this.bar('hp','HP',d.hp,s.maxHP)}${this.bar('mp','MP',d.mp,s.maxMP)}${buffStatus}${this.bar('xp','EXP',d.exp,s.expNeeded)}</div></div>${tracker}<div class="rpg-location"><span class="rpg-location-name">${escape(this.mapTitle)}</span></div>`;
         this.root.querySelector('.rpg-nav').innerHTML = [['inventory','Túi đồ','B'],['quests','Nhiệm vụ','J'],['skills','Kỹ năng','C']].map(([id,name,key]) => `<button type="button" data-action="tab" data-id="${id}" aria-label="${name} (${key})"><span>${name}</span><kbd>${key}</kbd>${id==='quests' && d.quests?.some(quest => quest.status === 'completed')?'<i class="rpg-dot"></i>':''}</button>`).join('');
         if (this.tab) this.renderModal();
     }
@@ -168,8 +175,13 @@ export class RPGHUD {
     }
     openSkillShop(npc) {
         if (npc?.role !== 'skill-merchant' || this.scene.dialogue?.nearest() !== npc) return;
-        this.skillNPC = npc; this.bookSchool = 'god'; this.toggle('skill-shop');
+        this.skillNPC = npc; this.bookSchool = 'demon'; this.toggle('skill-shop');
         void this.scene.skillsSystem?.load();
+    }
+    openFoodExchange(npc) {
+        if (npc?.role !== 'food-exchange' || this.scene.dialogue?.nearest() !== npc) return;
+        this.foodNPC = npc;
+        this.toggle('food-exchange');
     }
     openWingShop(npc) {
         if (npc?.role !== 'wing-merchant' || this.scene.dialogue?.nearest() !== npc) return;
@@ -186,6 +198,7 @@ export class RPGHUD {
         if (tab === 'wing-shop' && (!this.wingNPC || this.scene.dialogue?.nearest() !== this.wingNPC)) return;
         if (tab === 'shop' && (!this.shopNPC || this.scene.dialogue?.nearest() !== this.shopNPC)) return;
         if (tab === 'exchange' && (!this.exchangeNPC || this.scene.dialogue?.nearest() !== this.exchangeNPC)) return;
+        if (tab === 'food-exchange' && (!this.foodNPC || this.scene.dialogue?.nearest() !== this.foodNPC)) return;
         if (this.scene.dialogue?.isOpen) { this.toast('Kết thúc hội thoại để mở menu.'); return; }
         if (this.tab === tab) { this.close(); return; }
         if (!this.tab) {
@@ -201,7 +214,7 @@ export class RPGHUD {
     }
     close() {
         if (!this.tab) return;
-        this.previewId = null; this.tab = null; this.shopNPC = null; this.exchangeNPC = null; this.wingNPC = null; this.skillNPC = null; this.overlay.hidden = true;
+        this.previewId = null; this.tab = null; this.shopNPC = null; this.exchangeNPC = null; this.foodNPC = null; this.wingNPC = null; this.skillNPC = null; this.overlay.hidden = true;
         this.scene.input.keyboard.resetKeys();
         this.scene.input.keyboard.enabled = this.keyboardWasEnabled;
         if (!this.scene.dialogue?.isOpen) this.scene.dialogueUI?.actionBar?.setVisible(true);
@@ -219,6 +232,7 @@ export class RPGHUD {
         if (this.wingNPC && this.tab !== 'quests') names['wing-shop'] = 'Đá nâng cấp cánh';
         if (this.shopNPC && this.tab !== 'quests') names.shop = 'Cửa hàng';
         if (this.exchangeNPC && this.tab === 'exchange') names.exchange = 'Đổi vật phẩm quái';
+        if (this.foodNPC && this.tab === 'food-exchange') names['food-exchange'] = 'Đổi món ăn';
         const tabs = this.tab === 'quests' ? '' : `<div class="rpg-tabs">${Object.entries(names).map(([id, name]) => `<button type="button" data-action="tab" data-id="${id}" class="${id === this.tab ? 'active' : ''}">${name}</button>`).join('')}</div>`;
         this.modal.classList.toggle('rpg-skills-modal', this.tab === 'skills');
         this.modal.classList.toggle('rpg-skill-shop-modal', this.tab === 'skill-shop');
@@ -229,6 +243,7 @@ export class RPGHUD {
         this.modal.classList.toggle('rpg-potential-modal', this.tab === 'potential');
         this.modal.classList.toggle('rpg-quests-modal', this.tab === 'quests');
         this.modal.classList.toggle('rpg-exchange-modal', this.tab === 'exchange');
+        this.modal.classList.toggle('rpg-food-exchange-modal', this.tab === 'food-exchange');
         this.modal.innerHTML = `<header class="rpg-modal-header"><h2 id="rpg-modal-title">${names[this.tab]}</h2><button type="button" data-action="close" aria-label="Đóng menu">✕ <small>Esc</small></button></header>${tabs}${this.content()}`;
         this.drawCharacterPreview();
         if (focusWasInside && focusAction) {
@@ -244,6 +259,7 @@ export class RPGHUD {
         if (this.tab === 'wing-shop') return renderWingShop(this);
         if (this.tab === 'shop') return this.shopContent();
         if (this.tab === 'exchange') return this.exchangeContent();
+        if (this.tab === 'food-exchange') return this.foodExchangeContent();
         if (this.tab === 'inventory') {
             return this.inventoryContent();
         }
@@ -424,6 +440,18 @@ export class RPGHUD {
             <div class="rpg-shop-buy"><span>${escape(exchangeError || 'Đổi 10 vật phẩm lấy 1 đá nâng cấp.')}</span>
                 <button type="button" data-action="exchange-materials" ${canExchange ? 'class="rpg-primary"' : 'disabled'}>Đổi 10 vật phẩm</button>
             </div>`;
+    }
+    foodExchangeContent() {
+        const inventory = this.state.data.inventory;
+        return `<div class="rpg-shop-gold"><strong>${escape(this.foodNPC?.name ?? 'Đầu bếp')}</strong><span>🍄 Nấm: ${inventory.yuna_mushroom ?? 0}</span></div>
+            <p class="rpg-subtle">Mỗi món cần 5 Nấm YuNa và 5 cá cùng loại. Ăn món sẽ hồi HP/MP mỗi giây trong 3 phút; hiệu ứng mới thay thế hiệu ứng đang có.</p>
+            <div class="rpg-shop-grid rpg-food-grid">${FOOD_RECIPES.map(recipe => {
+                const error = this.state.canExchangeFood(recipe.id);
+                return `<article class="rpg-shop-item rpg-food-item"><header><span class="rpg-item-emoji" role="img" aria-label="${escape(recipe.name)}" style="font-size:38px">${recipe.emoji}</span><div><h3>${escape(recipe.name)}</h3><span class="rpg-tier">${escape(recipe.fishName)}: ${inventory[recipe.fishId] ?? 0} / 5</span></div></header>
+                    <p class="rpg-subtle">Hồi ${recipe.heal} HP và ${recipe.mana} MP mỗi giây · 3 phút</p>
+                    <div class="rpg-shop-buy"><span>5 🍄 + 5 ${escape(recipe.fishName)}</span><button type="button" data-action="food-exchange" data-id="${recipe.id}" ${error ? `disabled title="${escape(error)}"` : 'class="rpg-primary"'}>${error || 'Đổi 1 món'}</button></div>
+                </article>`;
+            }).join('')}</div>`;
     }
     syncDialogue(open) { this.root.classList.toggle('talking', open); }
     toast(message) {

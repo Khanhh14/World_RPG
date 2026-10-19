@@ -18,7 +18,6 @@ export const villageNPCs = [
     },
     {
         id: 'mage',
-        role: 'skill-merchant',
         name: 'Pháp sư',
         frame: 84,
 
@@ -28,8 +27,8 @@ export const villageNPCs = [
 
         lines: [
             'Ta đang nghiên cứu những dấu tích trong hầm ngục.',
-            'Muốn đi xa, cháu cần chuẩn bị trang bị và thuốc hồi phục.',
-            'Khi cánh cổng hầm ngục mở, ta sẽ chỉ đường cho cháu.'
+            'Học giả Sora tại Thành Yuna lưu giữ sách kỹ năng của các hệ Ma, Thần và Nhân.',
+            'Muốn đi xa, cháu cần chuẩn bị trang bị và thuốc hồi phục.'
         ]
     },
     {

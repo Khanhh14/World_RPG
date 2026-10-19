@@ -1,7 +1,7 @@
 // Graphics giới hạn số hạt; vùng hồi phục ở lớp mặt đất, tia sáng ở lớp phía trên.
 export class CombatVFX {
  constructor(scene){this.scene=scene;this.g=scene.add.graphics().setDepth(9501);this.ground=scene.add.graphics().setDepth(98);this.bursts=[];this.reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false;}
- emit(kind,p,radius,color,angle=0){if(!p)return;this.bursts.push({...p,kind,radius,color,angle,start:this.scene.time.now,duration:kind==='heal'?1050:kind==='whirl'?720:kind==='slash'?300:550});if(this.bursts.length>36)this.bursts.shift();}
+ emit(kind,p,radius,color,angle=0){if(!p)return;this.bursts.push({...p,kind,radius,color,angle,start:this.scene.time.now,duration:kind==='heal'?1050:kind==='combo'?680:kind==='beam'?520:kind==='burn'?850:kind==='drain'?760:kind==='whirl'?720:kind==='slash'?300:550});if(this.bursts.length>36)this.bursts.shift();}
  arc(x,y,r,start,end,color,alpha,width){const g=this.g;g.lineStyle(width,color,alpha);g.beginPath();g.arc(x,y,r,start,end);g.strokePath();}
  star(x,y,size,color,alpha){const g=this.g;g.fillStyle(color,alpha);g.fillTriangle(x,y-size,x+size*.3,y,x-size*.3,y);g.fillTriangle(x,y+size,x+size*.3,y,x-size*.3,y);g.fillTriangle(x-size,y,x,y-size*.3,x,y+size*.3);g.fillTriangle(x+size,y,x,y-size*.3,x,y+size*.3);}
  field(now,f){
@@ -51,7 +51,35 @@ export class CombatVFX {
   }
   for(let i=this.bursts.length-1;i>=0;i--){
    const e=this.bursts[i],t=(now-e.start)/e.duration;if(t>=1){this.bursts.splice(i,1);continue;}const fade=1-t,r=e.radius,angle=e.angle;
-   if(e.kind==='cast'||e.kind==='nova'||e.kind==='sanctuary'){
+   if(e.kind==='beam'){
+    const length=r*(.35+t*.65),halfWidth=4+Math.sin(t*Math.PI)*13;
+    const x2=e.x+Math.cos(angle)*length,y2=e.y+Math.sin(angle)*length;
+    g.lineStyle(halfWidth*2,e.color,fade*.25).lineBetween(e.x,e.y,x2,y2);
+    g.lineStyle(halfWidth,0xf9ffff,fade*.85).lineBetween(e.x,e.y,x2,y2);
+    g.lineStyle(2,0xfff2b0,fade).lineBetween(e.x,e.y,x2,y2);
+    for(let j=1;j<=5;j++){const k=j/6;this.star(e.x+(x2-e.x)*k,e.y+(y2-e.y)*k,4+fade*3,0xffffff,fade);}
+   }else if(e.kind==='counter'){
+    const radius=32+t*r;
+    g.lineStyle(7*(1-t)+2,e.color,fade*.8).strokeCircle(e.x,e.y,radius);
+    g.lineStyle(2,0xeaffff,fade*.8).strokeCircle(e.x,e.y,radius+8);
+    for(let j=0;j<4;j++){const a=angle+t*2+j*Math.PI/2;this.star(e.x+Math.cos(a)*radius, e.y+Math.sin(a)*radius,7*fade,e.color,fade);}
+   }else if(e.kind==='burn'){
+    for(let j=0;j<7;j++){const a=j*Math.PI*2/7+t*2,rad=r*(.2+t*.65),x=e.x+Math.cos(a)*rad,y=e.y+Math.sin(a)*rad;
+     g.fillStyle(e.color,fade*.2).fillCircle(x,y,10+fade*5);
+     g.fillStyle(0xffb64e,fade*.85).fillTriangle(x,y-18*fade,x-6*fade,y+4*fade,x+6*fade,y+4*fade);
+     g.fillStyle(0xfff1be,fade*.8).fillTriangle(x,y-10*fade,x-2*fade,y+2*fade,x+3*fade,y+2*fade);
+    }
+   }else if(e.kind==='drain'){
+    for(let j=0;j<5;j++){const a=angle+t*5+j*Math.PI*2/5,rad=r*(1-t*.75);
+     const x=e.x+Math.cos(a)*rad,y=e.y+Math.sin(a)*rad;
+     g.lineStyle(3,e.color,fade*.7).lineBetween(x,y,e.x,e.y);
+     this.star(x,y,5*fade,e.color,fade);
+    }
+   }else if(e.kind==='combo'){
+    const step=Math.min(2,Math.floor(t*3)),sweep=angle-1.15+step*.9+(t%(.34))*.7;
+    this.arc(e.x,e.y,r*(.55+step*.12),sweep-.55,sweep+.75,e.color,fade*.85,8);
+    this.arc(e.x,e.y,r*.68,sweep-.35,sweep+.45,0xf2ffff,fade*.75,3);
+   }else if(e.kind==='cast'||e.kind==='nova'||e.kind==='sanctuary'){
     const size=r*(.2+t*.9);
     g.fillStyle(e.color,fade*.12).fillCircle(e.x,e.y,size);
     for(let j=0;j<3;j++)this.arc(e.x,e.y,size*(1-j*.17),angle+j*2.1+t*3,angle+j*2.1+t*3+1.5,e.color,fade*.8,4-j);

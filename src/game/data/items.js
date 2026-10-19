@@ -102,3 +102,15 @@ export const canShopItem = (id,classCode) => ITEMS[id]?.type!=='weapon' || ITEMS
 
 ITEMS.mushroom_basket = { name:'Rổ hái nấm', type:'material', category:'gathering', maxStack:1, price:200, emoji:'🧺', description:'Có rổ trong túi mới hái được nấm. Không tiêu hao khi hái.' };
 ITEMS.yuna_mushroom = { name:'Nấm YuNa', type:'material', category:'gathering', maxStack:99, emoji:'🍄', description:'Đổi 20 nấm lấy 1 đá cường hóa tại Người hái nấm Nami ở Ngoại ô YuNa.' };
+export const FOOD_RECIPES = [
+    { id:'fish_perch_food', fishId:'fish_perch', fishName:'Cá rô', name:'Canh cá rô', emoji:'🍲', heal:5, mana:5, color:0x83e7a1 },
+    { id:'fish_carp_food', fishId:'fish_carp', fishName:'Cá chép', name:'Cá chép hầm', emoji:'🍛', heal:7, mana:7, color:0x82d9ee },
+    { id:'fish_catfish_food', fishId:'fish_catfish', fishName:'Cá trê', name:'Cá trê tiềm', emoji:'🥘', heal:9, mana:9, color:0xd5a4ff }
+];
+for (const recipe of FOOD_RECIPES) {
+    ITEMS[recipe.id] = {
+        name:recipe.name, type:'consumable', category:'food', maxStack:99, emoji:recipe.emoji,
+        healPerSecond:recipe.heal, manaPerSecond:recipe.mana, buffDuration:180000,
+        description:`Hồi ${recipe.heal} HP và ${recipe.mana} MP mỗi giây trong 3 phút.`
+    };
+}

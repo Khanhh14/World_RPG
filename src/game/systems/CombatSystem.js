@@ -69,10 +69,52 @@ export class CombatSystem {
     if(effect==='power'){this.melee(damage*(skill.multiplier ?? 1.6),skill.range ?? 112,false);this.flash(p,skill.range ?? 112,color ?? 0xffd37a,'power');}
     if(effect==='bolt')this.volley(skill,damage);
     if(effect==='whirl'){this.melee(damage*(skill.multiplier ?? 1),skill.range ?? 125,true);this.flash(p,skill.range ?? 125,color ?? 0x7ce1d0,'whirl');}
+    if(effect==='beam'){
+      const end={x:p.x+this.facing.x*skill.range,y:p.y+this.facing.y*skill.range};
+      for(const target of this.targets.values()){
+        if(target.hp<=0||!target.entity.sprite.active)continue;
+        const point=this.targetPoint(target);
+        if(segmentDistance(point,p,end)<=skill.width&&!this.clearLine(p,point))continue;
+        if(segmentDistance(point,p,end)<=skill.width)this.hit(target,damage*skill.multiplier);
+      }
+      this.flash(p,skill.range,color,'beam');
+    }
+    if(effect==='combo'){
+      const target=this.nearestTarget(skill.range);
+      if(target){
+        for(let i=0;i<skill.hits;i++){
+          this.scene.time.delayedCall(i*125,()=>{
+            if(target.hp<=0||!target.entity.sprite.active)return;
+            this.hit(target,damage*skill.multiplier);
+            this.flash(this.targetPoint(target),48,color,'combo');
+          });
+        }
+      }
+      this.flash(p,skill.range,color,'combo');
+    }
+    if(effect==='ricochet')this.ricochet(skill,damage);
+    if(effect==='burn'){
+      const target=this.nearestTarget(skill.range);
+      if(target){
+        this.hit(target,damage*skill.multiplier);
+        target.burn={damage:damage*skill.burnMultiplier,nextTick:this.now+1000,expiresAt:this.now+skill.burnDuration,color};
+        this.flash(this.targetPoint(target),50,color,'burn');
+      }else this.flash(p,48,color,'burn');
+    }
+    if(effect==='nova'){
+      this.melee(damage*skill.multiplier,skill.range,true);
+      this.flash(p,skill.range,color,'nova');
+    }
     if(effect==='guard'){
       this.runtime.guardUntil=this.clock+(skill.duration ?? 5000);
       this.runtime.guardReduction=skill.reduction ?? 0.5;
       this.flash(p,60,color ?? 0x9cbaff,'ring');
+    }
+    if(effect==='counter'){
+      this.runtime.counterUntil=this.clock+skill.duration;
+      this.runtime.counterReduction=skill.reduction;
+      this.runtime.counterMultiplier=skill.counterMultiplier;
+      this.flash(p,skill.range,color,'counter');
     }
     if(effect==='healingField' && p){
       this.fields=this.fields.filter(f=>f.skillId!==id);
@@ -85,10 +127,11 @@ export class CombatSystem {
       this.float(p,`+${amount} HP`,'#a5f6b2');this.flash(p,48,color ?? 0x89efa9,'heal');
     }
     if(effect==='drain'){
-      const dealt=this.melee(damage*skill.multiplier,skill.range,true) || 0;
+      const target=this.nearestTarget(skill.range);
+      const dealt=target?this.hit(target,damage*skill.multiplier):0;
       const amount=Math.min(Math.floor(dealt*skill.lifesteal),this.state.maxHP-this.state.data.hp);
       if(amount>0){this.state.data.hp+=amount;this.state.changed();this.float(p,`+${amount} HP`,'#f6a5ce');}
-      this.flash(p,skill.range,color,'whirl');
+      this.flash(target?this.targetPoint(target):p,skill.range,color,'drain');
     }
     return true;
   }
@@ -142,9 +185,17 @@ export class CombatSystem {
     for(const t of (all?hits:hits.slice(0,1)))dealt+=this.hit(t,damage) || 0;
     return dealt;
   }
-  nearbyTargets(point,range){
-    return [...this.targets.values()].filter(t=>t.hp>0&&t.entity.sprite.active&&distance(point,this.targetPoint(t))<=range&&this.clearLine(point,this.targetPoint(t)))
+  nearbyTargets(point,range,excluded=new Set()){
+    return [...this.targets.values()].filter(t=>!excluded.has(t)&&t.hp>0&&t.entity.sprite.active&&distance(point,this.targetPoint(t))<=range&&this.clearLine(point,this.targetPoint(t)))
       .sort((a,b)=>distance(point,this.targetPoint(a))-distance(point,this.targetPoint(b)));
+  }
+  ricochet(skill,damage){
+    const p=this.origin();if(!p)return;
+    const target=this.nearbyTargets(p,skill.range)[0];
+    this.flash(p,52,skill.color,'cast');
+    if(!target)return;
+    const shot=this.projectile(damage*skill.multiplier,skill.range,skill.color,target);
+    Object.assign(shot,{homing:true,expires:this.now+3600,ricochetRemaining:skill.ricochets,ricochetRange:skill.range,visitedTargets:new Set(),speed:520});
   }
   volley(skill,damage){
     const p=this.origin();if(!p)return;
@@ -207,10 +258,17 @@ export class CombatSystem {
     }
     return previousHP-t.hp;
   }
-  damagePlayer(amount){
+  damagePlayer(amount,source=null){
     if(this.state.data.hp<=0)return;
-    const reduced=this.runtime.guardUntil>this.clock?Math.ceil(amount*(1-(this.runtime.guardReduction ?? .5))):amount;
+    const countering=this.runtime.counterUntil>this.clock;
+    const reduction=countering?this.runtime.counterReduction:this.runtime.guardReduction;
+    const protectedUntil=countering?this.runtime.counterUntil:this.runtime.guardUntil;
+    const reduced=protectedUntil>this.clock?Math.ceil(amount*(1-(reduction ?? .5))):amount;
     this.state.takeDamage(reduced);this.float(this.origin(),`−${reduced}`,'#ff9b8e');
+    if(countering&&source?.hp>0){
+      this.hit(source,this.state.attack*(this.runtime.counterMultiplier??1));
+      this.flash(this.targetPoint(source),46,0x9deaff,'counter');
+    }
     if(this.state.data.hp<=0){this.scene.player.stop();this.deathAt=this.now+1600;this.notify('Bạn bị hạ. Đang hồi sinh ở Làng Khởi Đầu…');}
   }
   flash(p,radius,color,kind='ring'){this.vfx.emit(kind,p,radius,color,Math.atan2(this.facing.y,this.facing.x));}
@@ -275,6 +333,10 @@ export class CombatSystem {
   }
   update(time,delta=16){
     if(!this.alive||!this.state||!this.scene.player)return;
+    const foodTick=this.state.updateFoodBuff();
+    if(foodTick?.recipe&&(foodTick.heal||foodTick.mana)){
+      this.flash(this.origin(),42,foodTick.recipe.color,'potion');
+    }
     if(this.state.data.hp<=0||this.uiBlocked)this.scene.player.stop();
     const v=this.scene.player.sprite.body?.velocity;if(v&&Math.hypot(v.x,v.y)>1){const l=Math.hypot(v.x,v.y);this.facing={x:v.x/l,y:v.y/l};}
     for(const entity of this.scene.monsters||[])if(entity.sprite?.active&&!this.targets.has(entity)){
@@ -302,7 +364,15 @@ export class CombatSystem {
       this.updateMonsterAI(t);
       const p=this.targetPoint(t),me=this.origin();
       if(!t.entity.data.boss&&t.aggro&&!this.busy&&this.now>=t.nextHit&&Math.hypot(p.x-me.x,p.y-me.y)<95&&this.clearLine(p,me)){
-        t.nextHit=this.now+1300;this.damagePlayer(Math.max(2,t.damage-Math.floor(this.state.defense/2)));
+        t.nextHit=this.now+1300;this.damagePlayer(Math.max(2,t.damage-Math.floor(this.state.defense/2)),t);
+      }
+      if(t.burn){
+        if(this.now>t.burn.expiresAt+100)t.burn=null;
+        else if(this.now>=t.burn.nextTick&&!this.busy){
+          t.burn.nextTick+=1000;
+          this.hit(t,t.burn.damage);
+          this.flash(this.targetPoint(t),28,t.burn.color,'burn');
+        }
       }
       if(!t.entity.data.boss&&t.hp<t.maxHP){const y=p.y-t.entity.sprite.displayHeight/2-8;g.fillStyle(0x172b24,.95).fillRect(p.x-23,y,46,6);g.fillStyle(0xe9806e,1).fillRect(p.x-22,y+1,44*t.hp/t.maxHP,4);}
     }
@@ -329,13 +399,26 @@ export class CombatSystem {
       const target=shot.target
         ? segmentDistance(this.targetPoint(shot.target),a,b)<24?shot.target:null
         : [...this.targets.values()].find(t=>t.hp>0&&t.entity.sprite.active&&segmentDistance(this.targetPoint(t),a,b)<24);
-      if(target){this.hit(target,shot.damage);this.flash(this.targetPoint(target),42,shot.color,'nova');this.shots.splice(i,1);continue;}
+      if(target){
+        const point=this.targetPoint(target);
+        this.hit(target,shot.damage);this.flash(point,42,shot.color,'nova');
+        if(shot.ricochetRemaining>0){
+          shot.visitedTargets.add(target);
+          const next=this.nearbyTargets(point,shot.ricochetRange,shot.visitedTargets)[0];
+          if(next){
+            shot.ricochetRemaining--;shot.target=next;shot.x=point.x;shot.y=point.y;
+            shot.left=shot.ricochetRange;shot.expires=this.now+1800;
+            continue;
+          }
+        }
+        this.shots.splice(i,1);continue;
+      }
       shot.trail.push(a);if(shot.trail.length>10)shot.trail.shift();
       shot.x=b.x;shot.y=b.y;shot.left-=step;
       if(shot.left<=0){this.shots.splice(i,1);continue;}
       
     }
-    this.vfx.update(this.now,this.origin(),this.shots.filter(s=>!s.launchAt||s.launchAt<=this.now),this.runtime.guardUntil>this.clock,this.fields);
+    this.vfx.update(this.now,this.origin(),this.shots.filter(s=>!s.launchAt||s.launchAt<=this.now),this.runtime.guardUntil>this.clock||this.runtime.counterUntil>this.clock,this.fields);
     for(let i=this.effects.length-1;i>=0;i--){
       const e=this.effects[i],k=clamp((this.now-e.at)/(e.end-e.at),0,1);
       if(k>=1){e.text?.destroy();this.effects.splice(i,1);continue;}

@@ -33,6 +33,7 @@
 .rpg-ui .rpg-bar{height:17px;margin-top:5px;border-radius:4px;overflow:hidden;background:#091c19;border:1px solid #415448;position:relative}
 .rpg-ui .rpg-fill{height:100%;transition:width .2s}.rpg-ui .rpg-bar.hp .rpg-fill{background:linear-gradient(#e67468,#b74342)}.rpg-ui .rpg-bar.mp .rpg-fill{background:linear-gradient(#71b8d9,#40789c)}
 .rpg-ui .rpg-bar.xp{height:12px}.rpg-ui .rpg-bar.xp .rpg-fill{background:linear-gradient(#ecd08c,#bf9650)}
+.rpg-ui .rpg-food-buff{margin-top:5px;color:#a8f0bd;font-size:10px;text-shadow:0 1px 2px #07130f}
 .rpg-ui .rpg-bar-label{position:absolute;inset:0;text-align:center;font-size:10px;font-weight:bold;line-height:15px;color:#fff;text-shadow:0 1px 2px #000}
 .rpg-ui .rpg-bar.xp .rpg-bar-label{font-size:9px;line-height:10px}
 .rpg-ui .rpg-location{position:absolute;right:18px;top:18px;text-align:right;max-width:44%;font-size:13px}
@@ -56,6 +57,11 @@
 .rpg-ui .rpg-tabs{display:flex;gap:6px;border-bottom:1px solid #4d604b;padding-bottom:10px;margin-bottom:12px;flex-wrap:wrap}
 .rpg-ui .rpg-tabs button{font-size:12px;padding:7px 10px}
 .rpg-ui .rpg-tabs button.active,.rpg-ui .rpg-shop-filters button.active{background:#b6985e;color:#182c21;border-color:#e4c585;font-weight:bold}
+.rpg-ui .rpg-food-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.rpg-ui .rpg-food-item header{align-items:center}
+.rpg-ui .rpg-food-item .rpg-shop-buy{align-items:stretch;flex-direction:column}
+.rpg-ui .rpg-food-item .rpg-shop-buy button{min-height:38px}
+@media(max-width:700px){.rpg-ui .rpg-food-grid{grid-template-columns:1fr}}
 /* Trang bị + balo */
 .rpg-ui .rpg-bag-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
 .rpg-ui .rpg-equipment-panel,.rpg-ui .rpg-bag-panel{min-width:0;padding:12px;background:linear-gradient(160deg,#19362b,#0d211b);border:1px solid #486551;border-radius:10px;box-shadow:inset 0 1px #ffffff08}

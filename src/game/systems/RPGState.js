@@ -11,7 +11,8 @@ import {
     ITEMS,
     EQUIPMENT_SLOTS,
     BAG_CAPACITY,
-    MONSTER_MATERIALS
+    MONSTER_MATERIALS,
+    FOOD_RECIPES
 } from '../data/items.js';
 
 export { ITEMS } from '../data/items.js';
@@ -108,6 +109,7 @@ export class RPGState {
             bossStoneInbox: 0,
             pendingKills: [],
             mushroomHarvest: {},
+            foodBuff: null,
 
             inventory: {
                 health_potion: 5,
@@ -227,6 +229,15 @@ export class RPGState {
             this.data.pendingBossRewards = Array.isArray(saved.pendingBossRewards) ? [...new Set(saved.pendingBossRewards.filter(id=>typeof id==='string'&&/^[a-f0-9-]{36}$/i.test(id)))] : [];
             this.data.bossStoneInbox = integer(saved.bossStoneInbox,0,999999,0);
             this.data.mushroomHarvest = Object.fromEntries(Object.entries(saved.mushroomHarvest || {}).filter(([k,v]) => /^patch-\d+$/.test(k) && Number.isFinite(v)));
+            const foodBuff = saved.foodBuff;
+            const foodRecipe = FOOD_RECIPES.find(recipe => recipe.id === foodBuff?.foodId);
+            if (foodRecipe && Number.isSafeInteger(foodBuff.expiresAt) && foodBuff.expiresAt > Date.now()) {
+                this.data.foodBuff = {
+                    foodId:foodRecipe.id,
+                    expiresAt:foodBuff.expiresAt,
+                    nextTickAt:Number.isSafeInteger(foodBuff.nextTickAt) ? foodBuff.nextTickAt : Date.now()
+                };
+            }
             this.data.pendingPurchase = saved.pendingPurchase || null;
             this.data.pendingWingAction = saved.pendingWingAction || null;
             this.data.pendingSkillAction = saved.pendingSkillAction || null;
@@ -470,6 +481,54 @@ export class RPGState {
         const result = this.commitGathering({...this.data,inventory:{...inventory,yuna_mushroom:inventory.yuna_mushroom-20,upgrade_stone:(inventory.upgrade_stone||0)+1}});
         return {...result,message:result.ok?'Đã đổi 20 nấm lấy 1 đá cường hóa.':result.message};
     }
+    canExchangeFood(recipeId) {
+        const recipe = FOOD_RECIPES.find(value => value.id === recipeId);
+        if (!recipe) return 'Món ăn không hợp lệ.';
+        const inventory = this.data.inventory;
+        if ((inventory.yuna_mushroom || 0) < 5) return 'Cần 5 Nấm YuNa cho mỗi món.';
+        if ((inventory[recipe.fishId] || 0) < 5) return `Cần 5 ${recipe.fishName} cho món này.`;
+        const error = this.canAdd(recipe.id);
+        const freesSlot = inventory.yuna_mushroom === 5 || inventory[recipe.fishId] === 5;
+        if (error && !(error === 'Ba lô đã đầy.' && freesSlot && !inventory[recipe.id])) return error;
+        return '';
+    }
+    exchangeFood(recipeId) {
+        const recipe = FOOD_RECIPES.find(value => value.id === recipeId);
+        const error = this.canExchangeFood(recipeId);
+        if (error) return {ok:false,message:error};
+        const inventory = {
+            ...this.data.inventory,
+            yuna_mushroom:this.data.inventory.yuna_mushroom - 5,
+            [recipe.fishId]:this.data.inventory[recipe.fishId] - 5,
+            [recipe.id]:(this.data.inventory[recipe.id] || 0) + 1
+        };
+        const result = this.commitGathering({...this.data,inventory});
+        return {...result,message:result.ok ? `Đã đổi 5 Nấm YuNa và 5 ${recipe.fishName} lấy 1 ${recipe.name}.` : result.message};
+    }
+    updateFoodBuff(now = Date.now()) {
+        const buff = this.data.foodBuff;
+        if (!buff) return null;
+        if (now > buff.expiresAt + 100 || (now >= buff.expiresAt && buff.nextTickAt > buff.expiresAt)) {
+            this.data.foodBuff = null;
+            this.changed();
+            return {expired:true,heal:0,mana:0};
+        }
+        if (now < buff.nextTickAt) return null;
+        const recipe = FOOD_RECIPES.find(value => value.id === buff.foodId);
+        if (!recipe) {
+            this.data.foodBuff = null;
+            this.changed();
+            return {expired:true,heal:0,mana:0};
+        }
+        buff.nextTickAt += 1000;
+        const heal = this.data.hp > 0 ? Math.min(recipe.heal,this.maxHP - this.data.hp) : 0;
+        const mana = Math.min(recipe.mana,this.maxMP - this.data.mp);
+        this.data.hp += heal;
+        this.data.mp += mana;
+        if (buff.nextTickAt > buff.expiresAt) this.data.foodBuff = null;
+        this.changed();
+        return {heal,mana,recipe};
+    }
     addItem(id, quantity = 1) {
         if (this.canAdd(id, quantity)) return false;
 
@@ -529,6 +588,15 @@ export class RPGState {
         }
 
         if (item.type === 'consumable') {
+            if (item.category === 'food') {
+                const recipe = FOOD_RECIPES.find(value => value.id === id);
+                if (!recipe) return 'Món ăn này không hợp lệ.';
+                const now = Date.now();
+                this.data.foodBuff = {foodId:id,expiresAt:now+item.buffDuration,nextTickAt:now+1000};
+                this.data.inventory[id]--;
+                this.changed();
+                return `Đã ăn ${item.name.toLowerCase()}. Hồi HP và MP mỗi giây trong 3 phút.`;
+            }
             if (item.heal) {
                 if (this.data.hp >= this.maxHP) {
                     return 'Máu đã đầy, bình chưa bị sử dụng.';

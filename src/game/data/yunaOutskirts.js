@@ -17,8 +17,8 @@ export const yunaOutskirts = {
   {id:'mushroom-nami',name:'Người hái nấm Nami',role:'mushroom-merchant',frame:85,col:31,row:11,lines:['Mang rổ để hái nấm. Đổi 20 nấm lấy 1 đá cường hóa.']},
   { id:'yuna-wing-merchant', name:'Vũ sư Airi', role:'wing-merchant', frame:86, col:14.5,row:13,
     lines:['Chào mừng đến YuNa. Đá nâng cấp giúp đôi cánh của bạn mạnh hơn.'] },
-  { id:'yuna-guard', name:'Vệ binh Ren', frame:96, col:6.5,row:13,
-    lines:['Bạn đã tới Ngoại ô thành YuNa.', 'Phía Đông là đường trở lại Khu Rừng Phía Tây. Airi ở căn nhà bên cạnh chuyên bán đá nâng cấp cánh.'] }
+  { id:'yuna-food-cook', name:'Yuna', role:'food-exchange', frame:96, col:6.5,row:13,
+    lines:['Ta có thể nấu món ăn từ 5 Nấm YuNa và 5 cá cùng loại. Mỗi món hồi máu và mana theo thời gian.'] }
  ],
  monsters: [],
  portals: [{x:120,feetY:912,label:'Thành Yuna',target:'YunaCity',spawn:{x:2352,y:984}}, {x:2400,feetY:912,label:'Về Khu Rừng Phía Tây',target:'WestForest',spawn:{x:216,y:1080}}]
