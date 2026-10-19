@@ -32,7 +32,7 @@ export class MushroomSystem {
   const p=this.scene.player;if(!p||this.state.data.hp<=0||this.scene.hud?.blocked||this.scene.dialogue?.isOpen||Math.hypot(p.x-h.node.x,p.feetY-h.node.y)>80){this.cancel();return;}
   const t=Math.min(1,(performance.now()-h.start)/2000),x=p.x-40,y=p.feetY-80;
   this.progress.clear().fillStyle(0x182e25,.95).fillRoundedRect(x-3,y-3,86,14,5).fillStyle(0xd7bd79).fillRoundedRect(x,y,80*t,8,3);
-  if(t>=1){const result=this.state.harvestMushroom(h.node.id);this.cancel();this.scene.hud.toast(result.message);}
+  if(t>=1){const p=this.scene.player;const position={mapId:this.scene.mapData.id,x:p.x,feetY:p.feetY};this.cancel();void this.state.harvestMushroom(h.node.id,position).then(result=>{if(this.alive)this.scene.hud.toast(result.message);});}
  }
  openShop(){this.cancel();this.shopOpen=true;this.scene.player.stop();this.root.hidden=false;this.message('');this.render();this.root.querySelector('[data-close]').focus();}
  closeShop(){this.shopOpen=false;this.root.hidden=true;this.scene.input.keyboard.resetKeys();}

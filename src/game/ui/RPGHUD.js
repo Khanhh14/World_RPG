@@ -88,7 +88,8 @@ export class RPGHUD {
                 this.toast(this.state.exchangeMonsterMaterials().message);
             }
             if (action === 'food-exchange' && this.foodNPC && this.scene.dialogue?.nearest() === this.foodNPC) {
-                this.toast(this.state.exchangeFood(id).message);
+                const result = await this.state.exchangeFood(id, {mapId:this.scene.mapData.id,x:this.scene.player.x,feetY:this.scene.player.feetY});
+                this.toast(result.message);this.render();
             }
             if (action === 'boss-retry') await this.scene.bossRewards?.flush();
             if (action === 'boss-stones') this.scene.bossRewards?.collect();

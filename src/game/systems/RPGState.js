@@ -108,6 +108,7 @@ export class RPGState {
             pendingSkillAction: null,
             pendingPurchase: null,
             pendingItemUse: null,
+            pendingInventoryAction: null,
             pendingEquipmentAction: null,
             pendingBossRewards: [],
             bossStoneInbox: 0,
@@ -244,6 +245,12 @@ export class RPGState {
             }
             this.data.pendingPurchase = saved.pendingPurchase || null;
             this.data.pendingItemUse = saved.pendingItemUse || null;
+            const inventoryAction = saved.pendingInventoryAction;
+            if (inventoryAction && ['exchange-food', 'harvest-mushroom'].includes(inventoryAction.action)
+                && typeof inventoryAction.requestId === 'string'
+                && /^[a-f0-9-]{36}$/i.test(inventoryAction.requestId)) {
+                this.data.pendingInventoryAction = inventoryAction;
+            }
             const equipmentAction = saved.pendingEquipmentAction;
             if (equipmentAction && ['equip', 'unequip'].includes(equipmentAction.action)
                 && typeof equipmentAction.itemId === 'string'
@@ -541,15 +548,15 @@ export class RPGState {
     }
 
     applyServerItems(items) {
-        const counts = new Map();
+        const inventory = Object.fromEntries(Object.keys(ITEMS).map(id => [id, 0]));
         const equipment = Object.fromEntries(EQUIPMENT_SLOTS.map(([slot]) => [slot, null]));
         for (const item of items) {
             if (!ITEMS[item.id] || !Number.isSafeInteger(item.quantity) || item.quantity < 1) continue;
-            counts.set(item.id, (counts.get(item.id) || 0) + item.quantity);
+            inventory[item.id] += item.quantity;
             const slot = item.slot || item.type;
             if (item.location === 'equipment' && Object.hasOwn(equipment, slot)) equipment[slot] = item.id;
         }
-        for (const [id, quantity] of counts) this.data.inventory[id] = quantity;
+        this.data.inventory = inventory;
         for (const [slot] of EQUIPMENT_SLOTS) this.data.equipment[slot] = equipment[slot];
     }
 
@@ -580,6 +587,56 @@ export class RPGState {
         }
     }
 
+    async beginInventoryAction(action, details) {
+        if (this.usingItem) return {ok:false,message:'Đang xử lý vật phẩm…'};
+        if (this.data.pendingInventoryAction) return await this.recoverInventoryAction();
+        this.data.pendingInventoryAction = {...details,action,requestId:crypto.randomUUID()};
+        try {
+            if (!this.storage) throw new Error();
+            this.storage.setItem(this.saveKey, JSON.stringify(this.data));
+            const saved = JSON.parse(this.storage.getItem(this.saveKey));
+            if (saved.pendingInventoryAction?.requestId !== this.data.pendingInventoryAction.requestId) throw new Error();
+        } catch {
+            this.data.pendingInventoryAction = null;
+            return {ok:false,message:'Hãy cho phép lưu dữ liệu trình duyệt trước khi thực hiện giao dịch.'};
+        }
+        return await this.recoverInventoryAction();
+    }
+
+    async recoverInventoryAction() {
+        const pending = this.data.pendingInventoryAction;
+        if (!pending || this.usingItem) return {ok:false,message:'Đang xử lý vật phẩm…'};
+        this.usingItem = true;
+        try {
+            const result = pending.action === 'exchange-food'
+                ? await inventoryApi.exchangeFood(pending)
+                : await inventoryApi.harvestMushroom(pending);
+            if (result.requestId !== pending.requestId || !Array.isArray(result.items)) {
+                throw new Error('Máy chủ trả về trạng thái túi đồ không hợp lệ.');
+            }
+            this.applyServerItems(result.items);
+            if (pending.action === 'harvest-mushroom') {
+                this.data.mushroomHarvest[pending.patchId] = Number(result.expiresAt);
+            }
+            this.data.pendingInventoryAction = null;
+            this.changed();
+            return {
+                ok:true,
+                message:pending.action === 'exchange-food'
+                    ? `Đã đổi 5 Nấm YuNa và 5 ${FOOD_RECIPES.find(recipe=>recipe.id===pending.recipeId)?.fishName || 'cá'} lấy 1 món ăn.`
+                    : '+1 Nấm YuNa',
+            };
+        } catch (error) {
+            if ([400, 403, 409].includes(error.status)) {
+                this.data.pendingInventoryAction = null;
+                this.changed();
+            }
+            return {ok:false,message:error.message || 'Chưa xác nhận được giao dịch túi đồ.'};
+        } finally {
+            this.usingItem = false;
+        }
+    }
+
     commitGathering(next) {
         try {
             if (!this.storage) throw new Error();
@@ -591,14 +648,11 @@ export class RPGState {
         for (const fn of this.listeners) fn(this.data);
         return {ok:true};
     }
-    harvestMushroom(id, now = Date.now()) {
+    async harvestMushroom(id, position, now = Date.now()) {
         if (!/^patch-\d+$/.test(id)) return {ok:false,message:'Cụm nấm không hợp lệ.'};
         if (!this.data.inventory.mushroom_basket) return {ok:false,message:'Cần mua rổ hái nấm từ Nami (200 vàng).'};
         if ((this.data.mushroomHarvest[id] || 0) > now) return {ok:false,message:'Nấm chưa mọc lại.'};
-        const error = this.canAdd('yuna_mushroom');
-        if (error) return {ok:false,message:error};
-        const result = this.commitGathering({...this.data, inventory:{...this.data.inventory,yuna_mushroom:(this.data.inventory.yuna_mushroom||0)+1}, mushroomHarvest:{...this.data.mushroomHarvest,[id]:now+30000}});
-        return {...result,message:result.ok?'+1 Nấm YuNa':result.message};
+        return await this.beginInventoryAction('harvest-mushroom',{patchId:id,position});
     }
     exchangeMushrooms() {
         const inventory = this.data.inventory;
@@ -620,18 +674,11 @@ export class RPGState {
         if (error && !(error === 'Ba lô đã đầy.' && freesSlot && !inventory[recipe.id])) return error;
         return '';
     }
-    exchangeFood(recipeId) {
+    async exchangeFood(recipeId, position) {
         const recipe = FOOD_RECIPES.find(value => value.id === recipeId);
         const error = this.canExchangeFood(recipeId);
         if (error) return {ok:false,message:error};
-        const inventory = {
-            ...this.data.inventory,
-            yuna_mushroom:this.data.inventory.yuna_mushroom - 5,
-            [recipe.fishId]:this.data.inventory[recipe.fishId] - 5,
-            [recipe.id]:(this.data.inventory[recipe.id] || 0) + 1
-        };
-        const result = this.commitGathering({...this.data,inventory});
-        return {...result,message:result.ok ? `Đã đổi 5 Nấm YuNa và 5 ${recipe.fishName} lấy 1 ${recipe.name}.` : result.message};
+        return await this.beginInventoryAction('exchange-food',{recipeId,position});
     }
     updateFoodBuff(now = Date.now()) {
         const buff = this.data.foodBuff;

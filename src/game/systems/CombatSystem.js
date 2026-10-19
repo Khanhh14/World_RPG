@@ -133,6 +133,71 @@ export class CombatSystem {
       if(amount>0){this.state.data.hp+=amount;this.state.changed();this.float(p,`+${amount} HP`,'#f6a5ce');}
       this.flash(target?this.targetPoint(target):p,skill.range,color,'drain');
     }
+    if(effect==='shadowbind'){
+      const target=this.nearestTarget(skill.range);
+      if(target){this.hit(target,damage*skill.multiplier);target.stunUntil=this.now+skill.stunDuration;this.flash(this.targetPoint(target),60,color,'bind');}
+      else this.flash(p,46,color,'bind');
+    }
+    if(effect==='darkrain'){
+      const targets=this.nearbyTargets(p,skill.range).slice(0,skill.count);
+      targets.forEach((target,index)=>this.scene.time.delayedCall(index*150,()=>{
+        if(target.hp<=0||!target.entity.sprite.active)return;
+        const point=this.targetPoint(target);this.hit(target,damage*skill.multiplier);this.flash(point,60,color,'rain');
+      }));
+      this.flash(p,skill.range,color,'cast');
+    }
+    if(effect==='evade'){
+      this.runtime.evadeUntil=this.clock+skill.duration;
+      this.flash(p,62,color,'veil');
+    }
+    if(effect==='chainlightning'){
+      let previous=p;
+      const visited=new Set();
+      for(let i=0;i<skill.count;i++){
+        const target=this.nearbyTargets(previous,skill.range,visited)[0];
+        if(!target)break;
+        visited.add(target);
+        const point=this.targetPoint(target);
+        this.hit(target,damage*skill.multiplier*Math.pow(.82,i));
+        this.vfx.emit('chain',point,56,color,Math.atan2(point.y-previous.y,point.x-previous.x));
+        previous=point;
+      }
+      this.flash(p,40,color,'chain');
+    }
+    if(effect==='barrier'){
+      this.runtime.barrierHP=Math.round(damage*skill.shieldMultiplier);
+      this.runtime.barrierUntil=this.clock+skill.duration;
+      this.flash(p,58,color,'barrier');
+    }
+    if(effect==='manaregen'){
+      this.runtime.manaBlessUntil=this.clock+skill.duration;
+      this.runtime.manaBlessNext=this.clock+1000;
+      this.runtime.manaBlessRestore=skill.restore;
+      this.flash(p,50,color,'mana');
+    }
+    if(effect==='armorbreak'){
+      const target=this.nearestTarget(skill.range);
+      if(target){
+        this.hit(target,damage*skill.multiplier);
+        target.vulnerableUntil=this.clock+skill.duration;
+        target.vulnerability=skill.vulnerability;
+        this.flash(this.targetPoint(target),55,color,'break');
+      }else this.flash(p,45,color,'break');
+    }
+    if(effect==='fanshot'){
+      const count=skill.count??5,range=skill.range,colorValue=color??0x83e4c6;
+      this.flash(p,46,colorValue,'fan');
+      for(let i=0;i<count;i++){
+        const angle=Math.atan2(this.facing.y,this.facing.x)+(i-(count-1)/2)*.17;
+        const shot=this.projectile(damage*skill.multiplier,range,colorValue,null);
+        if(shot)Object.assign(shot,{dx:Math.cos(angle),dy:Math.sin(angle),speed:470,expires:this.now+1800});
+      }
+    }
+    if(effect==='warcry'){
+      this.runtime.attackUntil=this.clock+skill.duration;
+      this.runtime.attackMultiplier=skill.attackMultiplier;
+      this.flash(p,58,color,'warcry');
+    }
     return true;
   }
   attack(){
@@ -241,7 +306,11 @@ export class CombatSystem {
     this.shots.push(shot);return shot;
   }
   hit(t,damage){
-    if(t.hp<=0)return 0;const previousHP=t.hp;t.hp=Math.max(0,t.hp-Math.round(damage));t.aggro=true;t.chaseUntil=this.now+6000;t.visibleUntil=this.now+4500;
+    if(t.hp<=0)return 0;
+    const runtime=this.runtime;
+    if(runtime.attackUntil>this.clock)damage*=runtime.attackMultiplier??1;
+    if(t.vulnerableUntil>this.clock)damage*=t.vulnerability??1;
+    const previousHP=t.hp;t.hp=Math.max(0,t.hp-Math.round(damage));t.aggro=true;t.chaseUntil=this.now+6000;t.visibleUntil=this.now+4500;
     this.float(this.targetPoint(t),`−${Math.round(damage)}`,'#ffe0ad');
     this.flash(this.targetPoint(t),34,0xffd397,'impact');
     if(t.hp===0){
@@ -264,6 +333,13 @@ export class CombatSystem {
   }
   damagePlayer(amount,source=null){
     if(this.state.data.hp<=0)return;
+    if(this.runtime.evadeUntil>this.clock){this.flash(this.origin(),38,0xb273ef,'veil');return;}
+    if(this.runtime.barrierUntil>this.clock&&this.runtime.barrierHP>0){
+      const absorbed=Math.min(amount,this.runtime.barrierHP);
+      this.runtime.barrierHP-=absorbed;amount-=absorbed;
+      this.flash(this.origin(),42,0x77dcff,'barrier');
+      if(amount<=0)return;
+    }
     const countering=this.runtime.counterUntil>this.clock;
     const reduction=countering?this.runtime.counterReduction:this.runtime.guardReduction;
     const protectedUntil=countering?this.runtime.counterUntil:this.runtime.guardUntil;
@@ -292,7 +368,9 @@ export class CombatSystem {
   }
   updateMonsterAI(target) {
     const {entity}=target,data=entity.data,body=entity.sprite.body;
-    if(!data.ai||!body)return;
+    if(!body)return;
+    if(target.stunUntil>this.now){body.setVelocity(0,0);return;}
+    if(!data.ai)return;
     if(target.hp<=0||this.busy){body.setVelocity(0,0);return;}
 
     const player=this.scene.player.sprite;
@@ -337,6 +415,12 @@ export class CombatSystem {
   }
   update(time,delta=16){
     if(!this.alive||!this.state||!this.scene.player)return;
+    if(this.runtime.barrierUntil<=this.clock)this.runtime.barrierHP=0;
+    if(this.runtime.manaBlessUntil>this.clock&&this.runtime.manaBlessNext<=this.clock){
+      const amount=Math.min(this.runtime.manaBlessRestore??0,this.state.maxMP-this.state.data.mp);
+      if(amount>0){this.state.data.mp+=amount;this.state.changed();this.float(this.origin(),`+${amount} MP`,'#9cecff');this.flash(this.origin(),32,0x77dcff,'mana');}
+      this.runtime.manaBlessNext=this.clock+1000;
+    }
     const foodTick=this.state.updateFoodBuff();
     if(foodTick?.recipe&&(foodTick.heal||foodTick.mana)){
       this.flash(this.origin(),42,foodTick.recipe.color,'potion');
@@ -364,10 +448,10 @@ export class CombatSystem {
     const g=this.graphics;g.clear();
     for(const t of this.targets.values()){
       if(!t.entity.sprite.active)continue;
-      if(t.hp<=0){if(this.now>=t.respawnAt){t.hp=t.maxHP;t.aggro=false;t.entity.sprite.setPosition(t.entity.home?.x??t.entity.sprite.x,t.entity.home?.y??t.entity.sprite.y);t.entity.sprite.body?.reset(t.entity.sprite.x,t.entity.sprite.y);for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(true);}else continue;}
+      if(t.hp<=0){if(this.now>=t.respawnAt){t.hp=t.maxHP;t.aggro=false;t.stunUntil=0;t.vulnerableUntil=0;t.vulnerability=1;t.burn=null;t.entity.sprite.setPosition(t.entity.home?.x??t.entity.sprite.x,t.entity.home?.y??t.entity.sprite.y);t.entity.sprite.body?.reset(t.entity.sprite.x,t.entity.sprite.y);for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(true);}else continue;}
       this.updateMonsterAI(t);
       const p=this.targetPoint(t),me=this.origin();
-      if(!t.entity.data.boss&&t.aggro&&!this.busy&&this.now>=t.nextHit&&Math.hypot(p.x-me.x,p.y-me.y)<95&&this.clearLine(p,me)){
+      if(!t.entity.data.boss&&t.stunUntil<=this.now&&t.aggro&&!this.busy&&this.now>=t.nextHit&&Math.hypot(p.x-me.x,p.y-me.y)<95&&this.clearLine(p,me)){
         t.nextHit=this.now+1300;this.damagePlayer(Math.max(2,t.damage-Math.floor(this.state.defense/2)),t);
       }
       if(t.burn){
@@ -422,7 +506,7 @@ export class CombatSystem {
       if(shot.left<=0){this.shots.splice(i,1);continue;}
       
     }
-    this.vfx.update(this.now,this.origin(),this.shots.filter(s=>!s.launchAt||s.launchAt<=this.now),this.runtime.guardUntil>this.clock||this.runtime.counterUntil>this.clock,this.fields);
+    this.vfx.update(this.now,this.origin(),this.shots.filter(s=>!s.launchAt||s.launchAt<=this.now),this.runtime.guardUntil>this.clock||this.runtime.counterUntil>this.clock,this.fields,this.runtime.barrierUntil>this.clock&&this.runtime.barrierHP>0,this.runtime.evadeUntil>this.clock);
     for(let i=this.effects.length-1;i>=0;i--){
       const e=this.effects[i],k=clamp((this.now-e.at)/(e.end-e.at),0,1);
       if(k>=1){e.text?.destroy();this.effects.splice(i,1);continue;}

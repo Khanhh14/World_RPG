@@ -1,7 +1,7 @@
 // Graphics giới hạn số hạt; vùng hồi phục ở lớp mặt đất, tia sáng ở lớp phía trên.
 export class CombatVFX {
  constructor(scene){this.scene=scene;this.g=scene.add.graphics().setDepth(9501);this.ground=scene.add.graphics().setDepth(98);this.bursts=[];this.reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false;}
- emit(kind,p,radius,color,angle=0){if(!p)return;this.bursts.push({...p,kind,radius,color,angle,start:this.scene.time.now,duration:kind==='heal'?1050:kind==='combo'?680:kind==='beam'?520:kind==='burn'?850:kind==='drain'?760:kind==='whirl'?720:kind==='slash'?300:550});if(this.bursts.length>36)this.bursts.shift();}
+ emit(kind,p,radius,color,angle=0){if(!p)return;this.bursts.push({...p,kind,radius,color,angle,start:this.scene.time.now,duration:kind==='heal'?1050:kind==='combo'?680:kind==='beam'?520:kind==='burn'?850:kind==='drain'?760:kind==='whirl'?720:kind==='rain'?850:kind==='chain'?650:kind==='slash'?300:550});if(this.bursts.length>36)this.bursts.shift();}
  arc(x,y,r,start,end,color,alpha,width){const g=this.g;g.lineStyle(width,color,alpha);g.beginPath();g.arc(x,y,r,start,end);g.strokePath();}
  star(x,y,size,color,alpha){const g=this.g;g.fillStyle(color,alpha);g.fillTriangle(x,y-size,x+size*.3,y,x-size*.3,y);g.fillTriangle(x,y+size,x+size*.3,y,x-size*.3,y);g.fillTriangle(x-size,y,x,y-size*.3,x,y+size*.3);g.fillTriangle(x+size,y,x,y-size*.3,x,y+size*.3);}
  field(now,f){
@@ -35,7 +35,7 @@ export class CombatVFX {
     if(i%4===0){g.fillStyle(0xccffd1,fade*(1-t)*.7).fillRect(px-1,py-5,2,10);g.fillRect(px-5,py-1,10,2);}
   }
  }
- update(now,origin,shots,guard,fields=[]){
+ update(now,origin,shots,guard,fields=[],barrier=false,evade=false){
   const g=this.g;g.clear();this.ground.clear();
   for(const field of fields)this.field(now,field);
   for(const s of shots){
@@ -48,6 +48,17 @@ export class CombatVFX {
    const {x,y}=origin;g.fillStyle(0x75bcff,.055).fillCircle(x,y,42);g.lineStyle(2,0xbce9ff,.75).strokeCircle(x,y,41);g.lineStyle(1,0x669fff,.6).strokeCircle(x,y,46);
    for(let i=0;i<6;i++){const a=i*Math.PI/3+now*.00065;this.star(x+Math.cos(a)*44,y+Math.sin(a)*44,4,0xc3e7ff,.85);}
    g.lineStyle(2,0xb9deff,.7);g.beginPath();g.moveTo(x,y-22);g.lineTo(x+17,y-15);g.lineTo(x+15,y+5);g.lineTo(x,y+18);g.lineTo(x-15,y+5);g.lineTo(x-17,y-15);g.closePath();g.strokePath();
+  }
+  if(barrier&&origin){
+   const {x,y}=origin,pulse=Math.sin(now*.006)*3;
+   g.fillStyle(0x67d9ff,.08).fillCircle(x,y,45+pulse);
+   g.lineStyle(3,0x9cecff,.78).strokeCircle(x,y,45+pulse);
+   g.lineStyle(1,0xe1ffff,.58).strokeCircle(x,y,51+pulse);
+   for(let i=0;i<4;i++){const a=i*Math.PI/2-now*.0005;this.star(x+Math.cos(a)*48,y+Math.sin(a)*48,4,0xe7ffff,.9);}
+  }
+  if(evade&&origin){
+   const {x,y}=origin;
+   for(let i=0;i<3;i++)this.arc(x,y,30+i*8,now*.002+i*2,now*.002+i*2+2.2,0xc391ff,.55-i*.1,3);
   }
   for(let i=this.bursts.length-1;i>=0;i--){
    const e=this.bursts[i],t=(now-e.start)/e.duration;if(t>=1){this.bursts.splice(i,1);continue;}const fade=1-t,r=e.radius,angle=e.angle;
@@ -94,6 +105,47 @@ export class CombatVFX {
     for(let j=0;j<3;j++)this.arc(e.x,e.y,r*(.45+t*.55),t*7+j*2.1,t*7+j*2.1+1.5,j%2?0xd5ffe9:e.color,fade,7-j*1.5);
     for(let j=0;j<5;j++){const a=t*7+j*Math.PI*2/5;const px=e.x+Math.cos(a)*r*.7,py=e.y+Math.sin(a)*r*.7;this.star(px,py,8*fade,e.color,fade);}
     g.lineStyle(2,e.color,fade*.4).strokeEllipse(e.x,e.y+15,r*2*(.2+t*.8),r*(.2+t*.8));
+   }else if(e.kind==='bind'){
+    for(let j=0;j<3;j++){const a=angle+t*2+j*Math.PI*2/3,rad=r*(.35+t*.35);this.arc(e.x,e.y,rad,a,a+Math.PI*1.2,e.color,fade*.8,5);}
+    g.lineStyle(2,0xf0d9ff,fade*.8).strokeCircle(e.x,e.y,r*(.2+t*.7));
+    this.star(e.x,e.y-r*.15,8*fade,0xf7e9ff,fade);
+   }else if(e.kind==='rain'){
+    for(let j=0;j<7;j++){const x=e.x+Math.sin(j*2+t*5)*r*.45,y=e.y-r*.8+t*r*1.6+j%3*9;
+     g.lineStyle(3,e.color,fade*.75).lineBetween(x,y-12,x-5,y+7);
+     this.star(x-5,y+8,4*fade,0xe8c8ff,fade);
+    }
+    g.lineStyle(2,e.color,fade*.55).strokeCircle(e.x,e.y,r*(.2+t*.8));
+   }else if(e.kind==='veil'){
+    for(let j=0;j<5;j++){const a=angle+j*Math.PI*2/5-t*1.4,rad=r*(.35+t*.45);
+     this.arc(e.x,e.y,rad,a,a+1.5,e.color,fade*.75,4);
+     this.star(e.x+Math.cos(a)*rad,e.y+Math.sin(a)*rad,5*fade,0xeedbff,fade);
+    }
+   }else if(e.kind==='chain'){
+    const x2=e.x+Math.cos(angle)*r*(.3+t*.7),y2=e.y+Math.sin(angle)*r*(.3+t*.7);
+    g.lineStyle(7,e.color,fade*.22).lineBetween(e.x,e.y,x2,y2);
+    g.lineStyle(3,0xe9ffff,fade*.9).lineBetween(e.x,e.y,x2,y2);
+    for(let j=1;j<5;j++){const k=j/5;this.star(e.x+(x2-e.x)*k,e.y+(y2-e.y)*k,4*fade,e.color,fade);}
+   }else if(e.kind==='barrier'){
+    g.lineStyle(4,e.color,fade*.75).strokeCircle(e.x,e.y,r*(.25+t*.65));
+    g.lineStyle(1,0xeaffff,fade*.7).strokeCircle(e.x,e.y,r*(.35+t*.6));
+    for(let j=0;j<6;j++){const a=angle+t*1.5+j*Math.PI/3;this.star(e.x+Math.cos(a)*r*.6,e.y+Math.sin(a)*r*.6,5*fade,e.color,fade);}
+   }else if(e.kind==='mana'){
+    for(let j=0;j<6;j++){const a=j*Math.PI/3+t*2,x=e.x+Math.cos(a)*r*(.25+t*.35),y=e.y+Math.sin(a)*r*(.25+t*.35)-t*22;
+     this.star(x,y,5*fade,j%2?0xffedaa:e.color,fade);
+    }
+    g.lineStyle(2,e.color,fade*.6).strokeCircle(e.x,e.y,r*(.2+t*.7));
+   }else if(e.kind==='break'){
+    const sweep=angle-1+t*2;
+    this.arc(e.x,e.y,r*(.4+t*.4),sweep,sweep+2.2,e.color,fade*.8,6);
+    for(let j=0;j<4;j++){const a=sweep+j*.55;this.star(e.x+Math.cos(a)*r*.55,e.y+Math.sin(a)*r*.55,6*fade,0xffedc2,fade);}
+   }else if(e.kind==='fan'){
+    for(let j=-2;j<=2;j++){const a=angle+j*.18,len=r*(.35+t*.65);
+     g.lineStyle(3,e.color,fade*.65).lineBetween(e.x,e.y,e.x+Math.cos(a)*len,e.y+Math.sin(a)*len);
+     this.star(e.x+Math.cos(a)*len,e.y+Math.sin(a)*len,4*fade,0xeaffdf,fade);
+    }
+   }else if(e.kind==='warcry'){
+    for(let j=0;j<3;j++)this.arc(e.x,e.y,r*(.3+j*.22+t*.15),angle+j*2.1,angle+j*2.1+2.7, j%2?0xfff1c0:e.color,fade*.8,4-j);
+    this.star(e.x,e.y-r*.25,10*fade,0xfff2c2,fade);
    }else if(e.kind==='heal'||e.kind==='potion'){
     g.lineStyle(3,e.color,fade*.7).strokeEllipse(e.x,e.y+22,70+t*36,24+t*12);g.lineStyle(1,0xe4ffcb,fade*.5).strokeEllipse(e.x,e.y+22,90+t*32,34+t*12);
     if(e.kind==='heal'){g.fillStyle(e.color,fade*.7).fillRect(e.x-3,e.y-27-t*28,6,24);g.fillRect(e.x-12,e.y-18-t*28,24,6);}

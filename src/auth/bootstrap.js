@@ -1,5 +1,6 @@
 import { loadRuntime, RuntimeSave } from '../game/systems/RuntimeSave.js';
 import { wingsApi } from '../api/wingsApi.js';
+import { inventoryApi } from '../api/inventoryApi.js';
 import { AuthUI } from '../game/ui/AuthUI.js';
 import { authApi } from '../api/authApi.js';
 import { chooseCharacter } from '../game/ui/CharacterCreationUI.js';
@@ -12,8 +13,10 @@ export function withAuth(startGame) {
     pending = (async () => {
       const user = await new AuthUI().wait();
       const character = await chooseCharacter(user);
-      const [runtime, wingResult] = await Promise.all([loadRuntime(character.id), wingsApi.load()]);
+      const [runtime, wingResult, inventory] = await Promise.all([loadRuntime(character.id), wingsApi.load(), inventoryApi.load()]);
+      if (String(inventory.characterId) !== String(character.id)) throw new Error('Túi đồ không thuộc nhân vật đã chọn.');
       character.runtime = runtime; character.wings = wingResult.wings;
+      character.items = inventory.items; character.foodBuff = inventory.foodBuff;
       setCharacterProfile(character, user);
       const game = await startGame(user, ...args);
       game?.registry?.set('auth-user', user);

@@ -8,7 +8,7 @@ export class ActionBarUI {
     this.scene=scene;this.managesInput=true;this.visible=true;this.alive=true;this.npc=null;
     if(!document.getElementById('rpg-action-style')){const link=document.createElement('link');link.id='rpg-action-style';link.rel='stylesheet';link.href=`${import.meta.env?.BASE_URL??'/'}assets/style/actionBar.css?v=5`;document.head.appendChild(link);}
     this.root=document.createElement('section');this.root.className='rpg-actions';this.root.setAttribute('aria-label','Kỹ năng và tương tác');
-    this.root.innerHTML=`<div class="ra-notice" role="status" hidden></div><div class="ra-skills">${COMBAT_SKILLS.map(s=>this.button(s.id,s.name,s.key,s.icon,'skill')).join('')}</div><div class="ra-orbit">${this.button('hp','Bình HP','Q','hp','utility')}${this.button('auto','Tự động đánh','AUTO','auto','utility')}${this.button('mp','Bình Mana','R','mp','utility')}${this.button('special','Vũ khí','F','special','utility')}${this.button('interact','Đánh thường','E','sword','main')}</div><div class="ra-tooltip" role="tooltip" hidden></div><section class="ra-picker" role="dialog" aria-label="Gán bình vào ô nhanh" hidden></section>`;
+    this.root.innerHTML=`<div class="ra-notice" role="status" hidden></div><div class="ra-skills">${COMBAT_SKILLS.map((s,i)=>this.button(`slot-${i}`,`Ô kỹ năng ${i+1}`,s.key,s.icon,'skill')).join('')}</div><div class="ra-orbit">${this.button('hp','Bình HP','Q','hp','utility')}${this.button('auto','Tự động đánh','AUTO','auto','utility')}${this.button('mp','Bình Mana','R','mp','utility')}${this.button('special','Vũ khí','F','special','utility')}${this.button('interact','Đánh thường','E','sword','main')}</div><div class="ra-tooltip" role="tooltip" hidden></div><section class="ra-picker" role="dialog" aria-label="Gán bình vào ô nhanh" hidden></section>`;
     document.body.appendChild(this.root);this.buttons=new Map([...this.root.querySelectorAll('button[data-id]')].map(b=>[b.dataset.id,b]));
     this.picker=this.root.querySelector('.ra-picker');this.pickerKind=null;
     this.tooltip=this.root.querySelector('.ra-tooltip');this.notice=this.root.querySelector('.ra-notice');
@@ -41,7 +41,8 @@ export class ActionBarUI {
         return;
       }
       if(e.shiftKey&&['KeyQ','KeyR'].includes(e.code)){e.preventDefault();e.stopImmediatePropagation();this.openPicker(e.code==='KeyQ'?'hp':'mp');return;}
-      const id=({KeyE:'interact',KeyQ:'hp',KeyR:'mp',KeyF:'special',Digit1:'power',Digit2:'bolt',Digit3:'whirl',Digit4:'guard',Digit5:'heal',Numpad1:'power',Numpad2:'bolt',Numpad3:'whirl',Numpad4:'guard',Numpad5:'heal'})[e.code];
+      const slotKey=/^(?:Digit|Numpad)([1-5])$/.exec(e.code);
+      const id=slotKey?`slot-${Number(slotKey[1])-1}`:({KeyE:'interact',KeyQ:'hp',KeyR:'mp',KeyF:'special'})[e.code];
       if(!id||scene.hud?.blocked||scene.fishingSystem?.basketOpen)return;
       e.preventDefault();e.stopImmediatePropagation();this.invoke(id);
     };
@@ -76,7 +77,7 @@ export class ActionBarUI {
     }else if(id==='special')this.toast('Kỹ năng riêng của vũ khí sẽ được bổ sung sau.');
     else if(id==='hp'||id==='mp')this.combat.potion(id);
     else {
-      const slot=COMBAT_SKILLS.findIndex(skill=>skill.id===id);
+      const slot=Number(id.slice('slot-'.length));
       const selected=skillSlots(this.scene.rpgState)[slot];
       if(selected)this.combat.cast(selected);else this.toast('Ô trống. Nhấn C để gán kỹ năng.');
     }
@@ -97,8 +98,8 @@ export class ActionBarUI {
     auto.setAttribute('aria-pressed',String(this.combat.autoAttack));
     auto.dataset.tooltip=`Tự động đánh · Bấm để ${this.combat.autoAttack?'tắt':'bật'}.`;
     auto.disabled=!scene.rpgState||scene.rpgState.data.hp<=0||!!scene.hud?.blocked||!!scene.dialogue?.isOpen||!!f?.basketOpen||!!(f?.phase&&f.phase!=='idle');
-    for(const [slot,base] of COMBAT_SKILLS.entries()){
-      const skill=findSkill(skillSlots(scene.rpgState)[slot]), b=this.buttons.get(base.id);
+    for(let slot=0;slot<COMBAT_SKILLS.length;slot++){
+      const skill=findSkill(skillSlots(scene.rpgState)[slot]), b=this.buttons.get(`slot-${slot}`);
       const signature=skill?.id || 'empty';
       if(b.dataset.skill!==signature){
         b.dataset.skill=signature;

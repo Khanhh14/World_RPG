@@ -14,6 +14,7 @@ export function createCharacterState(StateClass, userId) {
   const state = new StateClass(null, userId);
   const seed = JSON.parse(JSON.stringify(state.data));
   Object.assign(seed, { level: profile.level, exp: profile.exp, gold: profile.gold, hp: profile.hp, mp: profile.mana, gems: Number(profile.gems || 0), inventory: {}, visited: [], explorationClaimed: false });
+  seed.foodBuff = profile.foodBuff || null;
   for (const slot of Object.keys(seed.equipment || {})) seed.equipment[slot] = null;
   for (const item of profile.items || []) {
     if (!ITEMS[item.id]) continue;
@@ -50,6 +51,7 @@ export function createCharacterState(StateClass, userId) {
   state.changed();
   if (state.data.pendingPurchase) void state.recoverPurchase();
   if (state.data.pendingItemUse) void state.recoverItemUse();
+  if (state.data.pendingInventoryAction) void state.recoverInventoryAction();
   if (state.data.pendingEquipmentAction) void state.recoverEquipmentAction();
   return state;
 }

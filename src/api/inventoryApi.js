@@ -3,17 +3,17 @@ import { retryRequest } from './questApi.js';
 const local = ['localhost', '127.0.0.1'].includes(location.hostname);
 const base = (import.meta.env?.VITE_API_BASE || (local ? `${location.protocol}//${location.hostname}:3001/api` : '/api')).replace(/\/$/, '');
 
-async function request(input, action = 'use') {
+async function request(input, action = 'use', method = 'POST') {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 12000);
   try {
     const response = await fetch(`${base}/inventory/${action}`, {
-      method: 'POST',
+      method,
       credentials: 'include',
       cache: 'no-store',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input),
+      ...(input ? { body: JSON.stringify(input) } : {}),
     });
     const data = await response.json().catch(() => null);
     if (!response.ok || !data?.success) {
@@ -29,6 +29,9 @@ async function request(input, action = 'use') {
 }
 
 export const inventoryApi = {
+  load: () => request(null, 'state', 'GET'),
   use: input => retryRequest(() => request(input)),
   equip: input => retryRequest(() => request(input, 'equipment')),
+  exchangeFood: input => retryRequest(() => request(input, 'exchange-food')),
+  harvestMushroom: input => retryRequest(() => request(input, 'harvest-mushroom')),
 };

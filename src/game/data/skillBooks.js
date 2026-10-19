@@ -1,11 +1,15 @@
-import { COMBAT_SKILLS } from './combatSkills.js';
-export const LEGACY_SKILLS = COMBAT_SKILLS.map(skill => ({
- ...skill,
- school:'mage',
- effect:skill.effect || skill.id,
- goldPrice:2000,
- gemPrice:10
-}));
+export const SCHOOLS = [{id:'demon',name:'Ma',color:'#d4a1ff'}, {id:'god',name:'Thần',color:'#f3d38a'}, {id:'human',name:'Nhân',color:'#8edbff'}];
+export const MAGE_SKILLS = [
+  {id:'mage_demon_bind',name:'U Minh Trói Hồn',school:'demon',seller:'mage',effect:'shadowbind',icon:'mage_bind',mana:16,cooldown:9000,multiplier:1.1,range:360,stunDuration:2200,color:0x9d61e8,description:'Gây 110% công và trói mục tiêu gần nhất trong 2,2 giây.'},
+  {id:'mage_demon_rain',name:'Hắc Vũ Thiên La',school:'demon',seller:'mage',effect:'darkrain',icon:'mage_rain',mana:24,cooldown:12500,multiplier:0.95,range:390,count:5,color:0x8c51c8,description:'Gọi mưa hắc khí xuống tối đa 5 kẻ địch trong tầm, mỗi đợt gây 95% công.'},
+  {id:'mage_demon_veil',name:'Ảnh Độn',school:'demon',seller:'mage',effect:'evade',icon:'mage_veil',mana:18,cooldown:15000,duration:2600,color:0xb273ef,description:'Hóa thành bóng tối trong 2,6 giây, né hoàn toàn đòn đánh của quái.'},
+  {id:'mage_god_chain',name:'Lôi Thần Liên Kích',school:'god',seller:'mage',effect:'chainlightning',icon:'mage_chain',mana:23,cooldown:10500,multiplier:1.35,range:410,count:4,color:0x75d9ff,description:'Phóng sét chuyền qua tối đa 4 kẻ địch, sát thương giảm nhẹ qua mỗi lần nảy.'},
+  {id:'mage_god_barrier',name:'Tinh Thuẫn Hộ Thể',school:'god',seller:'mage',effect:'barrier',icon:'mage_barrier',mana:20,cooldown:16000,shieldMultiplier:2.2,duration:7000,color:0x77dcff,description:'Tạo khiên hấp thụ sát thương bằng 220% công trong 7 giây.'},
+  {id:'mage_god_mana',name:'Thiên Nguyên Hồi Khí',school:'god',seller:'mage',effect:'manaregen',icon:'mage_mana',mana:12,cooldown:18000,duration:6000,restore:8,color:0xffdf82,description:'Hồi 8 mana mỗi giây trong 6 giây, không vượt quá mana tối đa.'},
+  {id:'mage_human_break',name:'Khai Sơn Phá Giáp',school:'human',seller:'mage',effect:'armorbreak',icon:'mage_break',mana:17,cooldown:9000,multiplier:1.25,range:350,duration:6500,vulnerability:1.4,color:0xffaa71,description:'Gây 125% công và làm mục tiêu nhận thêm 40% sát thương trong 6,5 giây.'},
+  {id:'mage_human_fan',name:'Lưu Tinh Tán Xạ',school:'human',seller:'mage',effect:'fanshot',icon:'mage_fan',mana:21,cooldown:11000,multiplier:0.8,range:390,count:5,color:0x83e4c6,description:'Bắn quạt 5 luồng năng lượng theo hướng nhìn, mỗi luồng gây 80% công.'},
+  {id:'mage_human_warcry',name:'Chiến Ý Nhân Tộc',school:'human',seller:'mage',effect:'warcry',icon:'mage_warcry',mana:16,cooldown:17000,duration:8000,attackMultiplier:1.35,color:0xffc878,description:'Tăng sát thương gây ra thêm 35% trong 8 giây.'}
+].map(skill => ({...skill,goldPrice:2000,gemPrice:10}));
 export const BOOK_SKILLS = [
   {
     "id": "holy_spear",
@@ -156,8 +160,8 @@ export const BOOK_SKILLS = [
     "gemPrice": 10
   }
 ];
-export const SCHOOLS = [{id:'demon',name:'Ma',color:'#d4a1ff'}, {id:'god',name:'Thần',color:'#f3d38a'}, {id:'human',name:'Nhân',color:'#8edbff'}];
-export const ALL_SKILLS = [...BOOK_SKILLS, ...LEGACY_SKILLS];
+export const LEGACY_SKILLS = MAGE_SKILLS;
+export const ALL_SKILLS = [...BOOK_SKILLS, ...MAGE_SKILLS];
 export const STARTER_SKILLS = [];
 export const findSkill = id => ALL_SKILLS.find(s => s.id === id);
 export function skillSlots(state) {
