@@ -1,5 +1,6 @@
 // col, row tính theo ô; row là vị trí chân NPC.
 export const villageNPCs = [
+    {id:'village-coachman',name:'Mã Phu',role:'coachman',frame:100,col:24,row:20.5,lines:['Bạn muốn đi tới đâu?']},
     {
         id: 'elder',
         name: 'Trưởng làng',

@@ -55,6 +55,7 @@ export class ActionBarUI {
     if(this.scene.dialogue?.isOpen)return {icon:'next',label:'Tiếp tục',kind:'dialogue'};
     if(f?.phase&&f.phase!=='idle')return {icon:'cancel',label:f.phase==='finishing'?'Nhận cá…':'Hủy câu',kind:'cancel'};
     const npc=this.scene.dialogue?.nearest?.()??this.npc;
+    if(npc?.role==='coachman')return {icon:'talk',label:'Dịch chuyển',kind:'npc'};
     if(npc)return {icon:npc.isMerchant?'shop':'talk',label:npc.isMerchant?'Mua bán':'Nói chuyện',kind:'npc'};
     const m=this.scene.mushroomSystem;
     if(m?.harvesting)return {icon:'cancel',label:'Hủy hái',kind:'harvest-cancel'};
@@ -63,7 +64,7 @@ export class ActionBarUI {
     return {icon:'sword',label:'Đánh thường',kind:'attack'};
   }
   invoke(id){
-    if(!this.alive||this.pickerKind||!this.scene.rpgState||this.scene.hud?.blocked||this.scene.mushroomSystem?.shopOpen||this.scene.fishingSystem?.basketOpen)return;
+    if(!this.alive||this.pickerKind||!this.scene.rpgState||this.scene.hud?.blocked||this.scene.fastTravel?.isOpen||this.scene.mushroomSystem?.shopOpen||this.scene.fishingSystem?.basketOpen)return;
     if(id==='interact'){
       const c=this.context(),f=this.scene.fishingSystem;
       if(c.kind==='dialogue'||c.kind==='npc')this.scene.dialogue?.interact();
@@ -83,7 +84,7 @@ export class ActionBarUI {
   }
   refresh(){
     if(!this.alive)return;const scene=this.scene,c=this.context(),f=scene.fishingSystem;
-    this.root.hidden=!!scene.mushroomSystem?.shopOpen||!!scene.hud?.blocked||!!f?.basketOpen||(!this.visible&&!scene.dialogue?.isOpen);
+    this.root.hidden=!!scene.fastTravel?.isOpen||!!scene.mushroomSystem?.shopOpen||!!scene.hud?.blocked||!!f?.basketOpen||(!this.visible&&!scene.dialogue?.isOpen);
     this.root.classList.toggle('ra-dialogue',!!scene.dialogue?.isOpen);
     const main=this.buttons.get('interact');
     if(main.dataset.context!==c.kind){main.dataset.context=c.kind;main.querySelector('.ra-icon').innerHTML=actionIcon(c.icon);}

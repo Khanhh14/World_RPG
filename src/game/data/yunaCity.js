@@ -8,6 +8,7 @@ export const yunaCity={
  fences:[],gardens:[],trees:[],decorations:[],
  monsters:[],
  npcs:[
+  {id:'yuna-coachman',name:'Mã Phu',role:'coachman',frame:100,col:45,row:23.5,lines:['Bạn muốn đi tới đâu?']},
   {id:'yuna-city-guard',name:'Đội trưởng Kael',frame:96,col:9.5,row:14,lines:['Chào mừng đến Thành Yuna.','Cổng phía Đông dẫn ra Ngoại ô YuNa.']},
   {id:'yuna-city-mayor',name:'Thành chủ Yuna',frame:86,col:25.5,row:11,lines:['Chào mừng lữ khách tới quảng trường Yuna.','Hãy chuẩn bị kỹ trước khi đối đầu với NaGa.']},
   {id:'yuna-city-scholar',name:'Học giả Sora',frame:84,col:40.5,row:14,lines:['NaGa cần mười phút để hồi sinh sau khi bị hạ.','Dấu báo kỹ năng là cơ hội tốt nhất để né đòn.']},

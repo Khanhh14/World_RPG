@@ -1,4 +1,5 @@
 import { Input } from 'phaser';
+import { FastTravelSystem } from './FastTravelSystem.js';
 
 // Chọn NPC gần nhất và quản lý tiến trình hội thoại.
 export class DialogueSystem {
@@ -43,6 +44,11 @@ export class DialogueSystem {
             return;
         }
         const npc = this.nearest();
+        if (npc?.role === 'coachman') {
+            this.player.stop(); npc.facePlayer(this.player);
+            this.scene.fastTravel ??= new FastTravelSystem(this.scene);
+            this.scene.fastTravel.open(npc); return;
+        }
         if (npc?.role === 'mushroom-merchant') {
             this.player.stop(); npc.facePlayer(this.player);
             this.scene.mushroomSystem?.openShop(); return;
