@@ -211,7 +211,7 @@ export class CombatSystem {
     if(this.state.data.hp<=0)return;
     const reduced=this.runtime.guardUntil>this.clock?Math.ceil(amount*(1-(this.runtime.guardReduction ?? .5))):amount;
     this.state.takeDamage(reduced);this.float(this.origin(),`−${reduced}`,'#ff9b8e');
-    if(this.state.data.hp<=0){this.scene.player.stop();this.deathAt=this.now+1600;this.notify('Bạn bị hạ. Đang trở về điểm vào map…');}
+    if(this.state.data.hp<=0){this.scene.player.stop();this.deathAt=this.now+1600;this.notify('Bạn bị hạ. Đang hồi sinh ở Làng Khởi Đầu…');}
   }
   flash(p,radius,color,kind='ring'){this.vfx.emit(kind,p,radius,color,Math.atan2(this.facing.y,this.facing.x));}
   float(p,text,color){if(!p)return;const o=this.scene.add.text(p.x,p.y-30,text,{fontFamily:'Arial',fontSize:'18px',fontStyle:'bold',color,stroke:'#152b23',strokeThickness:4}).setOrigin(.5).setDepth(9600);this.effects.push({text:o,y:o.y,at:this.now,end:this.now+750});}
@@ -307,9 +307,8 @@ export class CombatSystem {
       if(!t.entity.data.boss&&t.hp<t.maxHP){const y=p.y-t.entity.sprite.displayHeight/2-8;g.fillStyle(0x172b24,.95).fillRect(p.x-23,y,46,6);g.fillStyle(0xe9806e,1).fillRect(p.x-22,y+1,44*t.hp/t.maxHP,4);}
     }
     if(this.deathAt&&this.now>=this.deathAt){
-      this.deathAt=0;const spawn={...this.scene.mapData.player,...this.scene.spawn};const s=this.scene.player.sprite;
-      s.body?.reset?s.body.reset(spawn.x,spawn.y):s.setPosition(spawn.x,spawn.y);
-      this.state.data.hp=this.state.maxHP;this.state.changed();for(const t of this.targets.values())t.aggro=false;
+      this.deathAt=0;this.state.data.hp=this.state.maxHP;this.state.data.mp=this.state.maxMP;this.state.changed();
+      this.scene.scene.start('Game',{spawn:{x:960,y:768}});return;
     }
     // Không gây sát thương trong lúc menu/hội thoại/câu cá đang mở.
     if(this.busy)this.shots=[];

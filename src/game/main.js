@@ -1,3 +1,5 @@
+import { getCharacterProfile } from './systems/characterSession.js';
+import { RUNTIME_SCENES } from './systems/RuntimeSave.js';
 import { withAuth } from '../auth/bootstrap.js';
 import { AUTO, Game as PhaserGame, Scale } from 'phaser';
 
@@ -10,11 +12,15 @@ import { AtlastLake } from './scenes/AtlastLake.js';
 
 // Hàm này chỉ được withAuth gọi sau khi xác thực thành công.
 function StartGame(user, parent = 'game-container') {
+    const runtime=getCharacterProfile()?.runtime;
+    const all=[VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave];
+    const byKey={Game:VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave};
+    const first=byKey[runtime?.hp>0?RUNTIME_SCENES[runtime.mapId]:'Game']||VillageGame;
     const config = {
         type: AUTO,
         parent,
         callbacks: {
-            preBoot: game => game.registry.set('auth-user', user),
+            preBoot: game => {game.registry.set('auth-user', user);game.registry.set('resume-runtime',runtime);},
         },
 
         width: window.innerWidth,
@@ -39,14 +45,7 @@ function StartGame(user, parent = 'game-container') {
             },
         },
 
-        scene: [
-            VillageGame,
-            WestForest,
-            AtlastLake,
-            YunaOutskirts,
-            YunaCity,
-            NagaCave,
-        ],
+        scene: [first,...all.filter(s=>s!==first)],
     };
 
     return new PhaserGame(config);

@@ -25,6 +25,11 @@ export class BaseWorldScene extends Scene {
     init(data = {}) {
         // Dành cho điểm xuất hiện khi chuyển Scene sau này.
         this.spawn = data.spawn;
+        if(!this.registry.get('resume-applied')){
+            this.registry.set('resume-applied',true);
+            const saved=this.registry.get('resume-runtime');
+            if(saved)this.spawn=saved.hp<=0?{x:960,y:768}:{x:saved.x,y:saved.y};
+        }
     }
 
     preload() { loadWorldAssets(this); }
@@ -65,6 +70,8 @@ export class BaseWorldScene extends Scene {
         // Phaser tự dọn Game Objects khi Scene shutdown.
         // Bỏ tham chiếu các lớp quản lý để tạo lại sạch khi vào map lần nữa.
         this.events.once('shutdown', () => {
+            const saves=this.registry.get('runtime-save');
+            saves?.capture(this);void saves?.flush();
             if (this.equipmentUnsubscribe) this.equipmentUnsubscribe();
             this.hud?.destroy();
             this.hud = null;

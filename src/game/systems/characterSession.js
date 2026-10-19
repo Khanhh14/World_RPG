@@ -23,6 +23,7 @@ export function createCharacterState(StateClass, userId) {
   const prefix = `tiny-rpg-character-${profile.id}:`;
   let storage; try { storage = globalThis.localStorage; } catch { storage = null; }
   const seedJSON = JSON.stringify(seed);
+  seed.wings = profile.wings ?? null;
   state.data = seed;
   state.storage = {
     getItem(key) { try { return storage?.getItem(prefix + key) ?? seedJSON; } catch { return seedJSON; } },
@@ -33,6 +34,10 @@ export function createCharacterState(StateClass, userId) {
   Object.assign(state.data, { characterId: profile.id, name: profile.name, classCode: profile.classCode, className: profile.class.name, playerFrame: profile.class.frame });
   // MySQL là nguồn chính cho kinh tế; localStorage chỉ giữ giao diện/túi đồ hiện có.
   state.applyServerCharacter(profile);
+  if(profile.runtime){
+    state.data.hp=profile.runtime.hp<=0?state.maxHP:Math.min(profile.runtime.hp,state.maxHP);
+    state.data.mp=Math.min(profile.runtime.mp,state.maxMP);
+  }
   state.changed();
   if (state.data.pendingPurchase) void state.recoverPurchase();
   return state;
