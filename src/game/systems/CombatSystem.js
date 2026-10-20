@@ -340,7 +340,8 @@ export class CombatSystem {
     const countering=this.runtime.counterUntil>this.clock;
     const reduction=countering?this.runtime.counterReduction:this.runtime.guardReduction;
     const protectedUntil=countering?this.runtime.counterUntil:this.runtime.guardUntil;
-    const reduced=protectedUntil>this.clock?Math.ceil(amount*(1-(reduction ?? .5))):amount;
+    // Đòn đã xuyên qua né tránh/lá chắn luôn trừ ít nhất 5 HP, kể cả khi giảm sát thương.
+    const reduced=Math.max(5,Math.ceil(protectedUntil>this.clock?amount*(1-(reduction ?? .5)):amount));
     this.state.takeDamage(reduced);this.float(this.origin(),`−${reduced}`,'#ff9b8e');
     if(countering&&source?.hp>0){
       this.hit(source,this.state.attack*(this.runtime.counterMultiplier??1));
@@ -456,7 +457,7 @@ export class CombatSystem {
       this.updateMonsterAI(t);
       const p=this.targetPoint(t),me=this.origin();
       if(!t.entity.data.boss&&t.stunUntil<=this.now&&t.aggro&&!this.busy&&this.now>=t.nextHit&&Math.hypot(p.x-me.x,p.y-me.y)<95&&this.clearLine(p,me)){
-        t.nextHit=this.now+1300;this.damagePlayer(Math.max(2,t.damage-Math.floor(this.state.defense/2)),t);
+        t.nextHit=this.now+1300;this.damagePlayer(Math.max(5,t.damage-Math.floor(this.state.defense/2)),t);
       }
       if(t.burn){
         if(this.now>t.burn.expiresAt+100)t.burn=null;
