@@ -9,6 +9,7 @@ export class PortalSystem {
         this.createTextures();
 
         for (const portal of portals) {
+            if (portal.kind === 'doorway') continue;
             const { x, feetY } = portal;
             scene.add.ellipse(x, feetY - 4, 112, 24, 0x102538, 0.35)
                 .setDepth(99 + feetY);
@@ -84,6 +85,8 @@ export class PortalSystem {
     }
 
     contains(portal, player) {
+        if (portal.kind === 'doorway') return Math.abs(player.x - portal.x) < portal.width / 2
+            && Math.abs(player.feetY - portal.feetY) < portal.height / 2;
         return Math.abs(player.x - portal.x) < 18 &&
             Math.abs(player.feetY - (portal.feetY - 20)) < 18;
     }

@@ -23,10 +23,12 @@ export const noxiiEntrance = {
     paths, trees, npcs: [],
     decorations: [[5,18,17], [16,22,28], [34,30,17], [42,20,28]],
     monsters: [
-        ...pack('Tiểu quỷ NoXII', 110, [[7,9], [12,9], [7,13], [12,13]]),
-        ...pack('Ốc đá NoXII', 123, [[35,10], [40,10], [35,14], [40,14]]),
-        ...pack('Ốc thép NoXII', 124, [[10,25], [15,28], [34,26], [40,28]])
+        ...pack('Tiểu quỷ', 110, [[7,9], [12,9], [7,13], [12,13]]),
+        ...pack('Ốc đá', 123, [[35,10], [40,10], [35,14], [40,14]]),
+        ...pack('Ốc thép', 124, [[10,25], [15,28], [34,26], [40,28]])
     ],
-    portals: [{x: 1176, feetY: 1584, label: 'Về Khu Rừng Phía Tây',
+    portals: [{kind: 'doorway', x: 1176, feetY: 264, width: 192, height: 72,
+        target: 'NoxiiCave', spawn: {x: 864, y: 1248}},
+        {x: 1176, feetY: 1584, label: 'Về Khu Rừng Phía Tây',
         target: 'WestForest', spawn: {x: 1512, y: 432}}]
 };

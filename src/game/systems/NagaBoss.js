@@ -26,7 +26,7 @@ export class NagaBoss {
    const {remainingMs}=await getNagaStatus();if(!this.alive)return;
    this.statusReady=true;this.waitUntil=performance.now()+Math.max(0,remainingMs);this.checkAt=this.waitUntil;
    if(remainingMs>0){this.hideBoss();this.defeated=true;}
-   else if(this.scene.rpgState.data.pendingBossRewards?.length){this.hideBoss();this.checkAt=performance.now()+5000;this.statusReady=false;}
+   else if(this.scene.rpgState.data.pendingBossRewards?.some(entry=>typeof entry==='string'||entry.bossId==='naga')){this.hideBoss();this.checkAt=performance.now()+5000;this.statusReady=false;}
    else {this.defeated=false;this.reset();this.entity.sprite.setVisible(true);this.entity.shadow.setVisible(true);}
   }catch{if(this.alive){this.statusReady=false;this.checkAt=performance.now()+5000;this.hideBoss();this.updateHUD('Chưa xác nhận được hồi sinh · Đang thử lại…');}}
   finally{this.checking=false;}

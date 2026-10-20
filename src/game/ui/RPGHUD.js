@@ -85,8 +85,7 @@ export class RPGHUD {
                 }
             }
             if (action === 'exchange-materials' && this.exchangeNPC && this.scene.dialogue?.nearest() === this.exchangeNPC) {
-                const result = await this.state.exchangeMonsterMaterials({mapId:this.scene.mapData.id,x:this.scene.player.x,feetY:this.scene.player.feetY});
-                this.toast(result.message);this.render();
+                this.toast(this.state.exchangeMonsterMaterials().message);
             }
             if (action === 'food-exchange' && this.foodNPC && this.scene.dialogue?.nearest() === this.foodNPC) {
                 const result = await this.state.exchangeFood(id, {mapId:this.scene.mapData.id,x:this.scene.player.x,feetY:this.scene.player.feetY});
@@ -306,7 +305,7 @@ export class RPGHUD {
         }).join('');
         return `<div class="rpg-bag-layout">
             <section class="rpg-equipment-panel">
-                ${(d.pendingBossRewards?.length||this.state.bossRewardError)?`<p>Thưởng NaGa đang chờ đồng bộ. <button data-action="boss-retry">Thử nhận lại</button></p>`:''}
+                ${(d.pendingBossRewards?.length||this.state.bossRewardError)?`<p>Thưởng boss đang chờ đồng bộ. <button data-action="boss-retry">Thử nhận lại</button></p>`:''}
                 ${d.bossStoneInbox?`<p>Đá cường hóa thưởng đang chờ: ${d.bossStoneInbox} <button data-action="boss-stones">Nhận đá vào túi</button></p>`:''}
                 <div class="rpg-section-heading"><h3>Lữ khách</h3><span>Trang bị hiện tại</span></div>
                 <div class="rpg-model-stage"><span class="rpg-model-caption">${previewItem ? 'ĐANG THỬ ĐỒ' : 'NHÂN VẬT CỦA BẠN'}</span><span class="rpg-model-level">LV ${d.level}</span>

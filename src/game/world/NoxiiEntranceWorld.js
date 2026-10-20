@@ -24,11 +24,10 @@ export class NoxiiEntranceWorld extends TinyOutdoorWorldBuilder {
             tile(col,4,'dungeon',col===21?31:32,22);
         }
         for (let col=22; col<27; col++) tile(col,5,'dungeon',36+(col%3),22);
-        this.blocker(24.5*size,3*size,25*size,6*size);
-        this.add.text(24.5*size,1.5*size,'NoXII',{
-            fontFamily:'Arial',fontSize:'26px',fontStyle:'bold',color:'#d3f7ee',
-            stroke:'#14232a',strokeThickness:5
-        }).setOrigin(.5).setDepth(30);
+        // Chừa khoảng mở ở chính giữa; hai vách bên và trần vẫn có va chạm.
+        this.blocker(24.5*size, size, 25*size, 2*size);
+        this.blocker(17*size, 4*size, 10*size, 4*size);
+        this.blocker(32*size, 4*size, 10*size, 4*size);
         // Đá vụn ở hai bên lối vào, có va chạm và chừa đường giữa.
         for (const [col,row] of [[18,7],[30,7],[17,10],[31,10],[3,21],[44,23]]) {
             tile(col,row,'dungeon',6,100+(row+1)*size);

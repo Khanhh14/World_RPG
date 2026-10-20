@@ -32,6 +32,7 @@ export function createCharacterState(StateClass, userId) {
     removeItem(key) { try { storage?.removeItem(prefix + key); } catch {} },
   };
   state.restore();
+  const localUpgradeStones=state.data.inventory.upgrade_stone ?? 0;
   seed.inventory = {};
   for (const slot of Object.keys(seed.equipment || {})) seed.equipment[slot] = null;
   for (const item of profile.items || []) {
@@ -39,6 +40,8 @@ export function createCharacterState(StateClass, userId) {
     seed.inventory[item.id] = (seed.inventory[item.id] || 0) + item.quantity;
     if (item.location === 'equipment' && Object.hasOwn(seed.equipment || {}, item.slot)) seed.equipment[item.slot] = item.id;
   }
+  // Cường hóa và thưởng đá hiện lưu theo nhân vật trên trình duyệt.
+  seed.inventory.upgrade_stone=localUpgradeStones;
   state.data.inventory = seed.inventory;
   state.data.equipment = seed.equipment;
   Object.assign(state.data, { characterId: profile.id, name: profile.name, classCode: profile.classCode, className: profile.class.name, playerFrame: profile.class.frame });
@@ -52,7 +55,6 @@ export function createCharacterState(StateClass, userId) {
   if (state.data.pendingPurchase) void state.recoverPurchase();
   if (state.data.pendingItemUse) void state.recoverItemUse();
   if (state.data.pendingInventoryAction) void state.recoverInventoryAction();
-  if (state.data.pendingMonsterDrops?.length) void state.flushMonsterDrops();
   if (state.data.pendingEquipmentAction) void state.recoverEquipmentAction();
   return state;
 }

@@ -16,4 +16,5 @@ async function request(path, body) {
 }
 export const claimBossReward=input=>retryRequest(()=>request('/claim',input));
 
-export const getNagaStatus=()=>request('/status',null);
+export const getBossStatus=(bossId='naga')=>request(`/status?bossId=${encodeURIComponent(bossId)}`,null);
+export const getNagaStatus=()=>getBossStatus('naga');

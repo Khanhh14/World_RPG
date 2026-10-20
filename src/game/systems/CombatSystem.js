@@ -1,3 +1,4 @@
+import { monsterIntent } from './MonsterLeash.js';
 import { PotionLoadout } from './PotionLoadout.js';
 import { CombatVFX } from './CombatVFX.js';
 import { ITEMS } from '../data/items.js';
@@ -223,7 +224,7 @@ export class CombatSystem {
     const origin=this.origin();
     if(!origin)return null;
     return [...this.targets.values()]
-      .filter(target=>target.hp>0&&target.entity.sprite.active&&this.clearLine(origin,this.targetPoint(target)))
+      .filter(target=>target.hp>0&&!target.returning&&target.entity.sprite.active&&this.clearLine(origin,this.targetPoint(target)))
       .map(target=>({target,distance:distance(origin,this.targetPoint(target))}))
       .filter(entry=>entry.distance<=range)
       .sort((a,b)=>a.distance-b.distance)[0]?.target??null;
@@ -255,7 +256,7 @@ export class CombatSystem {
     return dealt;
   }
   nearbyTargets(point,range,excluded=new Set()){
-    return [...this.targets.values()].filter(t=>!excluded.has(t)&&t.hp>0&&t.entity.sprite.active&&distance(point,this.targetPoint(t))<=range&&this.clearLine(point,this.targetPoint(t)))
+    return [...this.targets.values()].filter(t=>!excluded.has(t)&&t.hp>0&&!t.returning&&t.entity.sprite.active&&distance(point,this.targetPoint(t))<=range&&this.clearLine(point,this.targetPoint(t)))
       .sort((a,b)=>distance(point,this.targetPoint(a))-distance(point,this.targetPoint(b)));
   }
   ricochet(skill,damage){
@@ -306,7 +307,7 @@ export class CombatSystem {
     this.shots.push(shot);return shot;
   }
   hit(t,damage){
-    if(t.hp<=0)return 0;
+    if(t.hp<=0||t.returning)return 0;
     const runtime=this.runtime;
     if(runtime.attackUntil>this.clock)damage*=runtime.attackMultiplier??1;
     if(t.vulnerableUntil>this.clock)damage*=t.vulnerability??1;
@@ -370,19 +371,26 @@ export class CombatSystem {
     if(target.hp<=0||this.busy){body.setVelocity(0,0);return;}
 
     const player=this.scene.player.sprite;
-    const playerDistance=distance(entity.sprite,player);
-    const detectionRange=data.detectionRange??260;
-    const chaseRange=data.chaseRange??360;
-    if(playerDistance<=detectionRange){
-      target.aggro=true;
-      target.chaseUntil=this.now+6000;
-    }else if(target.aggro&&playerDistance>chaseRange&&this.now>=target.chaseUntil){
-      target.aggro=false;
+    const intent=monsterIntent(target,player);
+    if (intent === 'return' || intent === 'arrived') {
+      target.aggro=false;target.chaseUntil=0;target.burn=null;target.stunUntil=0;
+      target.vulnerableUntil=0;target.vulnerability=1;target.returning=intent==='return';
+      if (intent==='arrived') {
+        body.reset(entity.home.x,entity.home.y);body.setVelocity(0,0);
+        target.hp=target.maxHP;target.patrolTarget=null;
+      } else {
+        const step=this.monsterDirection(entity,entity.home,distance(entity.sprite,entity.home),(data.moveSpeed??72)*1.25);
+        body.setVelocity(step.x,step.y);
+      }
+      entity.sprite.setDepth(100+entity.sprite.y);
+      entity.shadow.setPosition(entity.sprite.x,entity.sprite.y-2).setDepth(99+entity.sprite.y);
+      entity.label?.setPosition(entity.sprite.x,entity.sprite.y-entity.sprite.displayHeight-8);
+      return;
     }
-
     const speed=data.moveSpeed??72;
     let destination=null, movementSpeed=speed;
-    if(target.aggro&&playerDistance<=chaseRange){
+    if(intent==='chase'){
+      target.aggro=true;
       destination={x:player.x,y:player.y};
     }else{
       target.aggro=false;
@@ -444,7 +452,7 @@ export class CombatSystem {
     const g=this.graphics;g.clear();
     for(const t of this.targets.values()){
       if(!t.entity.sprite.active)continue;
-      if(t.hp<=0){if(this.now>=t.respawnAt){t.hp=t.maxHP;t.aggro=false;t.stunUntil=0;t.vulnerableUntil=0;t.vulnerability=1;t.burn=null;t.entity.sprite.setPosition(t.entity.home?.x??t.entity.sprite.x,t.entity.home?.y??t.entity.sprite.y);t.entity.sprite.body?.reset(t.entity.sprite.x,t.entity.sprite.y);for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(true);}else continue;}
+      if(t.hp<=0){if(this.now>=t.respawnAt){t.hp=t.maxHP;t.aggro=false;t.returning=false;t.stunUntil=0;t.vulnerableUntil=0;t.vulnerability=1;t.burn=null;t.entity.sprite.setPosition(t.entity.home?.x??t.entity.sprite.x,t.entity.home?.y??t.entity.sprite.y);t.entity.sprite.body?.reset(t.entity.sprite.x,t.entity.sprite.y);for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(true);}else continue;}
       this.updateMonsterAI(t);
       const p=this.targetPoint(t),me=this.origin();
       if(!t.entity.data.boss&&t.stunUntil<=this.now&&t.aggro&&!this.busy&&this.now>=t.nextHit&&Math.hypot(p.x-me.x,p.y-me.y)<95&&this.clearLine(p,me)){

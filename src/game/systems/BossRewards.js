@@ -7,8 +7,9 @@ export class BossRewards {
   const read=JSON.parse(this.state.storage?.getItem(this.state.saveKey)||'null');
   if(JSON.stringify(read)!==JSON.stringify(next))throw new Error('Không lưu được thưởng boss trên trình duyệt.');
  }
- async queue(){
-  const s=this.state;s.data.pendingBossRewards.push(crypto.randomUUID());
+ async queue(bossId='naga'){
+  if (!['naga','noxii'].includes(bossId)) throw new Error('Boss không hợp lệ.');
+  const s=this.state;s.data.pendingBossRewards.push({bossId,requestId:crypto.randomUUID()});
   // Giữ yêu cầu trong bộ nhớ nếu storage lỗi để nút Thử nhận lại có thể tiếp tục.
   try{this.persist(s.data);}catch(e){s.bossRewardError=e.message;s.changed();this.toast('Chưa lưu được yêu cầu. Mở B để thử nhận lại.');return;}
   s.changed();await this.flush();
@@ -17,13 +18,15 @@ export class BossRewards {
   const s=this.state;if(s.bossRewardBusy)return;s.bossRewardBusy=true;
   try{
    while(s.data.pendingBossRewards.length){
-    this.persist(s.data);const id=s.data.pendingBossRewards[0];
-    const result=await claimBossReward({bossId:'naga',requestId:id});
+    this.persist(s.data);const entry=s.data.pendingBossRewards[0];
+    const pending=typeof entry==='string'?{bossId:'naga',requestId:entry}:entry;
+    const id=pending.requestId;
+    const result=await claimBossReward(pending);
     if(result.requestId!==id||String(result.character?.id)!==String(s.data.characterId))throw new Error('Thưởng không thuộc nhân vật hiện tại.');
     s.applyServerCharacter(result.character);
-    const next={...s.data,pendingBossRewards:s.data.pendingBossRewards.filter(x=>x!==id),bossStoneInbox:s.data.bossStoneInbox+1};
+    const next={...s.data,pendingBossRewards:s.data.pendingBossRewards.filter(x=>(typeof x==='string'?x:x.requestId)!==id),bossStoneInbox:s.data.bossStoneInbox+result.reward.stones};
     this.persist(next);s.data.pendingBossRewards=next.pendingBossRewards;s.data.bossStoneInbox=next.bossStoneInbox;s.bossRewardError='';s.changed();
-    this.collect(false);this.toast('Thưởng NaGa: +500 vàng · +300 EXP · +1 đá cường hóa'+(s.data.bossStoneInbox?' (đá đang chờ trong B)':''));
+    this.collect(false);this.toast(`Thưởng ${pending.bossId==='naga'?'NaGa':'Hộ Vệ Hắc Thạch'}: +${result.reward.gold} vàng · +${result.reward.exp} EXP · +${result.reward.stones} đá cường hóa`+(s.data.bossStoneInbox?' (đá đang chờ trong B)':''));
    }
    this.collect(false);
   }catch(e){s.bossRewardError=e.message;this.toast('Thưởng đang chờ. Mở B → Thử nhận lại.');}

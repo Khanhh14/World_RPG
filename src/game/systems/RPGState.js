@@ -231,7 +231,9 @@ export class RPGState {
 
             this.data.mp = integer(saved.mp, 0, this.maxMP, this.maxMP);
             this.data.gold = integer(saved.gold, 0, 9999999, 50);
-            this.data.pendingBossRewards = Array.isArray(saved.pendingBossRewards) ? [...new Set(saved.pendingBossRewards.filter(id=>typeof id==='string'&&/^[a-f0-9-]{36}$/i.test(id)))] : [];
+            this.data.pendingBossRewards = Array.isArray(saved.pendingBossRewards) ? [...new Set(saved.pendingBossRewards.filter(entry=>typeof entry==='string'
+                ? /^[a-f0-9-]{36}$/i.test(entry)
+                : entry && ['naga','noxii'].includes(entry.bossId) && /^[a-f0-9-]{36}$/i.test(entry.requestId)))] : [];
             this.data.bossStoneInbox = integer(saved.bossStoneInbox,0,999999,0);
             this.data.mushroomHarvest = Object.fromEntries(Object.entries(saved.mushroomHarvest || {}).filter(([k,v]) => /^patch-\d+$/.test(k) && Number.isFinite(v)));
             const foodBuff = saved.foodBuff;
