@@ -52,6 +52,7 @@ export function createCharacterState(StateClass, userId) {
   if (state.data.pendingPurchase) void state.recoverPurchase();
   if (state.data.pendingItemUse) void state.recoverItemUse();
   if (state.data.pendingInventoryAction) void state.recoverInventoryAction();
+  if (state.data.pendingMonsterDrops?.length) void state.flushMonsterDrops();
   if (state.data.pendingEquipmentAction) void state.recoverEquipmentAction();
   return state;
 }

@@ -85,7 +85,8 @@ export class RPGHUD {
                 }
             }
             if (action === 'exchange-materials' && this.exchangeNPC && this.scene.dialogue?.nearest() === this.exchangeNPC) {
-                this.toast(this.state.exchangeMonsterMaterials().message);
+                const result = await this.state.exchangeMonsterMaterials({mapId:this.scene.mapData.id,x:this.scene.player.x,feetY:this.scene.player.feetY});
+                this.toast(result.message);this.render();
             }
             if (action === 'food-exchange' && this.foodNPC && this.scene.dialogue?.nearest() === this.foodNPC) {
                 const result = await this.state.exchangeFood(id, {mapId:this.scene.mapData.id,x:this.scene.player.x,feetY:this.scene.player.feetY});

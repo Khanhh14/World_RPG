@@ -15,7 +15,7 @@ export class MushroomSystem {
   document.body.append(this.root);
   if(!document.getElementById('mushroom-css')){const link=document.createElement('link');link.id='mushroom-css';link.rel='stylesheet';link.href='/assets/style/mushroom.css';document.head.append(link);}
   this.root.addEventListener('pointerdown',e=>e.stopPropagation());
-  this.root.addEventListener('click',e=>{if(e.target.closest('[data-close]'))this.closeShop();else if(e.target.closest('[data-buy]'))void this.buy();else if(e.target.closest('[data-exchange]')&&!this.busy){this.message(this.state.exchangeMushrooms().message);this.render();}});
+  this.root.addEventListener('click',e=>{if(e.target.closest('[data-close]'))this.closeShop();else if(e.target.closest('[data-buy]'))void this.buy();else if(e.target.closest('[data-exchange]')&&!this.busy)void this.exchange();});
   this.key=e=>{if(!this.alive)return;if(this.shopOpen){if(e.code==='Escape'){e.preventDefault();this.closeShop();}else if(e.code==='Tab'){const buttons=[...this.root.querySelectorAll('button:not(:disabled)')],i=buttons.indexOf(document.activeElement);e.preventDefault();buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length]?.focus();}if(!['Enter','Space'].includes(e.code))e.stopImmediatePropagation();}else if(e.code==='Escape')this.cancel();};
   window.addEventListener('keydown',this.key,true);
   this.tick=()=>this.update();scene.events.on('postupdate',this.tick);
@@ -39,5 +39,6 @@ export class MushroomSystem {
  message(text){this.root.querySelector('[data-message]').textContent=text;}
  render(){const d=this.state.data;this.root.querySelector('[data-count]').textContent=`Vàng: ${d.gold.toLocaleString('vi-VN')} · Nấm: ${d.inventory.yuna_mushroom||0}/20 · Đá: ${d.inventory.upgrade_stone||0}`;const buy=this.root.querySelector('[data-buy]');buy.disabled=this.busy||!!d.inventory.mushroom_basket;buy.textContent=d.inventory.mushroom_basket?'Đã có rổ':d.pendingPurchase?'Thử nhận lại':'Mua rổ';this.root.querySelector('[data-exchange]').disabled=this.busy||(d.inventory.yuna_mushroom||0)<20;}
  async buy(){if(this.busy||this.state.data.inventory.mushroom_basket)return;this.busy=true;this.render();try{const result=await this.state.buyItem('mushroom_basket');if(this.alive)this.message(result.message);}finally{this.busy=false;if(this.alive)this.render();}}
+ async exchange(){if(this.busy)return;this.busy=true;this.render();try{const result=await this.state.exchangeMushrooms(this.scene.mapData.id);if(this.alive)this.message(result.message);}finally{this.busy=false;if(this.alive)this.render();}}
  destroy(){this.alive=false;this.harvesting=null;this.shopOpen=false;window.removeEventListener('keydown',this.key,true);this.scene.events.off('postupdate',this.tick);this.root.remove();this.progress.destroy();if(this.scene.mushroomSystem===this)this.scene.mushroomSystem=null;}
 }

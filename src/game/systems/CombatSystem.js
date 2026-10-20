@@ -323,9 +323,9 @@ export class CombatSystem {
       }
       const drop=ITEMS[t.entity.data.dropItem];
       if(drop&&Math.random()<0.25){
-        if(this.state.addItem(t.entity.data.dropItem)){
-          this.scene.hud?.toast(`Nhặt được ${drop.name}.`);
-        }
+        void this.state.collectMonsterDrop(t.entity.data.dropItem).then(result=>{
+          this.scene.hud?.toast(result.message);
+        }).catch(error=>this.scene.hud?.toast(error.message || `Không lưu được ${drop.name} vào túi.`));
       }
       if (this.scene.mapData.id === 'west-forest') void this.scene.questSystem?.recordKill();
     }

@@ -34,4 +34,7 @@ export const inventoryApi = {
   equip: input => retryRequest(() => request(input, 'equipment')),
   exchangeFood: input => retryRequest(() => request(input, 'exchange-food')),
   harvestMushroom: input => retryRequest(() => request(input, 'harvest-mushroom')),
+  collectMonsterDrop: input => retryRequest(() => request(input, 'monster-drop')),
+  exchangeMonsterMaterials: input => retryRequest(() => request(input, 'exchange-monster-materials')),
+  exchangeMushrooms: input => retryRequest(() => request(input, 'exchange-mushrooms')),
 };
