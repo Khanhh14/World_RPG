@@ -317,17 +317,13 @@ export class CombatSystem {
       t.respawnAt=t.entity.data.boss?Infinity:this.now+15000;t.aggro=false;
       t.entity.sprite.body?.stop();
       for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(false);
-      const forestReward=this.scene.mapData.id==='west-forest';
-      if(forestReward){
-        // Thưởng 30 EXP + 10 vàng được backend lưu qua recordKill().
-      }
       const drop=ITEMS[t.entity.data.dropItem];
       if(drop&&Math.random()<0.25){
-        void this.state.collectMonsterDrop(t.entity.data.dropItem).then(result=>{
-          this.scene.hud?.toast(result.message);
-        }).catch(error=>this.scene.hud?.toast(error.message || `Không lưu được ${drop.name} vào túi.`));
+        if(this.state.addItem(t.entity.data.dropItem)){
+          this.scene.hud?.toast(`Nhặt được ${drop.name}.`);
+        }
       }
-      if (this.scene.mapData.id === 'west-forest') void this.scene.questSystem?.recordKill();
+      if (['west-forest', 'noxii-entrance'].includes(this.scene.mapData.id)) void this.scene.questSystem?.recordKill();
     }
     return previousHP-t.hp;
   }

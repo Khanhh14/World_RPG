@@ -5,6 +5,7 @@ const paths = [
     [0, 21, 56, 3],
     [11, 9, 3, 15],
     [30, 13, 3, 30],
+    [30, 3, 3, 13], // Nhánh phía bắc dẫn tới Cửa Hang NoXII.
     [39, 23, 3, 12]
 ];
 const clearings = [
@@ -76,6 +77,10 @@ export const westForest = {
         ])
     ],
     portals: [{
+        x: 1512, feetY: 288,
+        label: 'Cửa Hang NoXII', target: 'NoxiiEntrance',
+        spawn: { x: 1176, y: 1440 }
+    }, {
         x: 1512, feetY: 2016,
         label: 'Hang động NaGa', target: 'NagaCave',
         spawn: { x: 864, y: 1270 }

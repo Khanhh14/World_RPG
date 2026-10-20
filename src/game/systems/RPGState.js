@@ -109,7 +109,6 @@ export class RPGState {
             pendingPurchase: null,
             pendingItemUse: null,
             pendingInventoryAction: null,
-            pendingMonsterDrops: [],
             pendingEquipmentAction: null,
             pendingBossRewards: [],
             bossStoneInbox: 0,
@@ -247,17 +246,11 @@ export class RPGState {
             this.data.pendingPurchase = saved.pendingPurchase || null;
             this.data.pendingItemUse = saved.pendingItemUse || null;
             const inventoryAction = saved.pendingInventoryAction;
-            if (inventoryAction && ['exchange-food', 'harvest-mushroom', 'exchange-monster-materials', 'exchange-mushrooms'].includes(inventoryAction.action)
+            if (inventoryAction && ['exchange-food', 'harvest-mushroom'].includes(inventoryAction.action)
                 && typeof inventoryAction.requestId === 'string'
                 && /^[a-f0-9-]{36}$/i.test(inventoryAction.requestId)) {
                 this.data.pendingInventoryAction = inventoryAction;
             }
-            this.data.pendingMonsterDrops = Array.isArray(saved.pendingMonsterDrops)
-                ? saved.pendingMonsterDrops.filter(drop => MONSTER_MATERIALS.some(material => material.id === drop?.itemId)
-                    && drop.mapId === 'west-forest'
-                    && typeof drop.requestId === 'string'
-                    && /^[a-f0-9-]{36}$/i.test(drop.requestId))
-                : [];
             const equipmentAction = saved.pendingEquipmentAction;
             if (equipmentAction && ['equip', 'unequip'].includes(equipmentAction.action)
                 && typeof equipmentAction.itemId === 'string'
@@ -267,7 +260,9 @@ export class RPGState {
             }
             this.data.pendingWingAction = saved.pendingWingAction || null;
             this.data.pendingSkillAction = saved.pendingSkillAction || null;
-            this.data.pendingKills = Array.isArray(saved.pendingKills) ? saved.pendingKills.filter(id => typeof id === 'string' && /^[a-f0-9-]{36}$/i.test(id)) : [];
+            this.data.pendingKills = Array.isArray(saved.pendingKills) ? saved.pendingKills.filter(entry => typeof entry === 'string'
+                ? /^[a-f0-9-]{36}$/i.test(entry)
+                : entry && /^[a-f0-9-]{36}$/i.test(entry.eventId) && ['west-forest', 'noxii-entrance'].includes(entry.mapId)) : [];
 
             for (const id of Object.keys(ITEMS)) {
                 this.data.inventory[id] = integer(
@@ -617,11 +612,7 @@ export class RPGState {
         try {
             const result = pending.action === 'exchange-food'
                 ? await inventoryApi.exchangeFood(pending)
-                : pending.action === 'harvest-mushroom'
-                    ? await inventoryApi.harvestMushroom(pending)
-                    : pending.action === 'exchange-mushrooms'
-                        ? await inventoryApi.exchangeMushrooms(pending)
-                        : await inventoryApi.exchangeMonsterMaterials(pending);
+                : await inventoryApi.harvestMushroom(pending);
             if (result.requestId !== pending.requestId || !Array.isArray(result.items)) {
                 throw new Error('Máy chủ trả về trạng thái túi đồ không hợp lệ.');
             }
@@ -635,11 +626,7 @@ export class RPGState {
                 ok:true,
                 message:pending.action === 'exchange-food'
                     ? `Đã đổi 5 Nấm YuNa và 5 ${FOOD_RECIPES.find(recipe=>recipe.id===pending.recipeId)?.fishName || 'cá'} lấy 1 món ăn.`
-                    : pending.action === 'harvest-mushroom'
-                        ? '+1 Nấm YuNa'
-                        : pending.action === 'exchange-mushrooms'
-                            ? 'Đã đổi 20 Nấm YuNa lấy 1 đá cường hóa.'
-                        : 'Đã đổi 10 vật phẩm quái lấy 1 đá nâng cấp trang bị.',
+                    : '+1 Nấm YuNa',
             };
         } catch (error) {
             if ([400, 403, 409].includes(error.status)) {
@@ -669,67 +656,14 @@ export class RPGState {
         if ((this.data.mushroomHarvest[id] || 0) > now) return {ok:false,message:'Nấm chưa mọc lại.'};
         return await this.beginInventoryAction('harvest-mushroom',{patchId:id,position});
     }
-    async collectMonsterDrop(itemId) {
-        if (!MONSTER_MATERIALS.some(material => material.id === itemId)) {
-            return {ok:false,message:'Vật phẩm rơi từ quái không hợp lệ.'};
-        }
-        const pending = {itemId,mapId:'west-forest',requestId:crypto.randomUUID()};
-        this.data.pendingMonsterDrops.push(pending);
-        this.changed();
-        try {
-            const saved = JSON.parse(this.storage?.getItem(this.saveKey) || 'null');
-            if (!saved?.pendingMonsterDrops?.some(drop => drop.requestId === pending.requestId)) {
-                throw new Error('Không lưu được giao dịch nhặt vật phẩm.');
-            }
-        } catch (error) {
-            this.data.pendingMonsterDrops = this.data.pendingMonsterDrops.filter(drop => drop.requestId !== pending.requestId);
-            this.changed();
-            return {ok:false,message:error.message || 'Hãy cho phép lưu dữ liệu trình duyệt để nhận vật phẩm.'};
-        }
-        return await this.flushMonsterDrops(pending.requestId);
-    }
-    async flushMonsterDrops(requestId = null) {
-        if (this.processingMonsterDrops) return {ok:false,message:'Đang xử lý vật phẩm rơi từ quái…'};
-        this.processingMonsterDrops = true;
-        let requestedResult = null;
-        try {
-            while (this.data.pendingMonsterDrops.length) {
-                const pending = this.data.pendingMonsterDrops[0];
-                try {
-                    const result = await inventoryApi.collectMonsterDrop(pending);
-                    if (result.requestId !== pending.requestId || result.itemId !== pending.itemId || !Array.isArray(result.items)) {
-                        throw new Error('Máy chủ trả về giao dịch nhặt vật phẩm không hợp lệ.');
-                    }
-                    this.applyServerItems(result.items);
-                    this.data.pendingMonsterDrops.shift();
-                    this.changed();
-                    if (pending.requestId === requestId) {
-                        requestedResult = {ok:true,message:`Nhặt được ${ITEMS[pending.itemId]?.name || pending.itemId}.`};
-                    }
-                } catch (error) {
-                    if ([400,403,409].includes(error.status)) {
-                        this.data.pendingMonsterDrops.shift();
-                        this.changed();
-                        if (pending.requestId === requestId) requestedResult = {ok:false,message:error.message};
-                        continue;
-                    }
-                    if (pending.requestId === requestId) requestedResult = {ok:false,message:error.message || 'Chưa xác nhận được vật phẩm rơi từ quái.'};
-                    break;
-                }
-            }
-            return requestedResult || {ok:false,message:'Vật phẩm vẫn đang chờ đồng bộ với máy chủ.'};
-        } finally {
-            this.processingMonsterDrops = false;
-        }
-    }
-    async exchangeMushrooms(mapId) {
-        if ((this.data.inventory.yuna_mushroom||0)<20) return {ok:false,message:'Cần đủ 20 nấm để đổi 1 đá.'};
+    exchangeMushrooms() {
+        const inventory = this.data.inventory;
+        if ((inventory.yuna_mushroom||0)<20) return {ok:false,message:'Cần đủ 20 nấm để đổi 1 đá.'};
         const error = this.canAdd('upgrade_stone');
-        if (error && !(error==='Ba lô đã đầy.' && this.data.inventory.yuna_mushroom===20 && !this.data.inventory.upgrade_stone)) {
-            return {ok:false,message:error};
-        }
-        if (mapId !== 'yuna-outskirts') return {ok:false,message:'Hãy đến vườn nấm ở Ngoại ô YuNa.'};
-        return await this.beginInventoryAction('exchange-mushrooms',{mapId});
+        const freesSlot = inventory.yuna_mushroom===20 && !inventory.upgrade_stone;
+        if (error && !(error==='Ba lô đã đầy.' && freesSlot)) return {ok:false,message:error};
+        const result = this.commitGathering({...this.data,inventory:{...inventory,yuna_mushroom:inventory.yuna_mushroom-20,upgrade_stone:(inventory.upgrade_stone||0)+1}});
+        return {...result,message:result.ok?'Đã đổi 20 nấm lấy 1 đá cường hóa.':result.message};
     }
     canExchangeFood(recipeId) {
         const recipe = FOOD_RECIPES.find(value => value.id === recipeId);
@@ -808,10 +742,19 @@ export class RPGState {
         return '';
     }
 
-    async exchangeMonsterMaterials(position) {
+    exchangeMonsterMaterials() {
         const error = this.canExchangeMonsterMaterials();
         if (error) return { ok: false, message: error };
-        return await this.beginInventoryAction('exchange-monster-materials',{position});
+        let remaining = 10;
+        for (const material of MONSTER_MATERIALS) {
+            const count = Math.min(remaining, this.data.inventory[material.id] ?? 0);
+            this.data.inventory[material.id] -= count;
+            remaining -= count;
+            if (!remaining) break;
+        }
+        this.data.inventory.upgrade_stone = (this.data.inventory.upgrade_stone ?? 0) + 1;
+        this.changed();
+        return { ok: true, message: 'Đổi thành công 10 vật phẩm quái lấy 1 đá nâng cấp trang bị.' };
     }
 
     async useItem(id) {

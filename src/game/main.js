@@ -6,6 +6,7 @@ import { AUTO, Game as PhaserGame, Scale } from 'phaser';
 import { Game as VillageGame } from './scenes/Game.js';
 import { YunaCity } from './scenes/YunaCity.js';
 import { NagaCave } from './scenes/NagaCave.js';
+import { NoxiiEntrance } from './scenes/NoxiiEntrance.js';
 import { WestForest } from './scenes/WestForest.js';
 import { YunaOutskirts } from './scenes/YunaOutskirts.js';
 import { AtlastLake } from './scenes/AtlastLake.js';
@@ -13,8 +14,8 @@ import { AtlastLake } from './scenes/AtlastLake.js';
 // Hàm này chỉ được withAuth gọi sau khi xác thực thành công.
 function StartGame(user, parent = 'game-container') {
     const runtime=getCharacterProfile()?.runtime;
-    const all=[VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave];
-    const byKey={Game:VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave};
+    const all=[VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave,NoxiiEntrance];
+    const byKey={Game:VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave,NoxiiEntrance};
     const first=byKey[runtime?.hp>0?RUNTIME_SCENES[runtime.mapId]:'Game']||VillageGame;
     const config = {
         type: AUTO,

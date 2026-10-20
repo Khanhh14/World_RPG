@@ -13,7 +13,10 @@ export class QuestSystem {
     try {
       await this.refresh();
       if (!this.alive) return;
-      for (const id of [...this.state.data.pendingKills]) await this.record('monster_kill', 'west-forest', id);
+      for (const entry of [...this.state.data.pendingKills]) {
+        const kill = typeof entry === 'string' ? { eventId: entry, mapId: 'west-forest' } : entry;
+        await this.record('monster_kill', kill.mapId, kill.eventId);
+      }
       if (['village','west-forest','atlast-lake'].includes(this.scene.mapData.id)) await this.record('visit', this.scene.mapData.id);
     } catch (error) {
       if (this.alive) this.scene.rpgState.setQuestLoadError(error.message);
@@ -35,11 +38,11 @@ export class QuestSystem {
   retry() { void this.load(); }
 
   async record(eventType, mapId, eventId = crypto.randomUUID()) {
-    if (eventType === 'monster_kill' && !this.state.data.pendingKills.includes(eventId)) {
-      this.state.data.pendingKills.push(eventId); this.state.changed();
+    if (eventType === 'monster_kill' && !this.state.data.pendingKills.some(entry => (typeof entry === 'string' ? entry : entry.eventId) === eventId)) {
+      this.state.data.pendingKills.push({ eventId, mapId }); this.state.changed();
     }
     const result = await questApi.progress(eventType, mapId, eventId);
-    if (eventType === 'monster_kill') this.state.data.pendingKills = this.state.data.pendingKills.filter(id => id !== eventId);
+    if (eventType === 'monster_kill') this.state.data.pendingKills = this.state.data.pendingKills.filter(entry => (typeof entry === 'string' ? entry : entry.eventId) !== eventId);
     this.state.applyServerCharacter(result.character);
     if (this.alive) this.state.setQuests(result.quests);
     else this.state.changed();
