@@ -1,4 +1,4 @@
-import { ITEMS } from '../data/items.js';
+import { ITEMS, MONSTER_MATERIALS } from '../data/items.js';
 let profile = null;
 let accountId = null;
 export const getCharacterAccountId = () => accountId;
@@ -33,6 +33,7 @@ export function createCharacterState(StateClass, userId) {
   };
   state.restore();
   const localUpgradeStones=state.data.inventory.upgrade_stone ?? 0;
+  const localMonsterMaterials=Object.fromEntries(MONSTER_MATERIALS.map(m=>[m.id,state.data.inventory[m.id]??0]));
   seed.inventory = {};
   for (const slot of Object.keys(seed.equipment || {})) seed.equipment[slot] = null;
   for (const item of profile.items || []) {
@@ -42,6 +43,7 @@ export function createCharacterState(StateClass, userId) {
   }
   // Cường hóa và thưởng đá hiện lưu theo nhân vật trên trình duyệt.
   seed.inventory.upgrade_stone=localUpgradeStones;
+  Object.assign(seed.inventory,localMonsterMaterials);
   state.data.inventory = seed.inventory;
   state.data.equipment = seed.equipment;
   Object.assign(state.data, { characterId: profile.id, name: profile.name, classCode: profile.classCode, className: profile.class.name, playerFrame: profile.class.frame });

@@ -2,7 +2,7 @@ import { MAX_ENHANCEMENT, enhancedItem } from '../data/enhancement.js';
 import { renderSkillsPanel, renderSkillShop } from './SkillsPanel.js';
 import { renderWingsPanel, renderWingShop, wingEquipmentCard } from './WingsPanel.js';
 import { drawWingPixels } from '../world/WingTextures.js';
-import { canShopItem, EQUIPMENT_SLOTS, SHOP_ITEMS, MONSTER_MATERIALS, FOOD_RECIPES, gearIcon } from '../data/items.js';
+import { canShopItem, EQUIPMENT_SLOTS, SHOP_ITEMS, monsterMaterialsForMap, FOOD_RECIPES, gearIcon } from '../data/items.js';
 import { ITEMS } from '../systems/RPGState.js';
 import { renderQuestJournal } from './QuestJournal.js';
 
@@ -85,7 +85,7 @@ export class RPGHUD {
                 }
             }
             if (action === 'exchange-materials' && this.exchangeNPC && this.scene.dialogue?.nearest() === this.exchangeNPC) {
-                this.toast(this.state.exchangeMonsterMaterials().message);
+                this.toast(this.state.exchangeMonsterMaterials(this.scene.mapData.id).message);
             }
             if (action === 'food-exchange' && this.foodNPC && this.scene.dialogue?.nearest() === this.foodNPC) {
                 const result = await this.state.exchangeFood(id, {mapId:this.scene.mapData.id,x:this.scene.player.x,feetY:this.scene.player.feetY});
@@ -425,18 +425,19 @@ export class RPGHUD {
     }
     exchangeContent() {
         const inventory = this.state.data.inventory;
-        const total = MONSTER_MATERIALS.reduce(
+        const pool = monsterMaterialsForMap(this.scene.mapData.id);
+        const total = pool.reduce(
             (sum, material) => sum + (inventory[material.id] ?? 0), 0
         );
-        const exchangeError = this.state.canExchangeMonsterMaterials();
+        const exchangeError = this.state.canExchangeMonsterMaterials(this.scene.mapData.id);
         const canExchange = !exchangeError;
-        const materials = MONSTER_MATERIALS.map(material => `
+        const materials = pool.map(material => `
             <article class="rpg-shop-item">
                 <header>${itemIcon(ITEMS[material.id],44)}<div><h3>${escape(material.name)}</h3><span class="rpg-tier">Đang có: ${inventory[material.id] ?? 0}</span></div></header>
                 <p class="rpg-subtle">${escape(material.description)}</p>
             </article>`).join('');
         return `<div class="rpg-shop-gold"><strong>${escape(this.exchangeNPC?.name ?? 'Thợ săn')}</strong><span>Vật phẩm quái: ${total} / 10</span></div>
-            <p class="rpg-subtle">Gộp vật phẩm rơi từ bất kỳ quái nào: 10 vật phẩm đổi lấy 1 đá nâng cấp trang bị.</p>
+            <p class="rpg-subtle">Gộp các vật phẩm quái của khu vực này: 10 vật phẩm đổi lấy 1 đá nâng cấp trang bị.</p>
             <div class="rpg-shop-grid">${materials}</div>
             <div class="rpg-shop-buy"><span>${escape(exchangeError || 'Đổi 10 vật phẩm lấy 1 đá nâng cấp.')}</span>
                 <button type="button" data-action="exchange-materials" ${canExchange ? 'class="rpg-primary"' : 'disabled'}>Đổi 10 vật phẩm</button>

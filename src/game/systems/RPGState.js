@@ -13,6 +13,7 @@ import {
     EQUIPMENT_SLOTS,
     BAG_CAPACITY,
     MONSTER_MATERIALS,
+    monsterMaterialsForMap,
     FOOD_RECIPES
 } from '../data/items.js';
 
@@ -568,6 +569,9 @@ export class RPGState {
             const slot = item.slot || item.type;
             if (item.location === 'equipment' && Object.hasOwn(equipment, slot)) equipment[slot] = item.id;
         }
+        // Vật phẩm rơi và đá cường hóa dùng bản lưu riêng của nhân vật.
+        for (const material of MONSTER_MATERIALS) inventory[material.id] = this.data.inventory[material.id] ?? 0;
+        inventory.upgrade_stone = this.data.inventory.upgrade_stone ?? 0;
         this.data.inventory = inventory;
         for (const [slot] of EQUIPMENT_SLOTS) this.data.equipment[slot] = equipment[slot];
     }
@@ -727,8 +731,9 @@ export class RPGState {
         return true;
     }
 
-    canExchangeMonsterMaterials() {
-        const total = MONSTER_MATERIALS.reduce(
+    canExchangeMonsterMaterials(mapId = this.scene?.mapData?.id ?? 'west-forest') {
+        const materials = monsterMaterialsForMap(mapId);
+        const total = materials.reduce(
             (sum, material) => sum + (this.data.inventory[material.id] ?? 0),
             0
         );
@@ -738,7 +743,7 @@ export class RPGState {
 
         let remaining = 10;
         let freesSlot = false;
-        for (const material of MONSTER_MATERIALS) {
+        for (const material of materials) {
             const count = Math.min(remaining, this.data.inventory[material.id] ?? 0);
             if (count && count === this.data.inventory[material.id]) freesSlot = true;
             remaining -= count;
@@ -752,19 +757,21 @@ export class RPGState {
         return '';
     }
 
-    exchangeMonsterMaterials() {
-        const error = this.canExchangeMonsterMaterials();
+    exchangeMonsterMaterials(mapId = this.scene?.mapData?.id ?? 'west-forest') {
+        const materials = monsterMaterialsForMap(mapId);
+        const error = this.canExchangeMonsterMaterials(mapId);
         if (error) return { ok: false, message: error };
+        const inventory = {...this.data.inventory};
         let remaining = 10;
-        for (const material of MONSTER_MATERIALS) {
+        for (const material of materials) {
             const count = Math.min(remaining, this.data.inventory[material.id] ?? 0);
-            this.data.inventory[material.id] -= count;
+            inventory[material.id] = (inventory[material.id] ?? 0) - count;
             remaining -= count;
             if (!remaining) break;
         }
-        this.data.inventory.upgrade_stone = (this.data.inventory.upgrade_stone ?? 0) + 1;
-        this.changed();
-        return { ok: true, message: 'Đổi thành công 10 vật phẩm quái lấy 1 đá nâng cấp trang bị.' };
+        inventory.upgrade_stone = (inventory.upgrade_stone ?? 0) + 1;
+        const result = this.commitGathering({...this.data,inventory});
+        return {...result,message:result.ok?'Đổi thành công 10 vật phẩm quái lấy 1 đá cường hóa.':result.message};
     }
 
     async useItem(id) {

@@ -11,12 +11,19 @@ export const POTION_TIERS = [
     { level:5, hp:500, mp:250, hpPrice:120, mpPrice:95 }
 ];
 export const ITEMS = {};
-export const MONSTER_MATERIALS = [
+export const FOREST_MATERIALS = [
     { id:'boar_hide', name:'Da heo rừng', emoji:'🐗', description:'Da thu được khi hạ heo rừng ở Khu Rừng Phía Tây.' },
     { id:'wolf_fang', name:'Nanh sói', emoji:'🦷', description:'Nanh thu được khi hạ sói xám ở Khu Rừng Phía Tây.' },
     { id:'forest_gel', name:'Gel rừng', emoji:'🟢', description:'Gel thu được khi hạ slime rừng ở Khu Rừng Phía Tây.' },
     { id:'scorpion_tail', name:'Đuôi bọ cạp', emoji:'🦂', description:'Đuôi thu được khi hạ bọ cạp ở Khu Rừng Phía Tây.' }
 ];
+export const NOXII_MATERIALS = [
+    { id:'imp_horn', name:'Sừng tiểu quỷ', emoji:'🦴', description:'Rơi từ Tiểu quỷ tại Cửa Hang NoXII. Đổi tại Thợ rèn Doran.' },
+    { id:'stone_snail_shell', name:'Vỏ ốc đá', emoji:'🐚', description:'Rơi từ Ốc đá tại Cửa Hang NoXII. Đổi tại Thợ rèn Doran.' },
+    { id:'steel_snail_shell', name:'Vỏ ốc thép', emoji:'⚙️', description:'Rơi từ Ốc thép tại Cửa Hang NoXII. Đổi tại Thợ rèn Doran.' }
+];
+export const MONSTER_MATERIALS = [...FOREST_MATERIALS, ...NOXII_MATERIALS];
+export const monsterMaterialsForMap = mapId => mapId === 'noxii-entrance' ? NOXII_MATERIALS : mapId === 'west-forest' ? FOREST_MATERIALS : [];
 for (const material of MONSTER_MATERIALS) {
     ITEMS[material.id] = {
         name:material.name, type:'material', category:'monster-drop', level:1,
