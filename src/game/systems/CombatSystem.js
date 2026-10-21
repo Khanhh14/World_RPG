@@ -350,7 +350,7 @@ export class CombatSystem {
     if(this.state.data.hp<=0){this.scene.player.stop();this.deathAt=this.now+1600;this.notify('Bạn bị hạ. Đang hồi sinh ở Làng Khởi Đầu…');}
   }
   flash(p,radius,color,kind='ring'){this.vfx.emit(kind,p,radius,color,Math.atan2(this.facing.y,this.facing.x));}
-  float(p,text,color){if(!p)return;const o=this.scene.add.text(p.x,p.y-30,text,{fontFamily:'Arial',fontSize:'18px',fontStyle:'bold',color,stroke:'#152b23',strokeThickness:4}).setOrigin(.5).setDepth(9600);this.effects.push({text:o,y:o.y,at:this.now,end:this.now+750});}
+  float(p,text,color){if(!p||this.scene.activityUI?.settings.damageNumbers===false)return;const o=this.scene.add.text(p.x,p.y-30,text,{fontFamily:'Arial',fontSize:'18px',fontStyle:'bold',color,stroke:'#152b23',strokeThickness:4}).setOrigin(.5).setDepth(9600);this.effects.push({text:o,y:o.y,at:this.now,end:this.now+750});}
   monsterDirection(entity, target, distance, speed) {
     const dx=target.x-entity.sprite.x,dy=target.y-entity.sprite.y;
     if(distance<2)return {x:0,y:0};

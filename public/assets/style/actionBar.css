@@ -58,3 +58,7 @@
 .rpg-actions .ra-skill{width:48px;height:60px;padding-bottom:6px}
 .ra-skill .ra-icon{width:36px;height:36px}
 .rpg-actions .ra-skills{gap:6px;padding:7px}
+
+/* AUTO chỉ có chữ, giữ vị trí và trạng thái bật/tắt của nút cũ. */
+.ra-auto-word{display:block;font:800 12px/1 Arial,sans-serif;letter-spacing:.6px;color:#eee7c8;text-shadow:0 1px 2px #10251c}
+.ra-auto-on .ra-auto-word{color:#fff1ad}

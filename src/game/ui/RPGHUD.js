@@ -127,7 +127,7 @@ export class RPGHUD {
         this.unsubscribe = state.subscribe(() => this.render());
         this.render();
     }
-    get blocked() { return Boolean(this.tab); }
+    get blocked() { return Boolean(this.tab) || !!this.scene.activityUI?.isOpen; }
     bar(kind, label, value, max) {
         return `<div class="rpg-bar ${kind}" role="progressbar" aria-label="${label}" aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="${value}"><div class="rpg-fill" style="width:${Math.max(0,Math.min(100,(max > 0 ? value/max*100 : 0)))}%"></div><span class="rpg-bar-label">${label} ${value} / ${max}</span></div>`;
     }

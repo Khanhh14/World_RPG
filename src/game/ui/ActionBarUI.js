@@ -6,7 +6,7 @@ export { actionIcon } from './actionIcons.js';
 export class ActionBarUI {
   constructor(scene){
     this.scene=scene;this.managesInput=true;this.visible=true;this.alive=true;this.npc=null;
-    if(!document.getElementById('rpg-action-style')){const link=document.createElement('link');link.id='rpg-action-style';link.rel='stylesheet';link.href=`${import.meta.env?.BASE_URL??'/'}assets/style/actionBar.css?v=5`;document.head.appendChild(link);}
+    if(!document.getElementById('rpg-action-style')){const link=document.createElement('link');link.id='rpg-action-style';link.rel='stylesheet';link.href=`${import.meta.env?.BASE_URL??'/'}assets/style/actionBar.css?v=6`;document.head.appendChild(link);}
     this.root=document.createElement('section');this.root.className='rpg-actions';this.root.setAttribute('aria-label','Kỹ năng và tương tác');
     this.root.innerHTML=`<div class="ra-notice" role="status" hidden></div><div class="ra-skills">${COMBAT_SKILLS.map((s,i)=>this.button(`slot-${i}`,`Ô kỹ năng ${i+1}`,s.key,s.icon,'skill')).join('')}</div><div class="ra-orbit">${this.button('hp','Bình HP','Q','hp','utility')}${this.button('auto','Tự động đánh','AUTO','auto','utility')}${this.button('mp','Bình Mana','R','mp','utility')}${this.button('special','Vũ khí','F','special','utility')}${this.button('interact','Đánh thường','E','sword','main')}</div><div class="ra-tooltip" role="tooltip" hidden></div><section class="ra-picker" role="dialog" aria-label="Gán bình vào ô nhanh" hidden></section>`;
     document.body.appendChild(this.root);this.buttons=new Map([...this.root.querySelectorAll('button[data-id]')].map(b=>[b.dataset.id,b]));
@@ -50,7 +50,7 @@ export class ActionBarUI {
     this.onUpdate=()=>this.refresh();scene.events.on('postupdate',this.onUpdate);
     scene.events.once('shutdown',()=>this.destroy());this.resize(scene.scale.width,scene.scale.height);this.refresh();
   }
-  button(id,label,key,icon,kind){return `<button type="button" class="ra-button ra-${kind}" data-id="${id}" aria-label="${label} (${key})"><span class="ra-icon">${actionIcon(icon)}</span><span class="ra-label">${label}</span><kbd>${key}</kbd><span class="ra-count"></span><span class="ra-level"></span><span class="ra-cooldown" hidden></span></button>${['hp','mp'].includes(id)?`<button type="button" class="ra-assign ra-assign-${id}" data-choose="${id}" aria-label="Chọn cấp bình ${id==='hp'?'HP':'Mana'}">⌄</button>`:''}`;}
+  button(id,label,key,icon,kind){if(id==='auto')return '<button type="button" class="ra-button ra-utility" data-id="auto" aria-label="Tự động đánh" aria-pressed="false"><span class="ra-auto-word">AUTO</span></button>';return `<button type="button" class="ra-button ra-${kind}" data-id="${id}" aria-label="${label} (${key})"><span class="ra-icon">${actionIcon(icon)}</span><span class="ra-label">${label}</span><kbd>${key}</kbd><span class="ra-count"></span><span class="ra-level"></span><span class="ra-cooldown" hidden></span></button>${['hp','mp'].includes(id)?`<button type="button" class="ra-assign ra-assign-${id}" data-choose="${id}" aria-label="Chọn cấp bình ${id==='hp'?'HP':'Mana'}">⌄</button>`:''}`;}
   context(){
     const f=this.scene.fishingSystem;
     if(this.scene.dialogue?.isOpen)return {icon:'next',label:'Tiếp tục',kind:'dialogue'};

@@ -113,6 +113,8 @@ export class RPGState {
             pendingBossRewards: [],
             bossStoneInbox: 0,
             pendingKills: [],
+            pendingDailyAction: null,
+            activityRewardReceipts: [],
             mushroomHarvest: {},
             foodBuff: null,
 
@@ -235,6 +237,12 @@ export class RPGState {
                 ? /^[a-f0-9-]{36}$/i.test(entry)
                 : entry && ['naga','noxii'].includes(entry.bossId) && /^[a-f0-9-]{36}$/i.test(entry.requestId)))] : [];
             this.data.bossStoneInbox = integer(saved.bossStoneInbox,0,999999,0);
+            this.data.activityRewardReceipts = Array.isArray(saved.activityRewardReceipts)
+                ? [...new Set(saved.activityRewardReceipts.filter(id=>typeof id==='string'&&/^[a-f0-9-]{36}$/i.test(id)))] : [];
+            const dailyAction=saved.pendingDailyAction;
+            if(dailyAction && ['claim','collect'].includes(dailyAction.action)
+                && /^[a-f0-9-]{36}$/i.test(dailyAction.input?.requestId||'')
+                && (dailyAction.action==='claim'||/^[a-f0-9-]{36}$/i.test(dailyAction.input?.sourceId||''))) this.data.pendingDailyAction=dailyAction;
             this.data.mushroomHarvest = Object.fromEntries(Object.entries(saved.mushroomHarvest || {}).filter(([k,v]) => /^patch-\d+$/.test(k) && Number.isFinite(v)));
             const foodBuff = saved.foodBuff;
             const foodRecipe = FOOD_RECIPES.find(recipe => recipe.id === foodBuff?.foodId);
