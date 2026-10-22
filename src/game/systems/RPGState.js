@@ -195,7 +195,7 @@ export class RPGState {
     }
 
     get maxMP() {
-        return 50 + (this.data.level - 1) * 5;
+        return 50 + (this.data.level - 1) * 5 + this.bonus('maxMP');
     }
 
     get expNeeded() {
@@ -296,6 +296,7 @@ export class RPGState {
                 }
             }
 
+            this.data.mp = integer(saved.mp, 0, this.maxMP, this.maxMP);
             this.data.hp = integer(
                 saved.hp,
                 0,
@@ -588,6 +589,7 @@ export class RPGState {
             this.applyServerItems(result.items);
             this.data.pendingEquipmentAction = null;
             this.data.hp = Math.min(this.data.hp, this.maxHP);
+            this.data.mp = Math.min(this.data.mp, this.maxMP);
             this.changed();
             return pending.action === 'equip'
                 ? `Đã trang bị ${ITEMS[pending.itemId]?.name?.toLowerCase() || pending.itemId}.`

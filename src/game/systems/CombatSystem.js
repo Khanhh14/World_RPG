@@ -201,6 +201,32 @@ export class CombatSystem {
     }
     return true;
   }
+  get specialSkill(){return ITEMS[this.state?.data.equipment?.shield]?.specialSkill??null;}
+  specialError(){
+    if(!this.specialSkill)return 'Trang bị cầu phép thuật hoặc dao găm ở ô phụ để mở kỹ năng F.';
+    if(this.busy)return 'Hãy đóng bảng hoặc kết thúc thao tác hiện tại.';
+    if(this.remaining('offhand-special')>0)return 'Kỹ năng đặc biệt đang hồi.';
+    if(this.state.data.mp<this.specialSkill.mana)return 'Không đủ mana.';
+    return '';
+  }
+  castSpecial(){
+    const error=this.specialError();if(error){this.notify(error);return false;}
+    const skill=this.specialSkill,target=this.nearestTarget(skill.range);
+    if(!target){this.notify('Chưa có mục tiêu trong tầm kỹ năng đặc biệt.');return false;}
+    if(!this.state.spendMana(skill.mana))return false;
+    this.runtime.cooldowns['offhand-special']=this.clock+skill.cooldown;
+    const point=this.targetPoint(target),p=this.origin();
+    if(skill.id==='orb'){
+      this.projectile(this.state.attack*skill.multiplier,skill.range,0xb89aff,target);
+      this.flash(p,60,0xb89aff,'cast');
+    }else{
+      const dealt=this.hit(target,this.state.attack*skill.multiplier);
+      const healed=Math.min(Math.floor(dealt*.25),this.state.maxHP-this.state.data.hp);
+      if(healed>0){this.state.data.hp+=healed;this.state.changed();this.float(p,`+${healed} HP`,'#9df0b0');}
+      this.flash(point,60,0xf29da8,'drain');
+    }
+    return true;
+  }
   attack(){
     if(this.busy||this.remaining('basic'))return false;
     const mage=this.state.data.classCode==='mage';

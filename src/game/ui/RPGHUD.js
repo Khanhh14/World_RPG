@@ -1,3 +1,4 @@
+import { offhandTexture } from '../world/OffhandTextures.js';
 import { MAX_ENHANCEMENT, enhancedItem } from '../data/enhancement.js';
 import { renderSkillsPanel, renderSkillShop } from './SkillsPanel.js';
 import { renderWingsPanel, renderWingShop, wingEquipmentCard } from './WingsPanel.js';
@@ -52,6 +53,7 @@ export class RPGHUD {
             const button = event.target.closest('button[data-action]');
             if (!button || !this.root.contains(button) || button.disabled) return;
             const { action, id } = button.dataset;
+            if (action === 'activity') { this.scene.activityUI?.open(id); return; }
             if (action === 'tab' && !(button.closest('.rpg-tabs') && this.tab === id)) this.toggle(id);
             if (action === 'close') this.close();
             if (action === 'skill-slot') { this.skillSlot = Number(id); this.renderModal(); }
@@ -159,7 +161,7 @@ export class RPGHUD {
             : null;
         const buffStatus = buff ? `<div class="rpg-food-buff">${escape(buff.name)} · hiệu lực ${Math.ceil((d.foodBuff.expiresAt - Date.now()) / 60000)} phút</div>` : '';
         this.root.querySelector('.rpg-overview').innerHTML = `<div class="rpg-status"><div class="rpg-portrait">${icon(96,48)}<span class="rpg-level">LV ${d.level}</span></div><div class="rpg-meters"><div class="rpg-name">${escape(d.name || 'Lữ khách')}</div>${this.bar('hp','HP',d.hp,s.maxHP)}${this.bar('mp','MP',d.mp,s.maxMP)}${buffStatus}${this.bar('xp','EXP',d.exp,s.expNeeded)}</div></div>${tracker}<div class="rpg-location"><span class="rpg-location-name">${escape(this.mapTitle)}</span></div>`;
-        this.root.querySelector('.rpg-nav').innerHTML = [['inventory','Túi đồ','B'],['quests','Nhiệm vụ','J'],['skills','Kỹ năng','C']].map(([id,name,key]) => `<button type="button" data-action="tab" data-id="${id}" aria-label="${name} (${key})"><span>${name}</span><kbd>${key}</kbd>${id==='quests' && d.quests?.some(quest => quest.status === 'completed')?'<i class="rpg-dot"></i>':''}</button>`).join('');
+        this.root.querySelector('.rpg-nav').innerHTML = [['inventory','Túi đồ','B'],['quests','Nhiệm vụ','J'],['settings','Cài đặt','⚙'],['guide','Hướng dẫn','?']].map(([id,name,key]) => `<button type="button" data-action="${['settings','guide'].includes(id)?'activity':'tab'}" data-id="${id}" aria-label="${name} (${key})"><span>${name}</span><kbd>${key}</kbd>${id==='quests' && d.quests?.some(quest => quest.status === 'completed')?'<i class="rpg-dot"></i>':''}</button>`).join('');
         if (this.tab) this.renderModal();
     }
     async claimQuest(questId) {
@@ -291,6 +293,7 @@ export class RPGHUD {
                 <div class="rpg-equipment-header">${itemIcon(value ?? (frame === null ? { icon:slot, level:1 } : { frame }), 44)}
                     <div><div class="rpg-equipment-title">${escape(name)}</div><div class="rpg-equipment-name ${value ? '' : 'rpg-equipment-empty'}">${escape(value?.name ?? 'Chưa trang bị')} <span class="enhance-level">+${level}</span></div></div>
                 </div>${value ? `<div class="rpg-equipment-stats">${stats}</div>
+                ${value.specialSkill?`<p class="rpg-subtle">F · ${escape(value.specialSkill.name)} · ${value.specialSkill.mana} MP · ${value.specialSkill.cooldown/1000}s</p>`:''}
                 <div class="enhance-info">${level>=MAX_ENHANCEMENT?'Đã cường hóa tối đa':`Lên +${level+1}: <b>${Math.min(level+1,10)} đá</b> · Có ${d.inventory.upgrade_stone??0}`}</div>
                 <div class="rpg-equipment-footer"><span class="rpg-tier">CẤP ${value.level ?? 1}</span><div class="enhance-actions"><button type="button" data-action="unequip" data-id="${escape(id)}">Tháo</button><button type="button" class="enhance-button" data-action="enhance" data-id="${slot}" data-level="${level}" ${check.ok?'':'disabled'} title="${escape(check.ok?`Sau nâng: ${nextStats}. Giữ cấp khi đổi trang bị.`:check.message)}">Nâng cấp</button></div></div>` : `<div class="enhance-info">Cấp +${level} được giữ cho món mặc tiếp theo.</div>`}
             </div>`;
@@ -368,7 +371,9 @@ export class RPGHUD {
         const worldScale = Math.abs(sprite?.scaleX) || 3;
         const gap = 18 * scale / worldScale;
         const weapon = () => draw(getFrame(wf), x + direction * gap, y + 6 * scale / worldScale, scale, this.previewLeft);
-        const shield = () => draw(getFrame(sf), x - direction * gap, y + scale / worldScale, scale, this.previewLeft);
+        const offhand = ITEMS[equipment.shield];
+        const shieldFrame = offhand?.offhandKind ? this.scene.textures.getFrame(offhandTexture(this.scene, offhand)) : getFrame(sf);
+        const shield = () => draw(shieldFrame, x - direction * gap, y + scale / worldScale, scale, this.previewLeft);
         ctx.fillStyle = '#00000044'; ctx.beginPath(); ctx.ellipse(x, y + 60, 65, 15, 0, 0, Math.PI * 2); ctx.fill();
         const wingData = this.state.data.wings;
         const wingId = this.tab === 'wings' ? this.wingSelected : wingData?.equipped;
@@ -415,7 +420,7 @@ export class RPGHUD {
         const s = this.state, d = s.data;
         const ids = SHOP_ITEMS.filter(id => canShopItem(id,this.state.data.classCode) && (this.shopCategory === 'all' || ITEMS[id].category === this.shopCategory) && (!this.shopLevel || ITEMS[id].level === this.shopLevel));
         return `<div class="rpg-shop-gold"><strong>${escape(this.shopNPC?.name ?? 'Thương nhân')}</strong><span>● ${d.gold.toLocaleString('vi-VN')} vàng</span></div>
-        <div class="rpg-shop-filters" aria-label="Loại vật phẩm">${[['all','Tất cả'],['weapon','Vũ khí'],['gear','Khiên & giáp'],['hp','Bình máu'],['mp','Bình mana']].map(([id,label])=>`<button data-action="filter" data-id="${id}" class="${this.shopCategory===id?'active':''}">${label}</button>`).join('')}</div>
+        <div class="rpg-shop-filters" aria-label="Loại vật phẩm">${[['all','Tất cả'],['weapon','Vũ khí'],['gear','Khiên & giáp'],['special','Trang bị đặc biệt'],['hp','Bình máu'],['mp','Bình mana']].map(([id,label])=>`<button data-action="filter" data-id="${id}" class="${this.shopCategory===id?'active':''}">${label}</button>`).join('')}</div>
         <div class="rpg-shop-filters" aria-label="Cấp vật phẩm">${[0,1,2,3,4,5].map(level=>`<button data-action="tier" data-id="${level}" class="${this.shopLevel===level?'active':''}">${level?'Cấp '+level:'Mọi cấp'}</button>`).join('')}</div>
         <div class="rpg-subtle">Cấp vật phẩm thể hiện sức mạnh, không yêu cầu cấp nhân vật. Mua xong, mở Ba lô để dùng hoặc trang bị.</div>
         <div class="rpg-shop-grid">${ids.map(id=>{

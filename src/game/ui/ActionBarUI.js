@@ -8,7 +8,7 @@ export class ActionBarUI {
     this.scene=scene;this.managesInput=true;this.visible=true;this.alive=true;this.npc=null;
     if(!document.getElementById('rpg-action-style')){const link=document.createElement('link');link.id='rpg-action-style';link.rel='stylesheet';link.href=`${import.meta.env?.BASE_URL??'/'}assets/style/actionBar.css?v=6`;document.head.appendChild(link);}
     this.root=document.createElement('section');this.root.className='rpg-actions';this.root.setAttribute('aria-label','Kỹ năng và tương tác');
-    this.root.innerHTML=`<div class="ra-notice" role="status" hidden></div><div class="ra-skills">${COMBAT_SKILLS.map((s,i)=>this.button(`slot-${i}`,`Ô kỹ năng ${i+1}`,s.key,s.icon,'skill')).join('')}</div><div class="ra-orbit">${this.button('hp','Bình HP','Q','hp','utility')}${this.button('auto','Tự động đánh','AUTO','auto','utility')}${this.button('mp','Bình Mana','R','mp','utility')}${this.button('special','Vũ khí','F','special','utility')}${this.button('interact','Đánh thường','E','sword','main')}</div><div class="ra-tooltip" role="tooltip" hidden></div><section class="ra-picker" role="dialog" aria-label="Gán bình vào ô nhanh" hidden></section>`;
+    this.root.innerHTML=`<div class="ra-notice" role="status" hidden></div><div class="ra-skills">${COMBAT_SKILLS.map((s,i)=>this.button(`slot-${i}`,`Ô kỹ năng ${i+1}`,s.key,s.icon,'skill')).join('')}</div><div class="ra-orbit">${this.button('hp','Bình HP','Q','hp','utility')}${this.button('auto','Tự động đánh','AUTO','auto','utility')}${this.button('mp','Bình Mana','R','mp','utility')}${this.button('special','Kỹ năng trang bị phụ','F','special','utility')}${this.button('interact','Đánh thường','E','sword','main')}</div><div class="ra-tooltip" role="tooltip" hidden></div><section class="ra-picker" role="dialog" aria-label="Gán bình vào ô nhanh" hidden></section>`;
     document.body.appendChild(this.root);this.buttons=new Map([...this.root.querySelectorAll('button[data-id]')].map(b=>[b.dataset.id,b]));
     this.picker=this.root.querySelector('.ra-picker');this.pickerKind=null;
     this.tooltip=this.root.querySelector('.ra-tooltip');this.notice=this.root.querySelector('.ra-notice');
@@ -74,7 +74,7 @@ export class ActionBarUI {
       else if(c.kind==='fish')void f.start();
       else if(c.kind==='cancel')void f.cancel();
       else this.combat.attack();
-    }else if(id==='special')this.toast('Kỹ năng riêng của vũ khí sẽ được bổ sung sau.');
+    }else if(id==='special')this.combat.castSpecial();
     else if(id==='hp'||id==='mp')this.combat.potion(id);
     else {
       const slot=Number(id.slice('slot-'.length));
@@ -127,8 +127,13 @@ ${skill.description}${error?'\n'+error:''}`:'Nhấn C để gán kỹ năng vào
       if(this.root.hidden||scene.dialogue?.isOpen||(f?.phase&&f.phase!=='idle'))this.closePicker(false);
       else {scene.player?.stop();this.renderPicker();}
     }
-    const special=this.buttons.get('special');special.setAttribute('aria-disabled','true');special.dataset.tooltip='Kỹ năng đặc biệt của vũ khí · Chưa mở';
-    special.classList.add('ra-locked');
+    const special=this.buttons.get('special'),skill=this.combat.specialSkill,specialError=this.combat.specialError();
+    special.disabled=!!specialError;special.setAttribute('aria-disabled',String(!!specialError));
+    special.classList.toggle('ra-locked',!skill);
+    if(special.dataset.skill!==(skill?.id??'empty')){special.dataset.skill=skill?.id??'empty';special.querySelector('.ra-icon').innerHTML=actionIcon(skill?.icon??'special');}
+    special.setAttribute('aria-label',`${skill?.name??'Kỹ năng trang bị phụ'} (F)`);
+    special.dataset.tooltip=skill?`${skill.name} · F · ${skill.mana} MP · Hồi ${skill.cooldown/1000}s${specialError?'\n'+specialError:''}`:specialError;
+    this.cooldown(special,this.combat.remaining('offhand-special'),skill?.cooldown??12000);
     if(this.noticeUntil&&performance.now()>this.noticeUntil)this.notice.hidden=true;
   }
   openPicker(kind){

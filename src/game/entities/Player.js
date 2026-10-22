@@ -1,3 +1,5 @@
+import { ITEMS } from '../data/items.js';
+import { offhandTexture } from '../world/OffhandTextures.js';
 import { wingTexture } from '../world/WingTextures.js';
 // Logic nhân vật được dùng lại ở làng, rừng và các khu vực tiếp theo.
 export class Player {
@@ -117,9 +119,9 @@ export class Player {
             }
             this.currentShield = shield;
             if (shield) {
-                const frame = this.getShieldFrame(shield);
-                if (frame !== null) {
-                    this.shieldSprite = this.scene.add.image(this.x, this.sprite.y, 'dungeon', frame)
+                const item=ITEMS[shield], frame = this.getShieldFrame(shield);
+                if (item?.offhandKind || frame !== null) {
+                    this.shieldSprite = this.scene.add.image(this.x, this.sprite.y, item?.offhandKind?offhandTexture(this.scene,item):'dungeon', item?.offhandKind?undefined:frame)
                         .setScale(this.sprite.scaleX)
                         .setOrigin(0.5, 0.5);
                 }

@@ -1,5 +1,6 @@
+import { OFFHAND_ITEMS } from './offhands.js';
 export const EQUIPMENT_SLOTS = [
-    ['weapon','Vũ khí',103], ['shield','Khiên',102], ['armor','Áo giáp',null],
+    ['weapon','Vũ khí',103], ['shield','Trang bị phụ',102], ['armor','Áo giáp',null],
     ['helmet','Mũ',null], ['boots','Giày',null], ['gloves','Găng tay',null]
 ];
 export const BAG_CAPACITY = 24;
@@ -69,6 +70,7 @@ for (const spec of gear) for (let i=0;i<5;i++) {
 }
 // Giữ id cũ để không mất trượng trong bản lưu trước.
 ITEMS.wood_staff={name:'Trượng tập sự',frame:129,type:'weapon',category:'weapon',level:1,price:28,maxStack:1,attack:3,description:'+3 công. Có thể trang bị ở mọi cấp nhân vật.'};
+Object.assign(ITEMS, OFFHAND_ITEMS);
 export const SHOP_ITEMS=Object.keys(ITEMS)
     .filter(id => !['monster-drop','upgrade'].includes(ITEMS[id].category))
     .sort((a,b)=>ITEMS[a].level-ITEMS[b].level || ITEMS[a].price-ITEMS[b].price);
@@ -78,6 +80,8 @@ export function gearIcon(kind, level=1, size=40) {
     const colors=['#b9c5c9','#91c5e5','#bb9cde','#dea572','#e3ca78'];
     const base=colors[Math.max(0,Math.min(4,level-1))];
     const shapes={
+        orb:'<path d="M5 2H11V3H13V5H14V10H13V12H11V13H5V12H3V10H2V5H3V3H5Z" fill="#354268"/><path d="M5 4H11V5H12V9H11V11H5V10H4V6H5Z" fill="#a87df5"/><path d="M6 4H9V6H6Z" fill="#edebff"/><path d="M3 13H13V15H3Z" fill="#d0b569"/>',
+        dagger:'<path d="M10 1H13V5H12V7H10V9H8V11H6V8H8V6H9V3H10Z" fill="#ccdfe1"/><path d="M4 8L9 12L8 14L3 10Z" fill="#e1ba65"/><path d="M4 11L6 13L3 16L1 14Z" fill="#a56248"/>',
         armor:'<path d="M5 2H7V4H9V2H11L15 5V9H12V14H4V9H1V5Z"/><path d="M5 5H11V12H5Z" fill="#627985"/><path d="M7 5H9V12H7Z" fill="#d9e3df"/>',
         helmet:'<path d="M5 2H11V3H13V6H14V14H10V10H6V14H2V6H3V3H5Z"/><path d="M4 7H12V9H4Z" fill="#243b3c"/><path d="M7 2H9V13H7Z" fill="#e1e7dd"/>',
         boots:'<path d="M2 2H6V9H8V14H1V11H2ZM10 2H14V9H15V14H9V11H10Z"/><path d="M1 12H8V14H1ZM9 12H15V14H9Z" fill="#806447"/><path d="M3 4H6V5H3ZM11 4H14V5H11Z" fill="#e7d6a6"/>',

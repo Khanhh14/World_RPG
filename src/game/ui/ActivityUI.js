@@ -12,9 +12,9 @@ export class ActivityUI {
  constructor(scene){
   this.scene=scene;this.alive=true;this.isOpen=false;this.tab='daily';this.message='';this.settingsKey=`tiny-rpg-settings:${scene.rpgState.data.characterId}`;
   try{const stored=JSON.parse(localStorage.getItem(this.settingsKey)||'{}');this.settings=Object.fromEntries(Object.entries(defaults).map(([k,v])=>[k,typeof stored[k]==='boolean'?stored[k]:v]));}catch{this.settings={...defaults};}
-  if(!document.getElementById('rpg-activities-css')){const link=document.createElement('link');link.id='rpg-activities-css';link.rel='stylesheet';link.href='/assets/style/activities.css?v=1';document.head.append(link);}
+  if(!document.getElementById('rpg-activities-css')){const link=document.createElement('link');link.id='rpg-activities-css';link.rel='stylesheet';link.href='/assets/style/activities.css?v=2';document.head.append(link);}
   this.toolbar=document.createElement('nav');this.toolbar.className='ga-toolbar';this.toolbar.setAttribute('aria-label','Tiện ích trò chơi');
-  this.toolbar.innerHTML=TABS.map(([id,symbol,name])=>`<button type="button" data-open="${id}" aria-label="${name}"><span aria-hidden="true">${symbol}</span><small>${name}</small><i data-dot="${id}" hidden></i></button>`).join('');
+  this.toolbar.innerHTML=TABS.filter(([id])=>id==='daily').map(([id,symbol,name])=>`<button type="button" data-open="${id}" aria-label="${name}"><span aria-hidden="true">${symbol}</span><small>${name}</small><i data-dot="${id}" hidden></i></button>`).join('');
   this.root=document.createElement('dialog');this.root.className='ga-dialog';this.root.setAttribute('aria-labelledby','ga-title');
   this.root.innerHTML='<header class="ga-header"><div><small>HÀNH TRÌNH PHIÊU LƯU</small><h2 id="ga-title">Điểm danh 7 ngày</h2></div><button type="button" data-close aria-label="Đóng">×</button></header><nav class="ga-tabs" aria-label="Chọn tiện ích"></nav><div class="ga-content"></div><p class="ga-message" role="status"></p><footer>Esc để đóng · Di chuyển và chiến đấu tạm dừng khi mở bảng</footer>';
   this.root.querySelector('.ga-tabs').innerHTML=TABS.map(([id,symbol,name])=>`<button type="button" data-tab="${id}">${symbol} ${name}</button>`).join('');
@@ -55,6 +55,7 @@ export class ActivityUI {
  async act(button){
   this.message='';
   try{
+   if(button.dataset.action==='gifts'){this.tab='gifts';this.render();return;}
    if(button.dataset.action==='refresh'){await this.daily.load(true);return;}
    if(button.dataset.action==='claim'){
     const result=await this.daily.claim();
@@ -71,7 +72,7 @@ export class ActivityUI {
  updateToolbar(){
   const view=this.daily?.view;
   this.toolbar.querySelector('[data-dot="daily"]').hidden=!view?.canClaim;
-  const dot=this.toolbar.querySelector('[data-dot="gifts"]');dot.hidden=!view?.boxes.length;dot.textContent=view?.boxes.length||'';
+  const dot=this.toolbar.querySelector('[data-dot="gifts"]');if(dot){dot.hidden=!view?.boxes.length;dot.textContent=view?.boxes.length||'';}
  }
  applySettings(){
   for(const entity of this.scene.monsters||[])entity.label?.setVisible(this.settings.monsterNames&&entity.sprite.visible);
@@ -104,12 +105,12 @@ export class ActivityUI {
   return `<div class="ga-summary"><div><span class="ga-kicker">VÒNG ${v.cycle} · ${v.progress}/7 MỐC</span><h3>Mỗi ngày một phần quà</h3><p>Không cần liên tục. Nghỉ ngày vẫn giữ tiến độ.</p></div><div class="ga-reset">Đổi ngày lúc 00:00 Việt Nam<strong data-countdown></strong></div></div><div class="ga-days">${v.rewards.map(r=>{
    const claimed=r.day<=v.progress,current=v.canClaim&&r.day===v.nextDay;
    return `<article class="ga-day ${claimed?'is-claimed':''} ${current?'is-current':''} ${r.day===7?'is-grand':''}"><header><span>NGÀY ${r.day}</span><b>${claimed?'✓':r.day===7?'✦':current?'★':'◇'}</b></header><ul>${rewardsMarkup(r)}</ul><div class="ga-day-state">${claimed?'Đã nhận':current?'Hôm nay':'Sắp tới'}</div></article>`;
-  }).join('')}</div><div class="ga-daily-footer"><p>Vàng, đá quý cộng ngay. Vật phẩm chưa nhận được sẽ giữ trong Quà chờ.</p><button type="button" class="ga-primary" data-action="${busy?'refresh':'claim'}" ${(!v.canClaim||this.daily.busy)?'disabled':''}>${this.daily.busy?'Đang nhận…':busy?'Kiểm tra giao dịch chờ':v.canClaim?`Nhận quà ngày ${v.nextDay}`:'✓ Đã điểm danh hôm nay'}</button></div>`;
+  }).join('')}</div><div class="ga-daily-footer"><p>Vàng, đá quý cộng ngay. ${v.boxes.length?`<button type="button" data-action="gifts">Nhận vật phẩm còn chờ (${v.boxes.length})</button>`:"Quà được nhận tự động khi có chỗ trong túi."}</p><button type="button" class="ga-primary" data-action="${busy?'refresh':'claim'}" ${(!v.canClaim||this.daily.busy)?'disabled':''}>${this.daily.busy?'Đang nhận…':busy?'Kiểm tra giao dịch chờ':v.canClaim?`Nhận quà ngày ${v.nextDay}`:'✓ Đã điểm danh hôm nay'}</button></div>`;
  }
  renderGifts(v){
   return `<div class="ga-summary"><div><span class="ga-kicker">QUÀ ĐƯỢC GIỮ LẠI</span><h3>${v.boxes.length} phần quà chưa nhận vật phẩm</h3><p>Vàng và đá quý của các mốc này đã được cộng khi điểm danh.</p></div><button type="button" data-action="refresh" ${this.daily.busy?'disabled':''}>Làm mới</button></div><div class="ga-boxes">${v.boxes.length?v.boxes.map(b=>`<article><div><strong>Quà điểm danh ngày ${b.day}</strong><small>${escape(b.date)}</small></div><ul>${rewardsMarkup({items:b.items})}</ul><button type="button" class="ga-primary" data-action="collect" data-source="${escape(b.sourceId)}" ${this.daily.busy?'disabled':''}>Nhận quà</button></article>`).join(''):'<div class="ga-empty">✓ Bạn đã nhận hết quà.<p>Quà mới sẽ xuất hiện sau lần điểm danh tiếp theo.</p></div>'}</div><h3 class="ga-history-title">Nhật ký gần đây</h3><div class="ga-history">${v.history.length?v.history.map(h=>`<div><span>${escape(h.date)} · Ngày ${h.day}</span><strong>+${h.reward.gold} vàng${h.reward.gems?` · +${h.reward.gems} đá quý`:''}</strong><small>${h.collected?'Đã nhận vật phẩm':'Vật phẩm đang chờ'}</small></div>`).join(''):'Chưa có lần điểm danh nào.'}</div>`;
  }
- renderGuide(){return `<div class="ga-guide"><section><h3>Di chuyển & chiến đấu</h3><dl><dt>W A S D / Phím mũi tên</dt><dd>Di chuyển nhân vật.</dd><dt>E</dt><dd>Đánh thường; nói chuyện, câu cá hoặc tương tác khi ở gần.</dd><dt>1 – 5</dt><dd>Dùng các kỹ năng đã gán.</dd><dt>Q / R</dt><dd>Dùng bình HP / MP. Nút ⌄ cạnh bình để chọn cấp.</dd><dt>AUTO</dt><dd>Bật / tắt tự động tìm và đánh mục tiêu gần.</dd></dl></section><section><h3>Hành trang & hành trình</h3><dl><dt>B</dt><dd>Mở túi đồ, trang bị và cường hóa.</dd><dt>J</dt><dd>Xem nhật ký nhiệm vụ.</dd><dt>C</dt><dd>Xem và gán kỹ năng vào các ô nhanh.</dd><dt>Cổng dịch chuyển</dt><dd>Bước vào giữa cổng để đổi map.</dd><dt>Boss</dt><dd>Né vùng báo kỹ năng. Quà NaGa và Hộ Vệ Hắc Thạch có thời gian hồi sinh riêng.</dd></dl></section></div><div class="ga-tip"><b>Mẹo:</b> Điểm danh mỗi ngày để tích quà. Đá nâng cấp cánh được dùng trong bảng Cánh; thức ăn có thể hồi phục theo thời gian.</div>`;}
+ renderGuide(){return `<div class="ga-guide"><section><h3>Di chuyển & chiến đấu</h3><dl><dt>W A S D / Phím mũi tên</dt><dd>Di chuyển nhân vật.</dd><dt>E</dt><dd>Đánh thường; nói chuyện, câu cá hoặc tương tác khi ở gần.</dd><dt>F</dt><dd>Dùng kỹ năng riêng của cầu phép thuật hoặc dao găm đang trang bị ở ô phụ.</dd><dt>1 – 5</dt><dd>Dùng các kỹ năng đã gán.</dd><dt>Q / R</dt><dd>Dùng bình HP / MP. Nút ⌄ cạnh bình để chọn cấp.</dd><dt>AUTO</dt><dd>Bật / tắt tự động tìm và đánh mục tiêu gần.</dd></dl></section><section><h3>Hành trang & hành trình</h3><dl><dt>B</dt><dd>Mở túi đồ, trang bị và cường hóa.</dd><dt>J</dt><dd>Xem nhật ký nhiệm vụ.</dd><dt>C</dt><dd>Xem và gán kỹ năng vào các ô nhanh.</dd><dt>Cổng dịch chuyển</dt><dd>Bước vào giữa cổng để đổi map.</dd><dt>Boss</dt><dd>Né vùng báo kỹ năng. Quà NaGa và Hộ Vệ Hắc Thạch có thời gian hồi sinh riêng.</dd></dl></section></div><div class="ga-tip"><b>Mẹo:</b> Điểm danh mỗi ngày để tích quà. Đá nâng cấp cánh được dùng trong bảng Cánh; thức ăn có thể hồi phục theo thời gian.</div>`;}
  destroy(){
   this.alive=false;this.isOpen=false;clearInterval(this.timer);if(this.root.open)this.root.close();
   window.removeEventListener('keydown',this.key,true);document.removeEventListener('visibilitychange',this.visible);this.scene.events.off('postupdate',this.tick);
