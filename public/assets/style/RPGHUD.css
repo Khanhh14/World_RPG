@@ -187,3 +187,5 @@
 .rpg-ui .rpg-quest-tracker button { pointer-events: auto; cursor: pointer; }
 .rpg-ui .rpg-quest-tracker button:disabled { cursor: wait; }
 .rpg-ui .rpg-quest-tracker button:focus-visible { outline: 2px solid #fff0b6; outline-offset: 3px; }
+
+.rpg-sale-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.rpg-sale-actions button{flex:1}.rpg-sale-pending{padding:12px;border:1px solid #d5b575;border-radius:8px;background:#403b26;color:#ffe9ae}

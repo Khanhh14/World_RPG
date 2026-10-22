@@ -1,6 +1,6 @@
 import { MAX_ENHANCEMENT, enhancementLevel, enhancedItem } from '../data/enhancement.js';
 import { wingStats } from '../data/wings.js';
-import { purchaseItem } from '../../api/shopApi.js';
+import { purchaseItem, sellItemRequest } from '../../api/shopApi.js';
 import { inventoryApi } from '../../api/inventoryApi.js';
 import {
     createCharacterState,
@@ -108,6 +108,7 @@ export class RPGState {
             skills: null,
             pendingSkillAction: null,
             pendingPurchase: null,
+            pendingSale: null,
             pendingItemUse: null,
             pendingInventoryAction: null,
             pendingEquipmentAction: null,
@@ -255,6 +256,8 @@ export class RPGState {
                 };
             }
             this.data.pendingPurchase = saved.pendingPurchase || null;
+            const sale=saved.pendingSale;
+            if(sale && /^[a-f0-9-]{36}$/i.test(sale.requestId??'') && ITEMS[sale.itemId] && Number.isInteger(sale.quantity) && sale.quantity>0 && sale.quantity<=99 && ['local','inventory'].includes(sale.source))this.data.pendingSale=sale;
             this.data.pendingItemUse = saved.pendingItemUse || null;
             const inventoryAction = saved.pendingInventoryAction;
             if (inventoryAction && ['exchange-food', 'harvest-mushroom'].includes(inventoryAction.action)
@@ -279,7 +282,7 @@ export class RPGState {
                 this.data.inventory[id] = integer(
                     saved.inventory?.[id],
                     0,
-                    99,
+                    BAG_CAPACITY * (ITEMS[id].maxStack || 99),
                     0
                 );
             }
@@ -419,9 +422,11 @@ export class RPGState {
                 : 'Mỗi ô chứa tối đa 99 bình.';
         }
 
-        const usedSlots = Object.values(this.data.inventory)
-            .filter(number => number > 0)
-            .length;
+        const usedSlots = Object.entries(this.data.inventory).reduce((sum,[itemId,number])=>{
+            if(!ITEMS[itemId])return sum;
+            const bag=Math.max(0,number-Object.values(this.data.equipment).filter(id=>id===itemId).length);
+            return sum+Math.ceil(bag/(ITEMS[itemId].maxStack||99));
+        },0);
 
         if (!count && usedSlots >= BAG_CAPACITY) {
             return 'Ba lô đã đầy.';
@@ -431,6 +436,7 @@ export class RPGState {
     }
 
     canBuy(id, quantity = 1) {
+        if(this.data.pendingSale || this.selling)return {ok:false,message:'Đang chờ xác nhận bán đồ.'};
         const error = this.canAdd(id, quantity);
 
         if (error) {
@@ -485,7 +491,42 @@ export class RPGState {
         } finally { this.buying = false; }
     }
 
+    async sellItem(id,quantity=1,position) {
+        if(this.selling || this.buying || this.usingItem || this.data.pendingPurchase || this.data.pendingEquipmentAction || this.data.pendingItemUse || this.data.pendingInventoryAction)return {ok:false,message:'Hãy hoàn tất giao dịch vật phẩm đang chờ.'};
+        if(this.data.pendingSale)return this.recoverSale();
+        const worn=Object.values(this.data.equipment).filter(value=>value===id).length;
+        if(!ITEMS[id] || !Number.isInteger(quantity) || quantity<1 || quantity>99 || (this.data.inventory[id]??0)-worn<quantity)return {ok:false,message:'Không đủ vật phẩm trong balo. Hãy tháo đồ đang mặc trước.'};
+        const local=MONSTER_MATERIALS.some(m=>m.id===id)||id==='upgrade_stone';
+        if(local && this.data.pendingKills.length){
+            this.selling=true;
+            try{await this.scene?.questSystem?.load();}finally{this.selling=false;}
+        }
+        const pending={requestId:crypto.randomUUID(),itemId:id,quantity,source:local?'local':'inventory',position};
+        const next={...this.data,pendingSale:pending,inventory:{...this.data.inventory}};
+        if(local)next.inventory[id]-=quantity;
+        const saved=this.commitGathering(next);if(!saved.ok)return saved;
+        return this.recoverSale();
+    }
+    async recoverSale() {
+        const pending=this.data.pendingSale;if(!pending || this.selling)return {ok:false,message:'Đang xử lý bán đồ…'};
+        this.selling=true;
+        try{
+            const result=await sellItemRequest(pending);
+            if(result.sold?.itemId!==pending.itemId || result.sold?.quantity!==pending.quantity || result.sold?.source!==pending.source)throw new Error('Phản hồi bán đồ không khớp. Hãy thử xác nhận lại.');
+            if(pending.source==='inventory' && Array.isArray(result.items))this.applyServerItems(result.items);
+            this.data.pendingSale=null;this.applyServerCharacter(result.character);this.changed();
+            return {ok:true,message:`Đã bán ${pending.quantity} ${ITEMS[pending.itemId].name}, nhận ${result.sold.total} vàng.`};
+        }catch(error){
+            if([400,403,409].includes(error.status)){
+                if(pending.source==='local')this.data.inventory[pending.itemId]=(this.data.inventory[pending.itemId]??0)+pending.quantity;
+                this.data.pendingSale=null;this.changed();
+            }
+            return {ok:false,message:error.message || 'Bán đồ đang chờ xác nhận. Bấm Thử lại để kiểm tra giao dịch cũ.'};
+        }finally{this.selling=false;}
+    }
+
     async useConsumable(id) {
+        if(this.data.pendingSale || this.selling)return 'Hãy hoàn tất giao dịch bán đồ trước.';
         if (this.usingItem) return 'Đang xử lý vật phẩm…';
         if (this.data.pendingItemUse) {
             if (this.data.pendingItemUse.itemId !== id) {
@@ -546,6 +587,7 @@ export class RPGState {
     }
 
     async changeEquipment(id, action) {
+        if(this.data.pendingSale || this.selling)return 'Hãy hoàn tất giao dịch bán đồ trước.';
         if (this.usingItem) return 'Đang xử lý vật phẩm…';
         if (this.data.pendingEquipmentAction) return await this.recoverEquipmentAction();
         this.data.pendingEquipmentAction = { action, itemId:id, requestId:crypto.randomUUID() };
@@ -606,6 +648,7 @@ export class RPGState {
     }
 
     async beginInventoryAction(action, details) {
+        if(this.data.pendingSale || this.selling)return {ok:false,message:'Hãy hoàn tất giao dịch bán đồ trước.'};
         if (this.usingItem) return {ok:false,message:'Đang xử lý vật phẩm…'};
         if (this.data.pendingInventoryAction) return await this.recoverInventoryAction();
         this.data.pendingInventoryAction = {...details,action,requestId:crypto.randomUUID()};

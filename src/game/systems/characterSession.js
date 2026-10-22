@@ -54,6 +54,7 @@ export function createCharacterState(StateClass, userId) {
     state.data.mp=Math.min(profile.runtime.mp,state.maxMP);
   }
   state.changed();
+  if (state.data.pendingSale) void state.recoverSale();
   if (state.data.pendingPurchase) void state.recoverPurchase();
   if (state.data.pendingItemUse) void state.recoverItemUse();
   if (state.data.pendingInventoryAction) void state.recoverInventoryAction();
