@@ -457,6 +457,14 @@ export class CombatSystem {
       entity.label?.setPosition(entity.sprite.x,entity.sprite.y-entity.sprite.displayHeight-8);
     }
   }
+  tryMonsterAttack(target){
+    if(target.entity.data.boss || target.entity.sprite.active===false || target.hp<=0 || target.returning || target.stunUntil>this.now || !target.aggro || this.busy || this.now<(target.nextHit??0))return false;
+    const point=this.targetPoint(target),player=this.origin();
+    if(!player || Math.hypot(point.x-player.x,point.y-player.y)>=95 || !this.clearLine(point,player))return false;
+    target.nextHit=this.now+1300;
+    this.damagePlayer(Math.max(5,target.damage-Math.floor(this.state.defense/2)),target);
+    return true;
+  }
   update(time,delta=16){
     if(!this.alive||!this.state||!this.scene.player)return;
     if(this.runtime.barrierUntil<=this.clock)this.runtime.barrierHP=0;
@@ -473,7 +481,7 @@ export class CombatSystem {
     const v=this.scene.player.sprite.body?.velocity;if(v&&Math.hypot(v.x,v.y)>1){const l=Math.hypot(v.x,v.y);this.facing={x:v.x/l,y:v.y/l};}
     for(const entity of this.scene.monsters||[])if(entity.sprite?.active&&!this.targets.has(entity)){
       const hp=entity.data.hp??60;
-      this.targets.set(entity,{entity,hp,maxHP:hp,damage:entity.data.damage??10,aggro:false,nextHit:0,chaseUntil:0});
+      this.targets.set(entity,{entity,hp,maxHP:hp,damage:entity.data.damage??10,aggro:false,nextHit:0,chaseUntil:0,stunUntil:0,returning:false});
     }
     this.autoMoveDirection=null;
     if(this.autoAttack&&!this.busy){
@@ -494,10 +502,8 @@ export class CombatSystem {
       if(!t.entity.sprite.active)continue;
       if(t.hp<=0){if(this.now>=t.respawnAt){t.hp=t.maxHP;t.aggro=false;t.returning=false;t.stunUntil=0;t.vulnerableUntil=0;t.vulnerability=1;t.burn=null;t.entity.sprite.setPosition(t.entity.home?.x??t.entity.sprite.x,t.entity.home?.y??t.entity.sprite.y);t.entity.sprite.body?.reset(t.entity.sprite.x,t.entity.sprite.y);for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(true);}else continue;}
       this.updateMonsterAI(t);
-      const p=this.targetPoint(t),me=this.origin();
-      if(!t.entity.data.boss&&t.stunUntil<=this.now&&t.aggro&&!this.busy&&this.now>=t.nextHit&&Math.hypot(p.x-me.x,p.y-me.y)<95&&this.clearLine(p,me)){
-        t.nextHit=this.now+1300;this.damagePlayer(Math.max(5,t.damage-Math.floor(this.state.defense/2)),t);
-      }
+      const p=this.targetPoint(t);
+      this.tryMonsterAttack(t);
       if(t.burn){
         if(this.now>t.burn.expiresAt+100)t.burn=null;
         else if(this.now>=t.burn.nextTick&&!this.busy){

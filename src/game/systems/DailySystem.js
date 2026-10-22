@@ -55,7 +55,7 @@ export class DailySystem {
  async collect(sourceId){
   const box=this.view?.boxes.find(b=>b.sourceId===sourceId);
   if(box)for(const [id,qty] of Object.entries(box.items))if(id.startsWith('food_')){
-   const error=this.state.canAdd(id,qty);if(error)throw new Error(error+' Quà được giữ tại Quà chờ.');
+   const error=this.state.canAdd(id,qty);if(error)throw new Error(error+' Vật phẩm điểm danh vẫn được giữ lại. Khi túi có chỗ, mở Điểm danh để nhận lại.');
   }
   return this.run('collect',sourceId);
  }
