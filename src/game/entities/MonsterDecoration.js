@@ -22,6 +22,8 @@ export class MonsterDecoration {
             .setScale(scale)
             .setDepth(100 + feetY);
 
+        if(data.animation && scene.anims.exists(data.animation))this.sprite.play(data.animation);
+
         if (data.ai) {
             scene.physics.add.existing(this.sprite);
             this.sprite.body

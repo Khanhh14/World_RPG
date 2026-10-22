@@ -363,7 +363,7 @@ export class CombatSystem {
           this.scene.hud?.toast(`Nhặt được ${drop.name}.`);
         }
       }
-      if (['west-forest', 'noxii-entrance'].includes(this.scene.mapData.id)) void this.scene.questSystem?.recordKill();
+      if (['west-forest', 'noxii-entrance', 'dia-long-forest'].includes(this.scene.mapData.id)) void this.scene.questSystem?.recordKill();
     }
     return previousHP-t.hp;
   }
