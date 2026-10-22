@@ -53,6 +53,10 @@ export class DialogueSystem {
             this.player.stop(); npc.facePlayer(this.player);
             this.scene.mushroomSystem?.openShop(); return;
         }
+        if (npc?.role === 'skill-training-merchant') {
+            this.player.stop(); npc.facePlayer(this.player);
+            this.scene.hud?.openSkillTrainingShop(npc); return;
+        }
         if (npc?.role === 'skill-merchant') {
             this.player.stop(); npc.facePlayer(this.player);
             this.scene.hud?.openSkillShop(npc); return;

@@ -61,7 +61,7 @@ export class CombatSystem {
     return '';
   }
   cast(id){
-    const skill=findSkill(id);if(!skill)return false;
+    const skill=findSkill(id,this.state);if(!skill)return false;
     const error=this.ready(skill);if(error){this.notify(error);return false;}
     if(!this.state.spendMana(skill.mana))return false;
     this.runtime.cooldowns[id]=this.clock+skill.cooldown;

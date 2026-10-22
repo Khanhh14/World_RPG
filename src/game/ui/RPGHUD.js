@@ -1,6 +1,6 @@
 import { offhandTexture } from '../world/OffhandTextures.js';
 import { MAX_ENHANCEMENT, enhancedItem } from '../data/enhancement.js';
-import { renderSkillsPanel, renderSkillShop } from './SkillsPanel.js';
+import { renderSkillsPanel, renderSkillShop, renderSkillTrainingShop } from './SkillsPanel.js';
 import { renderWingsPanel, renderWingShop, wingEquipmentCard } from './WingsPanel.js';
 import { drawWingPixels } from '../world/WingTextures.js';
 import { canShopItem, EQUIPMENT_SLOTS, SHOP_ITEMS, monsterMaterialsForMap, FOOD_RECIPES, gearIcon } from '../data/items.js';
@@ -25,7 +25,7 @@ export class RPGHUD {
         }
         if (!document.querySelector('link[data-skill-books]')) {
             const link = document.createElement('link'); link.rel = 'stylesheet';
-            link.href = '/assets/style/skills.css?v=1'; link.dataset.skillBooks = 'true'; document.head.appendChild(link);
+            link.href = '/assets/style/skills.css?v=training-1'; link.dataset.skillBooks = 'true'; document.head.appendChild(link);
         }
         if (!document.querySelector('link[data-yuna-wings]')) {
             const wingCSS = document.createElement('link'); wingCSS.rel = 'stylesheet';
@@ -62,6 +62,11 @@ export class RPGHUD {
             if (action === 'skill-retry') await this.scene.skillsSystem?.load();
             if (action === 'skill-buy' && this.skillNPC && this.scene.dialogue?.nearest() === this.skillNPC) await this.scene.skillsSystem?.perform('buy', {skillId:id,merchantId:this.skillVendor});
             if (action === 'skill-assign') await this.scene.skillsSystem?.perform('assign', {skillId:id,slot:this.skillSlot ?? 0});
+            if (action === 'skill-material-buy' && this.trainingNPC && this.scene.dialogue?.nearest() === this.trainingNPC) await this.scene.skillsSystem?.perform('buy-material',{itemId:id,quantity:Number(button.dataset.quantity)});
+            if (action === 'skill-upgrade' || action === 'skill-breakthrough') {
+                const p=this.state.data.skills?.levels?.[id]??{level:1,cap:10};
+                await this.scene.skillsSystem?.perform(action==='skill-upgrade'?'upgrade':'breakthrough',{skillId:id,expectedLevel:p.level,expectedCap:p.cap});
+            }
             if (action === 'skill-clear') await this.scene.skillsSystem?.perform('assign', {skillId:null,slot:Number(id)});
             if (action === 'wing-select') { this.wingSelected = id; this.renderModal(); }
             if (action === 'wing-retry') await this.scene.wingsSystem?.load();
@@ -176,6 +181,11 @@ export class RPGHUD {
         this.shopNPC = npc; this.shopCategory = 'all'; this.shopLevel = 0;
         this.toggle('shop');
     }
+    openSkillTrainingShop(npc) {
+        if (npc?.role !== 'skill-training-merchant' || this.scene.dialogue?.nearest() !== npc) return;
+        this.trainingNPC=npc; this.toggle('skill-training-shop');
+        void this.scene.skillsSystem?.load();
+    }
     openSkillShop(npc) {
         if (npc?.role !== 'skill-merchant' || this.scene.dialogue?.nearest() !== npc) return;
         this.skillNPC = npc; this.skillVendor = npc.id === 'mage' ? 'mage' : 'sora'; this.bookSchool = 'demon'; this.toggle('skill-shop');
@@ -197,6 +207,7 @@ export class RPGHUD {
         this.toggle('exchange');
     }
     toggle(tab) {
+        if (tab === 'skill-training-shop' && (!this.trainingNPC || this.scene.dialogue?.nearest() !== this.trainingNPC)) return;
         if (tab === 'skill-shop' && (!this.skillNPC || this.scene.dialogue?.nearest() !== this.skillNPC)) return;
         if (tab === 'wing-shop' && (!this.wingNPC || this.scene.dialogue?.nearest() !== this.wingNPC)) return;
         if (tab === 'shop' && (!this.shopNPC || this.scene.dialogue?.nearest() !== this.shopNPC)) return;
@@ -217,7 +228,7 @@ export class RPGHUD {
     }
     close() {
         if (!this.tab) return;
-        this.previewId = null; this.tab = null; this.shopNPC = null; this.exchangeNPC = null; this.foodNPC = null; this.wingNPC = null; this.skillNPC = null; this.overlay.hidden = true;
+        this.previewId = null; this.tab = null; this.shopNPC = null; this.exchangeNPC = null; this.foodNPC = null; this.wingNPC = null; this.skillNPC = null; this.trainingNPC = null; this.overlay.hidden = true;
         this.scene.input.keyboard.resetKeys();
         this.scene.input.keyboard.enabled = this.keyboardWasEnabled;
         if (!this.scene.dialogue?.isOpen) this.scene.dialogueUI?.actionBar?.setVisible(true);
@@ -231,6 +242,7 @@ export class RPGHUD {
         const names = this.tab === 'quests'
             ? { quests: 'Nhật ký nhiệm vụ' }
             : { inventory: 'Túi đồ & Trang bị', potential: 'Tiềm Năng', wings: 'Nâng cấp cánh', skills: 'Kỹ năng' };
+        if (this.trainingNPC && this.tab !== 'quests') names['skill-training-shop']='Bí thuật Yuna';
         if (this.skillNPC && this.tab !== 'quests') names['skill-shop'] = 'Sách kỹ năng';
         if (this.wingNPC && this.tab !== 'quests') names['wing-shop'] = 'Đá nâng cấp cánh';
         if (this.shopNPC && this.tab !== 'quests') names.shop = 'Cửa hàng';
@@ -238,7 +250,7 @@ export class RPGHUD {
         if (this.foodNPC && this.tab === 'food-exchange') names['food-exchange'] = 'Đổi món ăn';
         const tabs = this.tab === 'quests' ? '' : `<div class="rpg-tabs">${Object.entries(names).map(([id, name]) => `<button type="button" data-action="tab" data-id="${id}" class="${id === this.tab ? 'active' : ''}">${name}</button>`).join('')}</div>`;
         this.modal.classList.toggle('rpg-skills-modal', this.tab === 'skills');
-        this.modal.classList.toggle('rpg-skill-shop-modal', this.tab === 'skill-shop');
+        this.modal.classList.toggle('rpg-skill-shop-modal', ['skill-shop','skill-training-shop'].includes(this.tab));
         this.modal.classList.toggle('rpg-wing-modal', this.tab === 'wings');
         this.modal.classList.toggle('rpg-wing-shop-modal', this.tab === 'wing-shop');
         this.modal.classList.toggle('rpg-shop-modal', this.tab === 'shop');
@@ -257,6 +269,7 @@ export class RPGHUD {
     content() {
         const s = this.state, d = s.data;
         if (this.tab === 'skills') return renderSkillsPanel(this);
+        if (this.tab === 'skill-training-shop') return renderSkillTrainingShop(this);
         if (this.tab === 'skill-shop') return renderSkillShop(this);
         if (this.tab === 'wings') return renderWingsPanel(this);
         if (this.tab === 'wing-shop') return renderWingShop(this);

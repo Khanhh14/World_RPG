@@ -99,7 +99,7 @@ export class ActionBarUI {
     auto.dataset.tooltip=`Tự động đánh · Bấm để ${this.combat.autoAttack?'tắt':'bật'}.`;
     auto.disabled=!scene.rpgState||scene.rpgState.data.hp<=0||!!scene.hud?.blocked||!!scene.dialogue?.isOpen||!!f?.basketOpen||!!(f?.phase&&f.phase!=='idle');
     for(let slot=0;slot<COMBAT_SKILLS.length;slot++){
-      const skill=findSkill(skillSlots(scene.rpgState)[slot]), b=this.buttons.get(`slot-${slot}`);
+      const skill=findSkill(skillSlots(scene.rpgState)[slot],scene.rpgState), b=this.buttons.get(`slot-${slot}`);
       const signature=skill?.id || 'empty';
       if(b.dataset.skill!==signature){
         b.dataset.skill=signature;
@@ -109,7 +109,7 @@ export class ActionBarUI {
         b.style.setProperty('--skill-color',skill?.color ? '#'+skill.color.toString(16).padStart(6,'0') : '#8edbff');
       }
       const remaining=skill?this.combat.remaining(skill.id):0,error=this.combat.ready(skill);
-      b.disabled=!!error;b.dataset.tooltip=skill?`${skill.name} · ${skill.mana} MP · Hồi ${skill.cooldown/1000}s
+      b.disabled=!!error;b.dataset.tooltip=skill?`${skill.name} · Lv ${skill.level} · ${skill.mana} MP · Hồi ${skill.cooldown/1000}s
 ${skill.description}${error?'\n'+error:''}`:'Nhấn C để gán kỹ năng vào ô này.';
       b.querySelector('.ra-count').textContent=skill?`${skill.mana} MP`:'';
       this.cooldown(b,remaining,skill?.cooldown || 1);

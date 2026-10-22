@@ -25,7 +25,7 @@ export class SkillsSystem {
   if(s.data.pendingSkillAction){await this.resume();return;}
   if(!s.skillsLoaded){await this.load();return;}
   const request={...input,requestId:crypto.randomUUID()};
-  if(action==='buy')request.position={mapId:this.scene.mapData.id,x:this.scene.player.x,feetY:this.scene.player.feetY};
+  if(['buy','buy-material'].includes(action))request.position={mapId:this.scene.mapData.id,x:this.scene.player.x,feetY:this.scene.player.feetY};
   s.data.pendingSkillAction={action,input:request};
   // Lưu mã yêu cầu trước khi gửi: tải lại trang vẫn dùng đúng mã cũ.
   try{
@@ -44,7 +44,7 @@ export class SkillsSystem {
   try{
    const result=await skillsApi.mutate(pending.action,pending.input);
    s.data.pendingSkillAction=null;this.apply(result);
-   if(this.alive)this.scene.hud?.toast(pending.action==='buy'?'Đã mua sách và học kỹ năng. Mở C để gán vào ô.':pending.input.skillId?'Đã gán kỹ năng vào ô '+(pending.input.slot+1)+'.':'Đã bỏ gán kỹ năng.');
+   if(this.alive){const messages={'buy-material':'Đã mua nguyên liệu kỹ năng.','upgrade':'Nâng kỹ năng thành công!','breakthrough':'Đột phá thành công! Đã mở thêm 10 cấp.','buy':'Đã học kỹ năng. Mở Balo → Kỹ năng để gán vào ô.'};this.scene.hud?.toast(messages[pending.action]??(pending.input.skillId?'Đã gán kỹ năng vào ô '+(pending.input.slot+1)+'.':'Đã bỏ gán kỹ năng.'));}
   }catch(error){
    if(error.status===400 || error.status===403 || error.status===409){
     s.data.pendingSkillAction=null;

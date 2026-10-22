@@ -1,3 +1,4 @@
+import {scaledSkill} from './skillTraining.js';
 export const SCHOOLS = [{id:'demon',name:'Ma',color:'#d4a1ff'}, {id:'god',name:'Thần',color:'#f3d38a'}, {id:'human',name:'Nhân',color:'#8edbff'}];
 export const MAGE_SKILLS = [
   {id:'mage_demon_bind',name:'U Minh Trói Hồn',school:'demon',seller:'mage',effect:'shadowbind',icon:'mage_bind',mana:16,cooldown:9000,multiplier:1.1,range:360,stunDuration:2200,color:0x9d61e8,description:'Gây 110% công và trói mục tiêu gần nhất trong 2,2 giây.'},
@@ -163,7 +164,7 @@ export const BOOK_SKILLS = [
 export const LEGACY_SKILLS = MAGE_SKILLS;
 export const ALL_SKILLS = [...BOOK_SKILLS, ...MAGE_SKILLS];
 export const STARTER_SKILLS = [];
-export const findSkill = id => ALL_SKILLS.find(s => s.id === id);
+export const findSkill = (id,state) => scaledSkill(ALL_SKILLS.find(s => s.id === id),state);
 export function skillSlots(state) {
  return state?.data?.skills?.slots ?? Array(5).fill(null);
 }
