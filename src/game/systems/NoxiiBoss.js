@@ -82,7 +82,7 @@ export class NoxiiBoss {
         const {skill,source}=w,c=this.scene.combat;
         if(skill.id==='quake'){
             if(Math.hypot(player.x-source.x,player.y-source.y)<skill.radius)this.damage(skill.damage);
-            c.vfx.emit('nova',source,skill.radius,0xc990fa);
+            c.vfx.emit('quake',source,skill.radius,0xc990fa);
         }else if(skill.id==='bolts'){
             const angle=Math.atan2(w.aim.y-source.y,w.aim.x-source.x);
             for(let i=0;i<skill.count;i++){
@@ -92,7 +92,7 @@ export class NoxiiBoss {
         }else{
             // Ba vùng rơi được báo trước; mỗi lần thi triển chỉ gây sát thương một lần.
             if(w.points.some(p=>Math.hypot(player.x-p.x,player.y-p.y)<skill.radius))this.damage(skill.damage);
-            for(const p of w.points)c.vfx.emit('nova',p,skill.radius,0xffa66e);
+            for(const p of w.points)c.vfx.emit('meteor',p,skill.radius,0xffa66e);
         }
     }
     drawWarning(w){
@@ -102,13 +102,11 @@ export class NoxiiBoss {
             const angle=Math.atan2(w.aim.y-source.y,w.aim.x-source.x);
             for(let i=0;i<skill.count;i++){
                 const a=angle+(i-(skill.count-1)/2)*.18;
-                g.lineStyle(9,0xb78bff,.18).lineBetween(source.x,source.y,source.x+Math.cos(a)*600,source.y+Math.sin(a)*600);
+                this.scene.combat.vfx.aim(g,source,a,600,0xb78bff,k);
             }
         }else for(const p of w.points){
             const color=skill.id==='quake'?0xc990fa:0xffa66e;
-            g.fillStyle(color,.12+k*.15).fillCircle(p.x,p.y,skill.radius);
-            g.lineStyle(3,color,.95).strokeCircle(p.x,p.y,skill.radius);
-            g.lineStyle(2,0xffe4c9,.8).strokeCircle(p.x,p.y,skill.radius*k);
+            this.scene.combat.vfx.telegraph(g,p,skill.radius,color,k,this.elapsed);
         }
     }
     updateBullets(delta,player){
@@ -119,9 +117,7 @@ export class NoxiiBoss {
             const blocked=!c.clearLine(old,b),hit=!blocked&&segmentDistance(player,old,b)<23;
             if(hit){this.damage(b.damage);c.vfx.emit('impact',b,28,0xba92ff);}
             if(hit||blocked||b.life<=0){this.bullets.splice(i,1);continue;}
-            g.fillStyle(0xc093ff,.22).fillCircle(b.x,b.y,16);
-            g.fillStyle(0x9869e0,1).fillCircle(b.x,b.y,8);
-            g.fillStyle(0xf4e6ff,1).fillCircle(b.x-2,b.y-2,3);
+            c.vfx.projectile({...b,color:0xc093ff,vfxKind:'fan'},this.elapsed,g);
         }
     }
     update(delta=16){

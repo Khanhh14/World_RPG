@@ -67,18 +67,22 @@ export class CombatSystem {
     this.runtime.cooldowns[id]=this.clock+skill.cooldown;
     const damage=Math.max(1,this.state.attack),p=this.origin();
     const effect=skill.effect || id, color=skill.color;
-    if(effect==='power'){this.melee(damage*(skill.multiplier ?? 1.6),skill.range ?? 112,false);this.flash(p,skill.range ?? 112,color ?? 0xffd37a,'power');}
+    // Aim once per cast; walking direction stays available for casts without a target.
+    const aimed=['power','bolt','whirl','beam','combo','ricochet','burn','nova','drain','shadowbind','darkrain','chainlightning','armorbreak','fanshot'].includes(effect);
+    const aim=aimed?this.skillDirection(skill.range??320):this.facing;
+    const flash=(point,radius,tint,kind,options={})=>this.flash(point,radius,tint,kind,{...options,angle:Math.atan2(aim.y,aim.x)});
+    if(effect==='power'){this.melee(damage*(skill.multiplier ?? 1.6),skill.range ?? 112,false,aim);flash(p,skill.range ?? 112,color ?? 0xffd37a,'power');}
     if(effect==='bolt')this.volley(skill,damage);
-    if(effect==='whirl'){this.melee(damage*(skill.multiplier ?? 1),skill.range ?? 125,true);this.flash(p,skill.range ?? 125,color ?? 0x7ce1d0,'whirl');}
+    if(effect==='whirl'){this.melee(damage*(skill.multiplier ?? 1),skill.range ?? 125,true);flash(p,skill.range ?? 125,color ?? 0x7ce1d0,'whirl');}
     if(effect==='beam'){
-      const end={x:p.x+this.facing.x*skill.range,y:p.y+this.facing.y*skill.range};
+      const end={x:p.x+aim.x*skill.range,y:p.y+aim.y*skill.range};
       for(const target of this.targets.values()){
         if(target.hp<=0||!target.entity.sprite.active)continue;
         const point=this.targetPoint(target);
         if(segmentDistance(point,p,end)<=skill.width&&!this.clearLine(p,point))continue;
         if(segmentDistance(point,p,end)<=skill.width)this.hit(target,damage*skill.multiplier);
       }
-      this.flash(p,skill.range,color,'beam');
+      flash(p,skill.range,color,'beam');
     }
     if(effect==='combo'){
       const target=this.nearestTarget(skill.range);
@@ -87,11 +91,11 @@ export class CombatSystem {
           this.scene.time.delayedCall(i*125,()=>{
             if(target.hp<=0||!target.entity.sprite.active)return;
             this.hit(target,damage*skill.multiplier);
-            this.flash(this.targetPoint(target),48,color,'combo');
+            flash(this.targetPoint(target),48,color,'combo');
           });
         }
       }
-      this.flash(p,skill.range,color,'combo');
+      flash(p,skill.range,color,'combo');
     }
     if(effect==='ricochet')this.ricochet(skill,damage);
     if(effect==='burn'){
@@ -99,57 +103,57 @@ export class CombatSystem {
       if(target){
         this.hit(target,damage*skill.multiplier);
         target.burn={damage:damage*skill.burnMultiplier,nextTick:this.now+1000,expiresAt:this.now+skill.burnDuration,color};
-        this.flash(this.targetPoint(target),50,color,'burn');
-      }else this.flash(p,48,color,'burn');
+        flash(this.targetPoint(target),50,color,'burn');
+      }else flash(p,48,color,'burn');
     }
     if(effect==='nova'){
       this.melee(damage*skill.multiplier,skill.range,true);
-      this.flash(p,skill.range,color,'nova');
+      flash(p,skill.range,color,'nova');
     }
     if(effect==='guard'){
       this.runtime.guardUntil=this.clock+(skill.duration ?? 5000);
       this.runtime.guardReduction=skill.reduction ?? 0.5;
-      this.flash(p,60,color ?? 0x9cbaff,'ring');
+      flash(p,60,color ?? 0x9cbaff,'guard');
     }
     if(effect==='counter'){
       this.runtime.counterUntil=this.clock+skill.duration;
       this.runtime.counterReduction=skill.reduction;
       this.runtime.counterMultiplier=skill.counterMultiplier;
-      this.flash(p,skill.range,color,'counter');
+      flash(p,skill.range,color,'counter');
     }
     if(effect==='healingField' && p){
       this.fields=this.fields.filter(f=>f.skillId!==id);
       this.fields.push({...p,skillId:id,radius:skill.radius,color:color??0xffdf99,start:this.now,end:this.now+skill.duration,next:this.now+skill.interval,interval:skill.interval,heal:skill.heal});
-      this.flash(p,skill.radius,color??0xffdf99,'sanctuary');
+      flash(p,skill.radius,color??0xffdf99,'sanctuary');
     }
     if(effect==='heal'){
       const amount=Math.min(skill.heal ?? 30,this.state.maxHP-this.state.data.hp);
       this.state.data.hp+=amount;this.state.changed();
-      this.float(p,`+${amount} HP`,'#a5f6b2');this.flash(p,48,color ?? 0x89efa9,'heal');
+      this.float(p,`+${amount} HP`,'#a5f6b2');flash(p,48,color ?? 0x89efa9,'heal');
     }
     if(effect==='drain'){
       const target=this.nearestTarget(skill.range);
       const dealt=target?this.hit(target,damage*skill.multiplier):0;
       const amount=Math.min(Math.floor(dealt*skill.lifesteal),this.state.maxHP-this.state.data.hp);
       if(amount>0){this.state.data.hp+=amount;this.state.changed();this.float(p,`+${amount} HP`,'#f6a5ce');}
-      this.flash(target?this.targetPoint(target):p,skill.range,color,'drain');
+      flash(target?this.targetPoint(target):p,60,color,'drain',{to:{...p}});
     }
     if(effect==='shadowbind'){
       const target=this.nearestTarget(skill.range);
-      if(target){this.hit(target,damage*skill.multiplier);target.stunUntil=this.now+skill.stunDuration;this.flash(this.targetPoint(target),60,color,'bind');}
-      else this.flash(p,46,color,'bind');
+      if(target){this.hit(target,damage*skill.multiplier);target.stunUntil=this.now+skill.stunDuration;flash(this.targetPoint(target),60,color,'bind');}
+      else flash(p,46,color,'bind');
     }
     if(effect==='darkrain'){
       const targets=this.nearbyTargets(p,skill.range).slice(0,skill.count);
       targets.forEach((target,index)=>this.scene.time.delayedCall(index*150,()=>{
         if(target.hp<=0||!target.entity.sprite.active)return;
-        const point=this.targetPoint(target);this.hit(target,damage*skill.multiplier);this.flash(point,60,color,'rain');
+        const point=this.targetPoint(target);this.hit(target,damage*skill.multiplier);flash(point,60,color,'rain');
       }));
-      this.flash(p,skill.range,color,'cast');
+      flash(p,skill.range,color,'cast');
     }
     if(effect==='evade'){
       this.runtime.evadeUntil=this.clock+skill.duration;
-      this.flash(p,62,color,'veil');
+      flash(p,62,color,'veil');
     }
     if(effect==='chainlightning'){
       let previous=p;
@@ -160,21 +164,21 @@ export class CombatSystem {
         visited.add(target);
         const point=this.targetPoint(target);
         this.hit(target,damage*skill.multiplier*Math.pow(.82,i));
-        this.vfx.emit('chain',point,56,color,Math.atan2(point.y-previous.y,point.x-previous.x));
+        this.vfx.emit('chain',previous,56,color,0,{to:{...point}});
         previous=point;
       }
-      this.flash(p,40,color,'chain');
+      flash(p,40,color,'chain');
     }
     if(effect==='barrier'){
       this.runtime.barrierHP=Math.round(damage*skill.shieldMultiplier);
       this.runtime.barrierUntil=this.clock+skill.duration;
-      this.flash(p,58,color,'barrier');
+      flash(p,58,color,'barrier');
     }
     if(effect==='manaregen'){
       this.runtime.manaBlessUntil=this.clock+skill.duration;
       this.runtime.manaBlessNext=this.clock+1000;
       this.runtime.manaBlessRestore=skill.restore;
-      this.flash(p,50,color,'mana');
+      flash(p,50,color,'mana');
     }
     if(effect==='armorbreak'){
       const target=this.nearestTarget(skill.range);
@@ -182,22 +186,23 @@ export class CombatSystem {
         this.hit(target,damage*skill.multiplier);
         target.vulnerableUntil=this.clock+skill.duration;
         target.vulnerability=skill.vulnerability;
-        this.flash(this.targetPoint(target),55,color,'break');
-      }else this.flash(p,45,color,'break');
+        flash(this.targetPoint(target),55,color,'break');
+      }else flash(p,45,color,'break');
     }
     if(effect==='fanshot'){
       const count=skill.count??5,range=skill.range,colorValue=color??0x83e4c6;
-      this.flash(p,46,colorValue,'fan');
+      flash(p,46,colorValue,'fan');
       for(let i=0;i<count;i++){
-        const angle=Math.atan2(this.facing.y,this.facing.x)+(i-(count-1)/2)*.17;
+        const angle=Math.atan2(aim.y,aim.x)+(i-(count-1)/2)*.17;
         const shot=this.projectile(damage*skill.multiplier,range,colorValue,null);
+        if(shot)shot.vfxKind='fan';
         if(shot)Object.assign(shot,{dx:Math.cos(angle),dy:Math.sin(angle),speed:470,expires:this.now+1800});
       }
     }
     if(effect==='warcry'){
       this.runtime.attackUntil=this.clock+skill.duration;
       this.runtime.attackMultiplier=skill.attackMultiplier;
-      this.flash(p,58,color,'warcry');
+      flash(p,58,color,'warcry');
     }
     return true;
   }
@@ -217,13 +222,13 @@ export class CombatSystem {
     this.runtime.cooldowns['offhand-special']=this.clock+skill.cooldown;
     const point=this.targetPoint(target),p=this.origin();
     if(skill.id==='orb'){
-      this.projectile(this.state.attack*skill.multiplier,skill.range,0xb89aff,target);
+      const shot=this.projectile(this.state.attack*skill.multiplier,skill.range,0xb89aff,target);if(shot)shot.vfxKind='orb';
       this.flash(p,60,0xb89aff,'cast');
     }else{
       const dealt=this.hit(target,this.state.attack*skill.multiplier);
       const healed=Math.min(Math.floor(dealt*.25),this.state.maxHP-this.state.data.hp);
       if(healed>0){this.state.data.hp+=healed;this.state.changed();this.float(p,`+${healed} HP`,'#9df0b0');}
-      this.flash(point,60,0xf29da8,'drain');
+      this.flash(point,60,0xf29da8,'drain',{to:{...p}});
     }
     return true;
   }
@@ -245,6 +250,12 @@ export class CombatSystem {
       this.flash(point,28,0xf8dd99,'impact');
     }
     return true;
+  }
+  skillDirection(range){
+    const p=this.origin(),target=this.nearestTarget(range);
+    if(!p||!target)return {...this.facing};
+    const q=this.targetPoint(target),dx=q.x-p.x,dy=q.y-p.y,length=Math.hypot(dx,dy);
+    return length>0?{x:dx/length,y:dy/length}:{...this.facing};
   }
   nearestTarget(range){
     const origin=this.origin();
@@ -270,12 +281,12 @@ export class CombatSystem {
     } finally { this.potionBusy=false; }
   }
   potionCount(kind){return this.potions.selected(kind)?.quantity??0;}
-  melee(damage,range,all){
+  melee(damage,range,all,aim=this.facing){
     const p=this.origin();if(!p)return;
     const hits=[...this.targets.values()].filter(t=>{
       if(t.hp<=0||t.entity.sprite.active===false)return false;
       const q=this.targetPoint(t),dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy);
-      return d<=range&&(all||d<20||(dx*this.facing.x+dy*this.facing.y)/d>=0.15)&&this.clearLine(p,q);
+      return d<=range&&(all||d<20||(dx*aim.x+dy*aim.y)/d>=0.15)&&this.clearLine(p,q);
     }).sort((a,b)=>Math.hypot(this.targetPoint(a).x-p.x,this.targetPoint(a).y-p.y)-Math.hypot(this.targetPoint(b).x-p.x,this.targetPoint(b).y-p.y));
     let dealt=0;
     for(const t of (all?hits:hits.slice(0,1)))dealt+=this.hit(t,damage) || 0;
@@ -288,21 +299,23 @@ export class CombatSystem {
   ricochet(skill,damage){
     const p=this.origin();if(!p)return;
     const target=this.nearbyTargets(p,skill.range)[0];
-    this.flash(p,52,skill.color,'cast');
-    if(!target)return;
+    const aim=this.skillDirection(skill.range);
+    this.flash(p,52,skill.color,'cast',{angle:Math.atan2(aim.y,aim.x)});
     const shot=this.projectile(damage*skill.multiplier,skill.range,skill.color,target);
-    Object.assign(shot,{homing:true,expires:this.now+3600,ricochetRemaining:skill.ricochets,ricochetRange:skill.range,visitedTargets:new Set(),speed:520});
+    Object.assign(shot,{vfxKind:'ricochet',homing:!!target,expires:this.now+3600,ricochetRemaining:skill.ricochets,ricochetRange:skill.range,visitedTargets:new Set(),speed:520});
   }
   volley(skill,damage){
     const p=this.origin();if(!p)return;
     const range=skill.range??320,color=skill.color??0x86d9ff,count=skill.projectiles??3;
     const targets=this.nearbyTargets(p,range);
-    this.flash(p,64,color,'cast');
+    const aim=this.skillDirection(range);
+    this.flash(p,64,color,'cast',{angle:Math.atan2(aim.y,aim.x)});
     for(let i=0;i<count;i++){
       const target=targets.length?targets[i%targets.length]:null;
-      const a=Math.atan2(this.facing.y,this.facing.x)+(i-(count-1)/2)*.24;
+      const point=target?this.targetPoint(target):null;
+      const a=(point?Math.atan2(point.y-p.y,point.x-p.x):Math.atan2(this.facing.y,this.facing.x))+(target?0:(i-(count-1)/2)*.24);
       const shot=this.projectile(damage*(skill.multiplier??.5),range,color,target);
-      Object.assign(shot,{dx:Math.cos(a),dy:Math.sin(a),homing:true,launchAt:this.now+i*95,expires:this.now+2600+i*95,speed:380+i*22});
+      Object.assign(shot,{vfxKind:'bolt',dx:Math.cos(a),dy:Math.sin(a),homing:true,launchAt:this.now+i*95,expires:this.now+2600+i*95,speed:380+i*22});
     }
     // Giới hạn số cầu còn sống để tránh tích lũy khi chỉnh hồi chiêu trong lúc phát triển.
     if(this.shots.length>60)this.shots.splice(0,this.shots.length-60);
@@ -375,7 +388,7 @@ export class CombatSystem {
     }
     if(this.state.data.hp<=0){this.scene.player.stop();this.deathAt=this.now+1600;this.notify('Bạn bị hạ. Đang hồi sinh ở Làng Khởi Đầu…');}
   }
-  flash(p,radius,color,kind='ring'){this.vfx.emit(kind,p,radius,color,Math.atan2(this.facing.y,this.facing.x));}
+  flash(p,radius,color,kind='ring',options={}){this.vfx.emit(kind,p,radius,color,options.angle??Math.atan2(this.facing.y,this.facing.x),options);}
   float(p,text,color){if(!p||this.scene.activityUI?.settings.damageNumbers===false)return;const o=this.scene.add.text(p.x,p.y-30,text,{fontFamily:'Arial',fontSize:'18px',fontStyle:'bold',color,stroke:'#152b23',strokeThickness:4}).setOrigin(.5).setDepth(9600);this.effects.push({text:o,y:o.y,at:this.now,end:this.now+750});}
   monsterDirection(entity, target, distance, speed) {
     const dx=target.x-entity.sprite.x,dy=target.y-entity.sprite.y;
@@ -537,7 +550,8 @@ export class CombatSystem {
       if(shot.left<=0){this.shots.splice(i,1);continue;}
       
     }
-    this.vfx.update(this.now,this.origin(),this.shots.filter(s=>!s.launchAt||s.launchAt<=this.now),this.runtime.guardUntil>this.clock||this.runtime.counterUntil>this.clock,this.fields,this.runtime.barrierUntil>this.clock&&this.runtime.barrierHP>0,this.runtime.evadeUntil>this.clock);
+    this.vfx.update(this.now,this.origin(),this.shots.filter(s=>!s.launchAt||s.launchAt<=this.now),this.runtime.guardUntil>this.clock||this.runtime.counterUntil>this.clock,this.fields,this.runtime.barrierUntil>this.clock&&this.runtime.barrierHP>0,this.runtime.evadeUntil>this.clock,{mana:this.runtime.manaBlessUntil>this.clock,warcry:this.runtime.attackUntil>this.clock});
+    for(const target of this.targets.values())if(target.hp>0&&!target.returning&&target.entity.sprite.active)this.vfx.status(this.now,this.targetPoint(target),{bind:target.stunUntil>this.now,burn:!!target.burn,broken:target.vulnerableUntil>this.clock});
     for(let i=this.effects.length-1;i>=0;i--){
       const e=this.effects[i],k=clamp((this.now-e.at)/(e.end-e.at),0,1);
       if(k>=1){e.text?.destroy();this.effects.splice(i,1);continue;}
