@@ -1,3 +1,4 @@
+const {enchantBonuses}=require('./wingEnchant');
 const {validateVitalContext,calculateMaxVitals}=require('./vitalStats');
 const tuLinhWeapons=require('../config/tuLinh.json').weapons;
 const shopCatalog = require('../config/shop.json');
@@ -66,7 +67,7 @@ function createInventoryService(db) {
     // Calculate their bonuses from known item stats; never accept a raw maxHP value.
     let ownedWings=[];
     if(context){[ownedWings]=await c.execute('SELECT wing_id, upgrade_level FROM character_wings WHERE character_id = ? ORDER BY wing_id',[character.id]);}
-    const {maxHp,maxMana}=calculateMaxVitals(character.level,gear,ownedWings,context?.enhancements);
+    const {maxHp,maxMana}=calculateMaxVitals(character.level,gear,ownedWings,context?.enhancements,context?await enchantBonuses(c,character.id):{});
     return {
       hp: context?Math.min(maxHp,context.hp):Number(runtimeRows[0]?.hp ?? character.hp),
       mana: context?Math.min(maxMana,context.mp):Number(runtimeRows[0]?.mana ?? character.mana),

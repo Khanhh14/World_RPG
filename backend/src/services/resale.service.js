@@ -16,6 +16,7 @@ async function checkLocalAllowance(c,char,item,itemId,quantity){
   if(event.action_type==='mushroom_harvest')harvests++;
   if(event.action_type==='boss_reward')bosses+=Number(p.stones||1);
   if(event.action_type==='daily_checkin')dailyStones+=Number(p.reward?.items?.upgrade_stone||0);
+  if(itemId==='wing_essence'&&event.action_type==='wing_enchant')sold++;
   if(event.action_type==='shop_sell'&&p.source==='local'&&(item.mapId?catalog[p.itemId]?.mapId===item.mapId:p.itemId===itemId))sold+=p.quantity;
  }
  const allowance=itemId==='upgrade_stone'?Math.floor(kills/10)+Math.floor(harvests/20)+bosses+dailyStones:Math.floor(kills/(item.exchangeCost||1));

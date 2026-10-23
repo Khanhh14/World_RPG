@@ -16,7 +16,7 @@ function itemVitals(id){
  if(!m)return {slot:null,hp:0,mp:0};
  const i=Number(m[2]||1)-1;return {slot:m[1],hp:(m[1]==='armor'?[10,20,35,55,80]:[5,10,15,25,35])[i],mp:0};
 }
-function calculateMaxVitals(level,gear,ownedWings=[],enhancements={}){
+function calculateMaxVitals(level,gear,ownedWings=[],enhancements={},enchantments={}){
  let maxHp=100+(Number(level)-1)*10,maxMana=50+(Number(level)-1)*5;
  for(const row of gear){
   const item=itemVitals(row.item_definition_id),n=enhancements[item.slot]||0;
@@ -28,6 +28,7 @@ function calculateMaxVitals(level,gear,ownedWings=[],enhancements={}){
   maxHp+=(style.base.maxHP||0)+(wings.perLevel.maxHP||0)*n;
   maxMana+=(style.base.maxMP||0)+(wings.perLevel.maxMP||0)*n;
  }
+ for(const b of Object.values(enchantments))maxHp+=Number(b.maxHP)||0;
  return {maxHp,maxMana};
 }
 module.exports={validateVitalContext,calculateMaxVitals};

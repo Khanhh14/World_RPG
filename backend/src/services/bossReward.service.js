@@ -1,6 +1,7 @@
 const {characterView,reward}=require('./progress.service');
 const fail=(status,message)=>Object.assign(new Error(message),{status});
 const BOSS_CONFIG=Object.freeze({
+ 'bach-ho':{name:'Bạch Hổ',cooldownMs:1200000,exp:5000,gold:3000,stones:5},
  'huyen-quy':{name:'Huyền Quy',cooldownMs:1200000,exp:5000,gold:3000,stones:5},
  'thanh-long':{name:'Thanh Long',cooldownMs:1200000,exp:5000,gold:3000,stones:5},
  'forest-guardian':{name:'Thủ hộ khu rừng',cooldownMs:1200000,exp:750,gold:300,stones:1},
@@ -40,11 +41,11 @@ function createBossRewardService(db){return {
     if(await cooldown(c,char.id,input.bossId)>0)throw fail(409,`${config.name} chưa hồi sinh. Hãy chờ đủ ${config.cooldownMs/60000} phút.`);
     await reward(c,char,config.exp,config.gold);
     await c.execute('INSERT INTO character_economy_events (character_id, request_id, action_type, payload) VALUES (?, ?, ?, ?)',
-     [char.id,input.requestId,'boss_reward',JSON.stringify({bossId:input.bossId,gold:config.gold,exp:config.exp,stones:config.stones,...(input.bossId==='thanh-long'?{eventItems:{nhan_long:1}}:input.bossId==='huyen-quy'?{eventItems:{huyen_giap:1}}:{})})]);
+     [char.id,input.requestId,'boss_reward',JSON.stringify({bossId:input.bossId,gold:config.gold,exp:config.exp,stones:config.stones,...(input.bossId==='thanh-long'?{eventItems:{nhan_long:1}}:input.bossId==='huyen-quy'?{eventItems:{huyen_giap:1}}:input.bossId==='bach-ho'?{eventItems:{han_nha:1}}:{})})]);
    }
    await c.commit();
    return {character:characterView(char),bossId:input.bossId,requestId:input.requestId,
-    eventItems:receipts.length?(typeof receipts[0].payload==='string'?JSON.parse(receipts[0].payload):receipts[0].payload).eventItems||{}:input.bossId==='thanh-long'?{nhan_long:1}:input.bossId==='huyen-quy'?{huyen_giap:1}:{},
+    eventItems:receipts.length?(typeof receipts[0].payload==='string'?JSON.parse(receipts[0].payload):receipts[0].payload).eventItems||{}:input.bossId==='thanh-long'?{nhan_long:1}:input.bossId==='huyen-quy'?{huyen_giap:1}:input.bossId==='bach-ho'?{han_nha:1}:{},
     reward:{gold:config.gold,exp:config.exp,stones:config.stones},replayed:!!receipts.length};
   }catch(e){await c.rollback().catch(()=>{});throw e;}finally{c.release();}
  }

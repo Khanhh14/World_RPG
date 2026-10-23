@@ -4,7 +4,7 @@ const {characterView}=require('./progress.service');
 const fail=(status,message)=>Object.assign(new Error(message),{status});
 const legacyStarter=['power','bolt','whirl','guard','heal'];
 function createSkillsService(db){
- const skillCatalog=[...catalog.books,...(catalog.mageBooks||[])];
+ const skillCatalog=[...catalog.books,...(catalog.mageBooks||[]),...(catalog.eventBooks||[])];
  const activeSkillIds=new Set(skillCatalog.map(book=>book.id));
  async function transaction(userId,operation){
   const c=await db.getConnection();

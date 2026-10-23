@@ -1,3 +1,4 @@
+const {enchantBonuses,rollEnchant}=require('./wingEnchant');
 const catalog = require('../config/wings.json');
 const { characterView } = require('./progress.service');
 const fail = (status, message) => Object.assign(new Error(message), { status });
@@ -23,6 +24,7 @@ function createWingsService(db) {
     const [materials] = await c.execute('SELECT item_id, quantity FROM character_wing_materials WHERE character_id = ? ORDER BY item_id', [char.id]);
     return { character: characterView(char), wings: {
       equipped: char.equipped_wing || null,
+      enchantments: await enchantBonuses(c,char.id),
       collection: wings.map(w => ({ id: w.wing_id, level: Number(w.upgrade_level) })),
       materials: Object.fromEntries(materials.map(m => [m.item_id, Number(m.quantity)])),
       revision: Number(char.progress_version || 0)
@@ -31,7 +33,7 @@ function createWingsService(db) {
   return {
     load: userId => transaction(userId, snapshot),
     async mutate(userId, action, input = {}) {
-      if (!['buy', 'equip', 'upgrade'].includes(action)) throw fail(404, 'Thao tác không tồn tại.');
+      if (!['buy', 'equip', 'upgrade','enchant'].includes(action)) throw fail(404, 'Thao tác không tồn tại.');
       if (typeof input.requestId !== 'string' || !/^[a-f0-9-]{36}$/i.test(input.requestId)) throw fail(400, 'Mã giao dịch không hợp lệ.');
       let payload;
       if (action === 'buy') {
@@ -51,8 +53,8 @@ function createWingsService(db) {
         const [receipts] = await c.execute('SELECT action_type, payload FROM character_economy_events WHERE character_id = ? AND request_id = ?', [char.id, input.requestId]);
         if (receipts.length) {
           const previous = typeof receipts[0].payload === 'string' ? JSON.parse(receipts[0].payload) : receipts[0].payload;
-          if (receipts[0].action_type !== 'wing_' + action || Object.keys(previous).length !== Object.keys(payload).length || Object.keys(payload).some(key => previous[key] !== payload[key])) throw fail(409, 'Mã giao dịch đã được dùng cho thao tác khác.');
-          return { ...await snapshot(c, char), replayed: true };
+          if (receipts[0].action_type !== 'wing_' + action || (action!=='enchant' && Object.keys(previous).length !== Object.keys(payload).length) || Object.keys(payload).some(key => previous[key] !== payload[key])) throw fail(409, 'Mã giao dịch đã được dùng cho thao tác khác.');
+          return { ...await snapshot(c, char), replayed: true, enchant:action==='enchant'?previous:null };
         }
         if (action === 'buy') {
           const p = input.position, merchant = catalog.merchant;
@@ -64,6 +66,8 @@ function createWingsService(db) {
           await c.execute('UPDATE characters SET gold = gold - ? WHERE id = ?', [stone.price, char.id]);
           await c.execute('UPDATE character_wing_materials SET quantity = quantity + 1 WHERE character_id = ? AND item_id = ?', [char.id, stone.id]);
           char.gold = Number(char.gold) - stone.price;
+        } else if(action==='enchant'){
+          payload=await rollEnchant(c,char,payload.wingId);
         } else if (action === 'equip') {
           await c.execute('UPDATE characters SET equipped_wing = ? WHERE id = ?', [payload.wingId, char.id]);
           char.equipped_wing = payload.wingId;
@@ -79,7 +83,7 @@ function createWingsService(db) {
         await c.execute('UPDATE characters SET progress_version = progress_version + 1 WHERE id = ?', [char.id]);
         char.progress_version = Number(char.progress_version || 0) + 1;
         await c.execute('INSERT INTO character_economy_events (character_id, request_id, action_type, payload) VALUES (?, ?, ?, ?)', [char.id, input.requestId, 'wing_' + action, JSON.stringify(payload)]);
-        return { ...await snapshot(c, char), replayed: false };
+        return { ...await snapshot(c, char), replayed: false, enchant:action==='enchant'?payload:null };
       });
     }
   };
