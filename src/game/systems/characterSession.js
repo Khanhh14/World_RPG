@@ -32,6 +32,7 @@ export function createCharacterState(StateClass, userId) {
     removeItem(key) { try { storage?.removeItem(prefix + key); } catch {} },
   };
   state.restore();
+  const localWingEssence=state.data.inventory.wing_essence ?? 0;
   const localUpgradeStones=state.data.inventory.upgrade_stone ?? 0;
   const localMonsterMaterials=Object.fromEntries(MONSTER_MATERIALS.map(m=>[m.id,state.data.inventory[m.id]??0]));
   seed.inventory = {};
@@ -43,6 +44,7 @@ export function createCharacterState(StateClass, userId) {
   }
   // Cường hóa và thưởng đá hiện lưu theo nhân vật trên trình duyệt.
   seed.inventory.upgrade_stone=localUpgradeStones;
+  seed.inventory.wing_essence=localWingEssence;
   Object.assign(seed.inventory,localMonsterMaterials);
   state.data.inventory = seed.inventory;
   state.data.equipment = seed.equipment;

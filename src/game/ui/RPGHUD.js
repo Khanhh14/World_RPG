@@ -4,7 +4,7 @@ import { MAX_ENHANCEMENT, enhancedItem } from '../data/enhancement.js';
 import { renderSkillsPanel, renderSkillShop, renderSkillTrainingShop } from './SkillsPanel.js';
 import { renderWingsPanel, renderWingShop, wingEquipmentCard } from './WingsPanel.js';
 import { drawWingPixels } from '../world/WingTextures.js';
-import { BAG_CAPACITY, canShopItem, EQUIPMENT_SLOTS, SHOP_ITEMS, monsterMaterialsForMap, FOOD_RECIPES, gearIcon } from '../data/items.js';
+import { BAG_CAPACITY, canShopItem, EQUIPMENT_SLOTS, SHOP_ITEMS, monsterMaterialsForMap, monsterExchangeForMap, FOOD_RECIPES, gearIcon } from '../data/items.js';
 import { ITEMS } from '../systems/RPGState.js';
 import { renderQuestJournal } from './QuestJournal.js';
 
@@ -460,6 +460,7 @@ export class RPGHUD {
     }
     exchangeContent() {
         const inventory = this.state.data.inventory;
+        const recipe = monsterExchangeForMap(this.scene.mapData.id);
         const pool = monsterMaterialsForMap(this.scene.mapData.id);
         const total = pool.reduce(
             (sum, material) => sum + (inventory[material.id] ?? 0), 0
@@ -471,11 +472,11 @@ export class RPGHUD {
                 <header>${itemIcon(ITEMS[material.id],44)}<div><h3>${escape(material.name)}</h3><span class="rpg-tier">Đang có: ${inventory[material.id] ?? 0}</span></div></header>
                 <p class="rpg-subtle">${escape(material.description)}</p>
             </article>`).join('');
-        return `<div class="rpg-shop-gold"><strong>${escape(this.exchangeNPC?.name ?? 'Thợ săn')}</strong><span>Vật phẩm quái: ${total} / 10</span></div>
-            <p class="rpg-subtle">Gộp các vật phẩm quái của khu vực này: 10 vật phẩm đổi lấy 1 đá nâng cấp trang bị.</p>
+        return `<div class="rpg-shop-gold"><strong>${escape(this.exchangeNPC?.name ?? 'Thợ săn')}</strong><span>Vật phẩm quái: ${total} / ${recipe.cost}</span></div>
+            <p class="rpg-subtle">Gộp các vật phẩm quái của khu vực này: ${recipe.cost} vật phẩm đổi lấy 1 ${escape(recipe.name)}.</p>
             <div class="rpg-shop-grid">${materials}</div>
-            <div class="rpg-shop-buy"><span>${escape(exchangeError || 'Đổi 10 vật phẩm lấy 1 đá nâng cấp.')}</span>
-                <button type="button" data-action="exchange-materials" ${canExchange ? 'class="rpg-primary"' : 'disabled'}>Đổi 10 vật phẩm</button>
+            <div class="rpg-shop-buy"><span>${escape(exchangeError || `Đổi ${recipe.cost} vật phẩm lấy 1 ${recipe.name}.`)}</span>
+                <button type="button" data-action="exchange-materials" ${canExchange ? 'class="rpg-primary"' : 'disabled'}>Đổi ${recipe.cost} vật phẩm</button>
             </div>`;
     }
     foodExchangeContent() {

@@ -23,12 +23,20 @@ export const NOXII_MATERIALS = [
     { id:'stone_snail_shell', name:'Vỏ ốc đá', emoji:'🐚', description:'Rơi từ Ốc đá tại Cửa Hang NoXII. Đổi tại Thợ rèn Doran.' },
     { id:'steel_snail_shell', name:'Vỏ ốc thép', emoji:'⚙️', description:'Rơi từ Ốc thép tại Cửa Hang NoXII. Đổi tại Thợ rèn Doran.' }
 ];
-export const MONSTER_MATERIALS = [...FOREST_MATERIALS, ...NOXII_MATERIALS];
-export const monsterMaterialsForMap = mapId => mapId === 'noxii-entrance' ? NOXII_MATERIALS : mapId === 'west-forest' ? FOREST_MATERIALS : [];
+export const DIA_LONG_MATERIALS = [
+    {id:'blue_feather',name:'Lông xanh',emoji:'🪶',description:'Lông rơi từ Chim Xanh ở Khu Rừng Địa Long. Gộp 20 lông bất kỳ đổi tại UDOI.'},
+    {id:'yellow_feather',name:'Lông vàng',emoji:'🪶',description:'Lông rơi từ Khỉ vàng ở Khu Rừng Địa Long. Gộp 20 lông bất kỳ đổi tại UDOI.'},
+    {id:'red_feather',name:'Lông đỏ',emoji:'🪶',description:'Lông rơi từ Chó đỏ ở Khu Rừng Địa Long. Gộp 20 lông bất kỳ đổi tại UDOI.'}
+];
+export const MONSTER_MATERIALS = [...FOREST_MATERIALS, ...NOXII_MATERIALS, ...DIA_LONG_MATERIALS];
+export const monsterMaterialsForMap = mapId => mapId === 'dia-long-forest' ? DIA_LONG_MATERIALS : mapId === 'noxii-entrance' ? NOXII_MATERIALS : mapId === 'west-forest' ? FOREST_MATERIALS : [];
+export const monsterExchangeForMap = mapId => mapId === 'dia-long-forest'
+    ? {cost:20,reward:'wing_essence',name:'Tinh chất cánh'}
+    : {cost:10,reward:'upgrade_stone',name:'đá cường hóa'};
 for (const material of MONSTER_MATERIALS) {
     ITEMS[material.id] = {
         name:material.name, type:'material', category:'monster-drop', level:1,
-        maxStack:99, emoji:material.emoji, description:material.description
+        maxStack:99, ...(material.id.endsWith('_feather')?{icon:material.id}:{emoji:material.emoji}), description:material.description
     };
 }
 ITEMS.upgrade_stone = {
@@ -36,6 +44,7 @@ ITEMS.upgrade_stone = {
     level:1, maxStack:99, emoji:'💎',
     description:'Nguyên liệu dùng để nâng cấp trang bị.'
 };
+ITEMS.wing_essence={name:'Tinh chất cánh',type:'material',category:'upgrade',level:1,maxStack:99,icon:'wing_essence',description:'Tinh chất đổi từ 20 lông quái tại UDOI. Chưa có tác dụng sử dụng; giữ lại cho bản cập nhật sau.'};
 for (const tier of POTION_TIERS) {
     const suffix = tier.level === 1 ? '' : `_${tier.level}`;
     ITEMS[`health_potion${suffix}`] = {
@@ -80,6 +89,8 @@ export function gearIcon(kind, level=1, size=40) {
     const colors=['#b9c5c9','#91c5e5','#bb9cde','#dea572','#e3ca78'];
     const base=colors[Math.max(0,Math.min(4,level-1))];
     const shapes={
+        ...Object.fromEntries([['blue_feather','#66c5eb'],['yellow_feather','#f3cb62'],['red_feather','#e67468']].map(([key,color])=>[key,`<path d="M10 1H14V5H13V8H11V10H8V12H5V14H2V12H4V9H6V6H8V3H10Z" fill="${color}"/><path d="M12 3L3 14" stroke="#fff0c1" stroke-width="1.3"/><path d="M8 5V9H12M6 8V11H9" fill="none" stroke="#36576a"/>`])),
+        wing_essence:'<path d="M6 1H10V3H9V5L13 8V14H3V8L7 5V3H6Z" fill="#bdd8cf"/><path d="M4 9H12V13H4Z" fill="#99a2ee"/><path d="M5 9L8 12L11 9M8 8V12" fill="none" stroke="#e8e4ff"/><path d="M6 1H10V3H6Z" fill="#d4aa61"/>',
         orb:'<path d="M5 2H11V3H13V5H14V10H13V12H11V13H5V12H3V10H2V5H3V3H5Z" fill="#354268"/><path d="M5 4H11V5H12V9H11V11H5V10H4V6H5Z" fill="#a87df5"/><path d="M6 4H9V6H6Z" fill="#edebff"/><path d="M3 13H13V15H3Z" fill="#d0b569"/>',
         dagger:'<path d="M10 1H13V5H12V7H10V9H8V11H6V8H8V6H9V3H10Z" fill="#ccdfe1"/><path d="M4 8L9 12L8 14L3 10Z" fill="#e1ba65"/><path d="M4 11L6 13L3 16L1 14Z" fill="#a56248"/>',
         armor:'<path d="M5 2H7V4H9V2H11L15 5V9H12V14H4V9H1V5Z"/><path d="M5 5H11V12H5Z" fill="#627985"/><path d="M7 5H9V12H7Z" fill="#d9e3df"/>',

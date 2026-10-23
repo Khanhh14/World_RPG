@@ -14,6 +14,7 @@ import {
     BAG_CAPACITY,
     MONSTER_MATERIALS,
     monsterMaterialsForMap,
+    monsterExchangeForMap,
     FOOD_RECIPES
 } from '../data/items.js';
 
@@ -237,7 +238,7 @@ export class RPGState {
             this.data.gold = integer(saved.gold, 0, 9999999, 50);
             this.data.pendingBossRewards = Array.isArray(saved.pendingBossRewards) ? [...new Set(saved.pendingBossRewards.filter(entry=>typeof entry==='string'
                 ? /^[a-f0-9-]{36}$/i.test(entry)
-                : entry && ['naga','noxii','forest-guardian'].includes(entry.bossId) && /^[a-f0-9-]{36}$/i.test(entry.requestId)))] : [];
+                : entry && ['naga','noxii','forest-guardian','thanh-long'].includes(entry.bossId) && /^[a-f0-9-]{36}$/i.test(entry.requestId)))] : [];
             this.data.bossStoneInbox = integer(saved.bossStoneInbox,0,999999,0);
             this.data.activityRewardReceipts = Array.isArray(saved.activityRewardReceipts)
                 ? [...new Set(saved.activityRewardReceipts.filter(id=>typeof id==='string'&&/^[a-f0-9-]{36}$/i.test(id)))] : [];
@@ -496,7 +497,7 @@ export class RPGState {
         if(this.data.pendingSale)return this.recoverSale();
         const worn=Object.values(this.data.equipment).filter(value=>value===id).length;
         if(!ITEMS[id] || !Number.isInteger(quantity) || quantity<1 || quantity>99 || (this.data.inventory[id]??0)-worn<quantity)return {ok:false,message:'Không đủ vật phẩm trong balo. Hãy tháo đồ đang mặc trước.'};
-        const local=MONSTER_MATERIALS.some(m=>m.id===id)||id==='upgrade_stone';
+        const local=MONSTER_MATERIALS.some(m=>m.id===id)||id==='upgrade_stone'||id==='wing_essence';
         if(local && this.data.pendingKills.length){
             this.selling=true;
             try{await this.scene?.questSystem?.load();}finally{this.selling=false;}
@@ -615,6 +616,7 @@ export class RPGState {
         // Vật phẩm rơi và đá cường hóa dùng bản lưu riêng của nhân vật.
         for (const material of MONSTER_MATERIALS) inventory[material.id] = this.data.inventory[material.id] ?? 0;
         inventory.upgrade_stone = this.data.inventory.upgrade_stone ?? 0;
+        inventory.wing_essence = this.data.inventory.wing_essence ?? 0;
         this.data.inventory = inventory;
         for (const [slot] of EQUIPMENT_SLOTS) this.data.equipment[slot] = equipment[slot];
     }
@@ -778,15 +780,16 @@ export class RPGState {
 
     canExchangeMonsterMaterials(mapId = this.scene?.mapData?.id ?? 'west-forest') {
         const materials = monsterMaterialsForMap(mapId);
+        const recipe = monsterExchangeForMap(mapId);
         const total = materials.reduce(
             (sum, material) => sum + (this.data.inventory[material.id] ?? 0),
             0
         );
-        if (total < 10) {
-            return `Cần thêm ${10 - total} vật phẩm rơi từ quái để đổi.`;
+        if (total < recipe.cost) {
+            return `Cần thêm ${recipe.cost - total} vật phẩm rơi từ quái để đổi.`;
         }
 
-        let remaining = 10;
+        let remaining = recipe.cost;
         let freesSlot = false;
         for (const material of materials) {
             const count = Math.min(remaining, this.data.inventory[material.id] ?? 0);
@@ -795,8 +798,8 @@ export class RPGState {
             if (!remaining) break;
         }
 
-        const error = this.canAdd('upgrade_stone');
-        if (error && !(error === 'Ba lô đã đầy.' && freesSlot && !this.data.inventory.upgrade_stone)) {
+        const error = this.canAdd(recipe.reward);
+        if (error && !(error === 'Ba lô đã đầy.' && freesSlot && !this.data.inventory[recipe.reward])) {
             return error;
         }
         return '';
@@ -804,19 +807,20 @@ export class RPGState {
 
     exchangeMonsterMaterials(mapId = this.scene?.mapData?.id ?? 'west-forest') {
         const materials = monsterMaterialsForMap(mapId);
+        const recipe = monsterExchangeForMap(mapId);
         const error = this.canExchangeMonsterMaterials(mapId);
         if (error) return { ok: false, message: error };
         const inventory = {...this.data.inventory};
-        let remaining = 10;
+        let remaining = recipe.cost;
         for (const material of materials) {
             const count = Math.min(remaining, this.data.inventory[material.id] ?? 0);
             inventory[material.id] = (inventory[material.id] ?? 0) - count;
             remaining -= count;
             if (!remaining) break;
         }
-        inventory.upgrade_stone = (inventory.upgrade_stone ?? 0) + 1;
+        inventory[recipe.reward] = (inventory[recipe.reward] ?? 0) + 1;
         const result = this.commitGathering({...this.data,inventory});
-        return {...result,message:result.ok?'Đổi thành công 10 vật phẩm quái lấy 1 đá cường hóa.':result.message};
+        return {...result,message:result.ok?`Đổi thành công ${recipe.cost} vật phẩm quái lấy 1 ${recipe.name}.`:result.message};
     }
 
     async useItem(id) {
