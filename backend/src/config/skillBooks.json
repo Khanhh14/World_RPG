@@ -315,5 +315,16 @@
       "goldPrice": 2000,
       "gemPrice": 10
     }
+  ],
+  "eventBooks": [
+    {
+      "id": "huyen_thu_han_phao",
+      "name": "Huyễn Thú Hàn Pháo",
+      "effect": "icecone",
+      "mana": 40,
+      "cooldown": 16000,
+      "multiplier": 2,
+      "range": 480
+    }
   ]
 }

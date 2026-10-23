@@ -23,7 +23,8 @@
     {
       "id": "han_nha",
       "name": "Hàn Nha",
-      "active": false
+      "active": true,
+      "source": "Bạch Hổ"
     }
   ],
   "weapons": {
@@ -83,6 +84,12 @@
       "materialId": "hoa_phung",
       "cost": 20,
       "itemId": "hoa_tien_ky"
+    },
+    {
+      "id": "han-nha-skill",
+      "materialId": "han_nha",
+      "cost": 20,
+      "skillId": "huyen_thu_han_phao"
     }
   ]
 }
