@@ -1,3 +1,5 @@
+import {TU_LINH_EQUIPMENT} from './tuLinhEquipment.js';
+import {eventEquipmentIcon} from '../world/EventEquipmentArt.js';
 import {TU_LINH_WEAPONS,tuLinhWeaponIcon} from './tuLinhWeapons.js';
 import { OFFHAND_ITEMS } from './offhands.js';
 export const EQUIPMENT_SLOTS = [
@@ -80,13 +82,14 @@ for (const spec of gear) for (let i=0;i<5;i++) {
 }
 // Giữ id cũ để không mất trượng trong bản lưu trước.
 ITEMS.wood_staff={name:'Trượng tập sự',frame:129,type:'weapon',category:'weapon',level:1,price:28,maxStack:1,attack:3,description:'+3 công. Có thể trang bị ở mọi cấp nhân vật.'};
-Object.assign(ITEMS, OFFHAND_ITEMS, TU_LINH_WEAPONS);
+Object.assign(ITEMS, OFFHAND_ITEMS, TU_LINH_WEAPONS, TU_LINH_EQUIPMENT);
 export const SHOP_ITEMS=Object.keys(ITEMS)
-    .filter(id => !['monster-drop','upgrade','event-weapon'].includes(ITEMS[id].category))
+    .filter(id => !['monster-drop','upgrade','event-weapon','event-gear'].includes(ITEMS[id].category))
     .sort((a,b)=>ITEMS[a].level-ITEMS[b].level || ITEMS[a].price-ITEMS[b].price);
 
 // Biểu tượng pixel cho các loại giáp chưa có ảnh riêng trong Tiny Dungeon.
 export function gearIcon(kind, level=1, size=40) {
+    if(TU_LINH_EQUIPMENT[kind])return eventEquipmentIcon(kind,size);
     if(TU_LINH_WEAPONS[kind])return tuLinhWeaponIcon(kind,size);
     const colors=['#b9c5c9','#91c5e5','#bb9cde','#dea572','#e3ca78'];
     const base=colors[Math.max(0,Math.min(4,level-1))];

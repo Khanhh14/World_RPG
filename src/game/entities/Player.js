@@ -84,6 +84,8 @@ export class Player {
 
     // Khiên: nằm phía đối diện, cách nhân vật 14px.
     if (this.shieldSprite) {
+        const offhand=ITEMS[this.currentShield];
+        if(offhand?.offhandKind==='flag')this.shieldSprite.setTexture(offhandTexture(this.scene,offhand,Math.floor(this.scene.time.now/180)%3));
         this.shieldSprite
             .setPosition(
                 this.x + (facingLeft ? 22 : -22),

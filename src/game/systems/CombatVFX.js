@@ -75,6 +75,7 @@ export class CombatVFX {
   for(let i=1;i<=4;i++){const d=length*((i/5+k*.15)%1),x=from.x+dx*d,y=from.y+dy*d;g.lineStyle(2,color,.65).lineBetween(x-dx*9-dy*5,y-dy*9+dx*5,x,y).lineBetween(x,y,x-dx*9+dy*5,y-dy*9-dx*5);}
  }
  field(now,f){
+  if(f.type==='fire'){this.fireField(now,f);return;}
   const age=(now-f.start)/1000,fade=clamp(Math.min((now-f.start)/250,(f.end-now)/500));
   if(!this.visible(f,f.radius))return;
   this.ground.fillStyle(f.color,.055*fade).fillCircle(f.x,f.y,f.radius);
@@ -85,6 +86,58 @@ export class CombatVFX {
    this.star(x,y,3+i%3,f.color,Math.sin(progress*Math.PI)*fade);
    if(i%4===0)this.cross(x,y,5,f.color,fade*(1-progress));
   }
+ }
+ fireField(now,f){
+  if(!this.visible(f,f.radius+100))return;
+  const age=Math.max(0,(now-f.start)/1000),remaining=f.end-now;
+  const fade=clamp(Math.min((now-f.start)/250,remaining/500));if(fade<=0)return;
+  const r=f.radius,x=f.x,y=f.y,time=this.reduced?Math.floor(age*6)/6:age;
+  const ground=this.ground,g=this.g,glow=this.glow;
+  // Scorched earth, molten cracks, and two concentric rune circles.
+  ground.fillStyle(0x3b201c,.35*fade).fillCircle(x,y,r);
+  ground.fillStyle(0xb94725,.15*fade).fillCircle(x,y,r*.85);
+  this.halo(x,y,r*.72,0xff8d36,.22*fade);
+  this.arc(x,y,r,0,TAU,0xffbc69,.7*fade,3,ground);
+  this.arc(x,y,r*.91,0,TAU,0xff763d,.45*fade,2,ground);
+  this.seal(x,y,r*.73,0xf2be74,.48*fade,time*.08,ground);
+  for(let i=0;i<14;i++){
+   const a=i*2.39996,inner=r*(.18+(i%5)*.13),px=x+Math.cos(a)*inner,py=y+Math.sin(a)*inner;
+   this.path([{x:px-9,y:py+5},{x:px,y:py-3},{x:px+7,y:py+1},{x:px+13,y:py-8}],0xff8c46,(.25+.12*Math.sin(time*4+i))*fade,2,ground);
+  }
+  // Layered flame tongues. Each has a red outer silhouette and a pale core.
+  const tongues=this.reduced?16:44;
+  for(let i=0;i<tongues;i++){
+   const a=i*2.39996+Math.sin(time*.4+i)*.08,ring=i<24?.87:.2+(i%7)*.085;
+   const px=x+Math.cos(a)*r*ring,py=y+Math.sin(a)*r*ring;
+   const wave=Math.sin(time*8+i*1.77),h=25+(i%5)*7+wave*9,w=5+(i%3)*2;
+   const tipX=px+Math.sin(time*5+i)*9,tipY=py-h;
+   glow.fillStyle(0xff6c28,.09*fade).fillEllipse(px,py-h*.3,w*5,h*1.1);
+   g.fillStyle(0xbc3f27,.5*fade).fillTriangle(px-w*1.4,py,px+w*1.4,py,tipX,tipY-6);
+   g.fillStyle(0xf28735,.72*fade).fillTriangle(px-w,py,px+w,py,tipX,tipY);
+   g.fillStyle(0xffd078,.85*fade).fillTriangle(px-w*.5,py,px+w*.5,py,px+wave*3,py-h*.62);
+   glow.fillStyle(0xffebae,.55*fade).fillRect(px-2,py-4,4,4);
+  }
+  // Floating ash, orbiting embers and warm vertical trails remain bounded.
+  const n=this.reduced?10:36;
+  for(let i=0;i<n;i++){
+   const k=(time*.42+i*.137)%1,a=i*2.399+time*.17,rad=r*(.2+(i%6)*.12);
+   const px=x+Math.cos(a)*rad+Math.sin(time*3+i)*10,py=y+Math.sin(a)*rad-k*105;
+   const alpha=Math.sin(k*Math.PI)*fade;
+   glow.lineStyle(1.5,0xffb650,alpha*.5).lineBetween(px,py,px-2,py+8);
+   glow.fillStyle(i%3?0xffb65c:0xffe4a4,alpha).fillRect(px,py,i%4===0?3:2,i%4===0?3:2);
+  }
+  for(let i=0;i<(this.reduced?2:5);i++){
+   const k=(time*.18+i*.21)%1,px=x+Math.sin(i*2.4+time*.3)*r*.55,py=y-k*100;
+   g.lineStyle(3,0x7d7166,fade*(1-k)*.12).strokeCircle(px,py,10+k*18);
+  }
+  // A spectral planted banner identifies the source of the fire domain.
+  const poleX=x-5,poleY=y-18;
+  g.lineStyle(4,0x51392a,fade).lineBetween(poleX,poleY+19,poleX,poleY-53);
+  g.lineStyle(1.5,0xf0c87a,fade).lineBetween(poleX-1,poleY+18,poleX-1,poleY-55);
+  const flutter=Math.sin(time*5)*4;
+  g.fillStyle(0xa74532,.8*fade).fillTriangle(poleX,poleY-49,poleX+36,poleY-43+flutter,poleX,poleY-24);
+  g.lineStyle(2,0xf3c373,fade).lineBetween(poleX,poleY-49,poleX+36,poleY-43+flutter).lineBetween(poleX+36,poleY-43+flutter,poleX,poleY-24);
+  this.star(poleX+13,poleY-38,6,0xffdda0,.8*fade,g);
  }
  cross(x,y,s,c,a){this.glow.fillStyle(c,a).fillRect(x-s*.25,y-s,s*.5,s*2).fillRect(x-s,y-s*.25,s*2,s*.5);}
  aura(now,p,guard,barrier,evade,buffs){

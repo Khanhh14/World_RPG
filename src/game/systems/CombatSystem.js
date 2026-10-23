@@ -208,7 +208,7 @@ export class CombatSystem {
   }
   get specialSkill(){return ITEMS[this.state?.data.equipment?.shield]?.specialSkill??null;}
   specialError(){
-    if(!this.specialSkill)return 'Trang bị cầu phép thuật hoặc dao găm ở ô phụ để mở kỹ năng F.';
+    if(!this.specialSkill)return 'Trang bị vật phẩm có kỹ năng ở ô phụ để mở kỹ năng F.';
     if(this.busy)return 'Hãy đóng bảng hoặc kết thúc thao tác hiện tại.';
     if(this.remaining('offhand-special')>0)return 'Kỹ năng đặc biệt đang hồi.';
     if(this.state.data.mp<this.specialSkill.mana)return 'Không đủ mana.';
@@ -217,6 +217,7 @@ export class CombatSystem {
   castSpecial(){
     const error=this.specialError();if(error){this.notify(error);return false;}
     const skill=this.specialSkill,target=this.nearestTarget(skill.range);
+    if(skill.id==='firefield')return this.castFireField(skill,target);
     if(!target){this.notify('Chưa có mục tiêu trong tầm kỹ năng đặc biệt.');return false;}
     if(!this.state.spendMana(skill.mana))return false;
     this.runtime.cooldowns['offhand-special']=this.clock+skill.cooldown;
@@ -230,6 +231,26 @@ export class CombatSystem {
       if(healed>0){this.state.data.hp+=healed;this.state.changed();this.float(p,`+${healed} HP`,'#9df0b0');}
       this.flash(point,60,0xf29da8,'drain',{to:{...p}});
     }
+    return true;
+  }
+  castFireField(skill,target){
+    const p=this.origin();if(!p)return false;
+    let point=target?this.targetPoint(target):{x:p.x+this.facing.x*180,y:p.y+this.facing.y*180};
+    // Stop the fallback placement before a wall instead of casting through it.
+    if(!target){
+      const desired=point;point={...p};
+      for(let i=1;i<=12;i++){
+        const next={x:p.x+(desired.x-p.x)*i/12,y:p.y+(desired.y-p.y)*i/12};
+        if(!this.clearLine(p,next))break;point=next;
+      }
+    }
+    const bounds=this.scene.physics?.world?.bounds;
+    if(bounds)point={x:clamp(point.x,16,bounds.width-16),y:clamp(point.y,16,bounds.height-16)};
+    if(!this.state.spendMana(skill.mana))return false;
+    this.runtime.cooldowns['offhand-special']=this.clock+skill.cooldown;
+    this.fields=this.fields.filter(f=>f.type!=='fire');
+    this.fields.push({...point,type:'fire',skillId:'hoa-tien-ky',radius:skill.radius,color:0xf1a65a,start:this.now,end:this.now+skill.duration,next:this.now+skill.interval,interval:skill.interval,damage:this.state.attack*skill.multiplier});
+    this.flash(p,62,0xf3bb68,'cast');this.flash(point,skill.radius,0xf2a05d,'nova');
     return true;
   }
   attack(){
@@ -327,6 +348,14 @@ export class CombatSystem {
       // Mỗi tick xét vị trí hiện tại. Không bù nhiều tick sau khi tab bị treo.
       if(this.now>=f.next&&f.next<=f.end&&this.now<=f.end+100){
         f.next=f.start+(Math.floor((this.now-f.start)/f.interval)+1)*f.interval;
+        if(f.type==='fire'){
+          if(!this.busy)for(const t of this.targets.values()){
+            if(t.hp<=0||t.returning||!t.entity.sprite.active)continue;
+            const point=this.targetPoint(t);
+            if(distance(point,f)<=f.radius&&this.clearLine(f,point))this.hit(t,f.damage);
+          }
+          continue;
+        }
         if(!this.busy&&p&&distance(p,f)<=f.radius){
           const amount=Math.max(0,Math.min(f.heal,this.state.maxHP-this.state.data.hp));
           if(amount){this.state.data.hp+=amount;this.state.changed();this.float(p,`+${amount} HP`,'#baffcb');this.flash(p,45,0xb5ffbc,'heal');}

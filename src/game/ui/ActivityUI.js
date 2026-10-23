@@ -14,7 +14,7 @@ export class ActivityUI {
  constructor(scene){
   this.scene=scene;this.alive=true;this.isOpen=false;this.tab='daily';this.message='';this.settingsKey=`tiny-rpg-settings:${scene.rpgState.data.characterId}`;
   try{const stored=JSON.parse(localStorage.getItem(this.settingsKey)||'{}');this.settings=Object.fromEntries(Object.entries(defaults).map(([k,v])=>[k,typeof stored[k]==='boolean'?stored[k]:v]));}catch{this.settings={...defaults};}
-  if(!document.getElementById('rpg-activities-css')){const link=document.createElement('link');link.id='rpg-activities-css';link.rel='stylesheet';link.href='/assets/style/activities.css?v=tu-linh-1';document.head.append(link);}
+  if(!document.getElementById('rpg-activities-css')){const link=document.createElement('link');link.id='rpg-activities-css';link.rel='stylesheet';link.href='/assets/style/activities.css?v=tu-linh-2';document.head.append(link);}
   this.toolbar=document.createElement('nav');this.toolbar.className='ga-toolbar';this.toolbar.setAttribute('aria-label','Tiện ích trò chơi');
   this.toolbar.innerHTML=PANELS.filter(([id])=>['daily','events'].includes(id)).map(([id,symbol,name])=>`<button type="button" data-open="${id}" aria-label="${name}"><span aria-hidden="true">${symbol}</span><small>${name}</small><i data-dot="${id}" hidden></i></button>`).join('');
   this.panels={};
@@ -65,8 +65,9 @@ export class ActivityUI {
  async act(button){
   this.message='';
   try{
+   if(button.dataset.action==='events-select'){this.events.selectedEventId=button.dataset.event;this.render();return;}
    if(button.dataset.action==='events-refresh'){await this.events.load();return;}
-   if(button.dataset.action==='events-exchange'){await this.events.exchange();return;}
+   if(button.dataset.action==='events-exchange'){await this.events.exchange(button.dataset.recipe);return;}
    if(button.dataset.action==='collect-pending'){
     for(const box of [...(this.daily.view?.boxes??[])])await this.daily.collect(box.sourceId);
     this.message='Đã nhận đầy đủ vật phẩm điểm danh.';this.render();return;
@@ -109,7 +110,7 @@ export class ActivityUI {
    ['monsterNames','Hiện tên quái thường','Bật hoặc ẩn nhãn tên phía trên các quái trong map.'],
    ['reducedMotion','Giảm chuyển động hiệu ứng','Giảm chuyển động của hiệu ứng hỗ trợ; vùng cảnh báo kỹ năng boss vẫn được giữ.']
   ].map(([id,label,hint])=>`<label><span><strong>${label}</strong><small>${hint}</small></span><input type="checkbox" data-setting="${id}" ${this.settings[id]?'checked':''}></label>`).join('')}</div>`;
-  if(this.tab==='events')content.innerHTML=renderEvents(this.events,this.scene.rpgState);
+  if(this.tab==='events'){const old=content.querySelector('.te-detail'),scroll=old&&old.dataset.eventId===this.events.selectedEventId?old.scrollTop:0;content.innerHTML=renderEvents(this.events,this.scene.rpgState);const detail=content.querySelector('.te-detail');if(detail)detail.scrollTop=scroll;}
   if(this.tab==='guide')content.innerHTML=this.renderGuide();
   this.renderMessage();this.updateClock();
  }

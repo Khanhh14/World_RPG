@@ -17,16 +17,18 @@ export class EventsSystem{
   this.state.storage.setItem(this.state.saveKey,JSON.stringify(next));
   if(this.state.storage.getItem(this.state.saveKey)!==JSON.stringify(next))throw new Error('Chưa lưu được yêu cầu đổi. Hãy thử lại.');
  }
- async exchange(){
+ async exchange(recipeId='nhan-long-weapon'){
   const s=this.state;if(this.busy)return;
   if(s.usingItem||s.buying||s.selling||s.bossRewardBusy||s.data.pendingPurchase||s.data.pendingSale||s.data.pendingEquipmentAction||s.data.pendingItemUse||s.data.pendingInventoryAction||s.data.pendingDailyAction){this.error='Hãy hoàn tất giao dịch vật phẩm đang chờ trước.';this.notify();return;}
   this.busy=true;this.error='';this.notify();
   try{
    if(!s.data.pendingEventExchange){
-    const event=this.view?.find(e=>e.id==='tu-linh'),weapon=event?.weapons?.[s.data.classCode];
-    if(!weapon)throw new Error('Hãy tải lại sự kiện.');
-    const error=s.canAdd(weapon.id);if(error)throw new Error(error+' Nhân Long vẫn được giữ.');
-    const pending={eventId:'tu-linh',requestId:crypto.randomUUID()};this.save({...s.data,pendingEventExchange:pending});s.data.pendingEventExchange=pending;s.changed();
+    const event=this.view?.find(e=>e.id==='tu-linh');
+    const recipe=event?.recipes?.find(r=>r.id===recipeId);
+    const itemId=recipe?.classWeapon?event.weapons?.[s.data.classCode]?.id:recipe?.itemId;
+    if(!itemId)throw new Error('Hãy tải lại sự kiện.');
+    const error=s.canAdd(itemId);if(error)throw new Error(error+' Nguyên liệu vẫn được giữ.');
+    const pending={eventId:'tu-linh',recipeId,requestId:crypto.randomUUID()};this.save({...s.data,pendingEventExchange:pending});s.data.pendingEventExchange=pending;s.changed();
    }
    const pending=s.data.pendingEventExchange,result=await eventsApi.exchange(pending);
    if(result.requestId!==pending.requestId||!ITEMS[result.itemId])throw new Error('Phản hồi đổi sự kiện không khớp.');

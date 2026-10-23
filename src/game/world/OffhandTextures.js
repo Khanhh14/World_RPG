@@ -1,12 +1,15 @@
+import {flagPixels} from './EventEquipmentArt.js';
 // Cùng hệ hình pixel 16px của trang bị hiện tại.
-export function offhandTexture(scene,item){
- const key=`offhand-${item.offhandKind}-${item.level}`;
+export function offhandTexture(scene,item,frame=0){
+ const key=`offhand-${item.offhandKind}-${item.level}${item.offhandKind==='flag'?'-'+frame:''}`;
  if(scene.textures.exists(key))return key;
  const texture=scene.textures.createCanvas(key,16,16),c=texture.context;
  const colors=['#a88bed','#80bddd','#c89deb','#e8b37c','#f3d67f'],color=colors[Math.max(0,Math.min(4,item.level-1))];
  const polygon=(points,fill)=>{c.fillStyle=fill;c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill();};
  c.imageSmoothingEnabled=false;
- if(item.offhandKind==='orb'){
+ if(item.offhandKind==='flag'){
+  for(const [x,y,w,h,color] of flagPixels(frame)){c.fillStyle=color;c.fillRect(x,y,w,h);}
+ }else if(item.offhandKind==='orb'){
   polygon([[5,1],[11,1],[11,2],[13,2],[13,4],[14,4],[14,10],[13,10],[13,12],[11,12],[11,13],[5,13],[5,12],[3,12],[3,10],[2,10],[2,4],[3,4],[3,2],[5,2]],'#26384f');
   polygon([[5,3],[11,3],[11,4],[12,4],[12,10],[10,10],[10,11],[5,11],[5,10],[4,10],[4,5],[5,5]],color);
   c.fillStyle='#eeebff';c.fillRect(5,4,4,2);c.fillRect(5,6,2,2);
