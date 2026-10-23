@@ -21,7 +21,9 @@ export function renderWingsPanel(hud) {
  const own=w?.collection?.find(x=>x.id===selected.id), level=own?.level || 0;
  const equipped=w?.equipped===selected.id, max=level>=WING_CATALOG.maxLevel;
  const stone=nextStone(level), count=w?.materials?.[stone?.id] || 0;
+ const ench=w?.enchantments?.[selected.id]||{};
  const current=wingStats(selected.id,level), next=wingStats(selected.id,Math.min(level+1,WING_CATALOG.maxLevel));
+ for(const key of ['maxHP','attack','defense']){current[key]+=ench[key]||0;next[key]+=ench[key]||0;}
  const busy=s.wingBusy, disabled=busy || !own || !s.wingsLoaded || Boolean(s.data.pendingWingAction);
  const canUpgrade=!disabled && !max && count>0;
  return `${status(s)}<div class="yw-layout">
@@ -38,7 +40,7 @@ export function renderWingsPanel(hud) {
    <button class="rpg-primary yw-upgrade-button" data-action="wing-upgrade" data-id="${selected.id}" ${canUpgrade?'':'disabled'}>${busy?'Đang lưu…':max?'Đã nâng tối đa':count<1?'Chưa đủ đá nâng cấp':`Nâng cấp lên +${level+1}`}</button>
    <p class="yw-muted yw-rule">+1–3: đá cấp 1 · +4–6: đá cấp 2 · +7–9: đá cấp 3 · +10 trở lên: đá cấp 4.<br>Mỗi lần dùng 1 viên, không thu thêm vàng, không mất cấp.</p>
    <div class="yw-materials">${WING_CATALOG.stones.map(st=>`<div>${stoneIcon(st,32)}<span>Cấp ${st.tier}<strong>×${w?.materials?.[st.id]||0}</strong></span></div>`).join('')}</div>
-   <p class="yw-footnote">Mua đá từ Vũ sư Airi trước nhà phía Tây Ngoại ô thành YuNa.</p>
+   <div class="yw-enchant"><span class="yw-eyebrow">PHÙ PHÉP CÁNH</span><h3>Tinh chất thức tỉnh</h3><p>Mỗi lọ nhận ngẫu nhiên <b>+10 HP</b>, <b>+1 thủ</b> hoặc <b>+2 công</b> (mỗi loại 1/3). Chỉ số cộng dồn, không mất chỉ số cũ.</p><p>Đã phù phép ${ench.count||0} lần: <strong>+${ench.maxHP||0} HP · +${ench.defense||0} thủ · +${ench.attack||0} công</strong></p><p>Đang có: <b>${s.data.inventory.wing_essence||0}</b> lọ tinh chất cánh</p><button class="rpg-primary yw-upgrade-button" data-action="wing-enchant" data-id="${selected.id}" ${disabled||s.selling||s.data.pendingSale||!(s.data.inventory.wing_essence>0)?'disabled':''}>${busy?'Đang phù phép…':'Phù phép · 1 tinh chất cánh'}</button></div><p class="yw-footnote">Mua đá từ Vũ sư Airi trước nhà phía Tây Ngoại ô thành YuNa.</p>
   </section></div>`;
 }
 export function renderWingShop(hud) {

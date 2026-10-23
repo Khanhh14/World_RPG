@@ -75,6 +75,7 @@ export class RPGHUD {
             if (action === 'wing-buy' && this.wingNPC && this.scene.dialogue?.nearest() === this.wingNPC) await this.scene.wingsSystem?.perform('buy', { itemId: id });
             if (action === 'wing-equip') await this.scene.wingsSystem?.perform('equip', { wingId: id });
             if (action === 'wing-unequip') await this.scene.wingsSystem?.perform('equip', { wingId: null });
+            if(action==='wing-enchant')await this.scene.wingsSystem?.perform('enchant',{wingId:id});
             if (action === 'wing-upgrade') {
                 const owned = this.state.data.wings?.collection?.find(item => item.id === id);
                 if (owned) await this.scene.wingsSystem?.perform('upgrade', { wingId: id, expectedLevel: owned.level });

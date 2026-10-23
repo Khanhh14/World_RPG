@@ -1,4 +1,5 @@
 import {eventsApi} from '../../api/eventsApi.js';
+import {EVENT_SKILLS} from '../data/eventSkills.js';
 import {ITEMS} from '../data/items.js';
 export class EventsSystem{
  constructor(scene){this.scene=scene;this.state=scene.rpgState;this.alive=true;this.view=null;this.error='';this.busy=false;this.loading=false;this.onChange=()=>{};scene.events.once('shutdown',()=>{this.alive=false;});if(this.state.data.pendingEventExchange)void this.load();}
@@ -25,16 +26,17 @@ export class EventsSystem{
    if(!s.data.pendingEventExchange){
     const event=this.view?.find(e=>e.id==='tu-linh');
     const recipe=event?.recipes?.find(r=>r.id===recipeId);
-    const itemId=recipe?.classWeapon?event.weapons?.[s.data.classCode]?.id:recipe?.itemId;
+    const itemId=recipe?.skillId|| (recipe?.classWeapon?event.weapons?.[s.data.classCode]?.id:recipe?.itemId);
     if(!itemId)throw new Error('Hãy tải lại sự kiện.');
-    const error=s.canAdd(itemId);if(error)throw new Error(error+' Nguyên liệu vẫn được giữ.');
+    const error=recipe.skillId?null:s.canAdd(itemId);if(error)throw new Error(error+' Nguyên liệu vẫn được giữ.');
     const pending={eventId:'tu-linh',recipeId,requestId:crypto.randomUUID()};this.save({...s.data,pendingEventExchange:pending});s.data.pendingEventExchange=pending;s.changed();
    }
    const pending=s.data.pendingEventExchange,result=await eventsApi.exchange(pending);
-   if(result.requestId!==pending.requestId||!ITEMS[result.itemId])throw new Error('Phản hồi đổi sự kiện không khớp.');
+   if(result.requestId!==pending.requestId||(!ITEMS[result.itemId]&&!EVENT_SKILLS.some(k=>k.id===result.itemId)))throw new Error('Phản hồi đổi sự kiện không khớp.');
    this.apply(result);s.applyServerItems(result.items);
+   if(result.skillId)await this.scene.skillsSystem?.load();
    this.save({...s.data,pendingEventExchange:null});s.data.pendingEventExchange=null;s.changed();
-   this.scene.hud?.toast(`Đã nhận ${ITEMS[result.itemId].name}. Mở Balo để trang bị.`);
+   this.scene.hud?.toast(result.skillId?'Đã học Huyễn Thú Hàn Pháo. Mở Balo → Kỹ năng để gán vào ô.':`Đã nhận ${ITEMS[result.itemId].name}. Mở Balo để trang bị.`);
   }catch(e){
    this.error=e.message;
    if([400,403,409].includes(e.status)){s.data.pendingEventExchange=null;s.changed();}

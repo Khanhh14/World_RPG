@@ -16,3 +16,4 @@
 /* Bốn cấp đá; tự xuống dòng ở màn hình hẹp. */
 .yw-shop-grid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
 .yw-materials{grid-template-columns:repeat(auto-fit,minmax(100px,1fr))}
+.yw-enchant{margin-top:18px;padding:16px;border:1px solid #8eaa77;border-radius:12px;background:linear-gradient(135deg,#233a38,#273247)}.yw-enchant h3{margin:6px 0;color:#e1edb8}.yw-enchant p{font-size:13px;line-height:1.6;color:#c3d7d2}.yw-enchant strong{color:#a5e7e4}

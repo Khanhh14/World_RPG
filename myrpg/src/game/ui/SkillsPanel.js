@@ -1,5 +1,5 @@
 import {SKILL_TRAINING,skillProgress,scaledSkill} from '../data/skillTraining.js';
-import { BOOK_SKILLS, MAGE_SKILLS, SCHOOLS, STARTER_SKILLS, findSkill, skillSlots } from '../data/skillBooks.js';
+import { EVENT_SKILLS, BOOK_SKILLS, MAGE_SKILLS, SCHOOLS, STARTER_SKILLS, findSkill, skillSlots } from '../data/skillBooks.js';
 import { actionIcon } from './actionIcons.js';
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=x=>Number(x||0).toLocaleString('vi-VN');
@@ -14,12 +14,12 @@ function filters(hud,shop){
 export function renderSkillsPanel(hud){
  const s=hud.state,owned=s.data.skills?.owned ?? STARTER_SKILLS,slots=skillSlots(s);
  const selected=Number.isInteger(hud.skillSlot)?hud.skillSlot:0;hud.skillSlot=selected;
- const group=hud.skillSchool || 'all';const list=[...BOOK_SKILLS,...MAGE_SKILLS].filter(k=>group==='all'||k.school===group).map(k=>scaledSkill(k,s));
+ const group=hud.skillSchool || 'all';const list=[...BOOK_SKILLS,...MAGE_SKILLS,...EVENT_SKILLS].filter(k=>group==='all'||k.school===group).map(k=>scaledSkill(k,s));
  const busy=s.skillBusy || !s.skillsLoaded || !!s.data.pendingSkillAction;
  return `${notice(s)}<div class="sk-heading"><div><span class="sk-eyebrow">BỘ KỸ NĂNG CHIẾN ĐẤU</span><h3>Chọn ô · Chọn kỹ năng</h3><p>Phím 1–5 sử dụng kỹ năng trong ô tương ứng. Mỗi kỹ năng chỉ gán một ô.</p></div><span class="sk-owned">${owned.length} kỹ năng đã học</span></div>
  <div class="sk-slots">${slots.map((id,i)=>{const k=findSkill(id,s);return `<button class="sk-slot ${selected===i?'selected':''}" data-action="skill-slot" data-id="${i}" aria-pressed="${selected===i}"><kbd>${i+1}</kbd>${k?art(k):'<span class="sk-empty">+</span>'}<strong>${esc(k?.name || 'Ô trống')}</strong></button>`;}).join('')}</div>
  <div class="sk-assignment"><span>Đang chọn <b>ô ${selected+1}</b>. Chọn “Gán vào ô” bên dưới để thay kỹ năng.</span><button data-action="skill-clear" data-id="${selected}" ${busy||!slots[selected]?'disabled':''}>Bỏ gán ô ${selected+1}</button></div>
- ${materialWallet(s)}<p class="sk-training-help">Mỗi lần nâng cần 3 bột. Đạt Lv 10 / 20 / 30… cần 1 / 2 / 3… sách phép đột phá để mở thêm 10 cấp.</p>${filters(hud,false)}<div class="sk-grid">${list.map(k=>{const has=owned.includes(k.id),assigned=slots.indexOf(k.id),seller=k.seller==='mage'?'Pháp sư':'Học giả Sora';return `<article class="sk-card ${has?'':'locked'}" style="--school:${schoolFor(k).color}"><header>${art(k)}<div><span class="sk-eyebrow">${schoolFor(k).name}</span><h3>${esc(k.name)}</h3></div></header><p>${esc(k.description)}</p><div class="sk-meta">${k.mana} MP <span>Hồi ${k.cooldown/1000}s</span></div><div class="sk-card-footer"><small>${assigned>=0?'Đang ở ô '+(assigned+1):has?'Đã mua':`Cần mua tại ${seller}`}</small><button data-action="skill-assign" data-id="${k.id}" ${busy||!has||assigned===selected?'disabled':'class="rpg-primary"'}>${!has?'Chưa mua':assigned===selected?'Đã gán':'Gán vào ô '+(selected+1)}</button></div>${trainingCard(s,k,has,busy)}</article>`;}).join('')}</div>`;
+ ${materialWallet(s)}<p class="sk-training-help">Mỗi lần nâng cần 3 bột. Đạt Lv 10 / 20 / 30… cần 1 / 2 / 3… sách phép đột phá để mở thêm 10 cấp.</p>${filters(hud,false)}<div class="sk-grid">${list.map(k=>{const has=owned.includes(k.id),assigned=slots.indexOf(k.id),seller=k.seller==='mage'?'Pháp sư':'Học giả Sora';return `<article class="sk-card ${has?'':'locked'}" style="--school:${schoolFor(k).color}"><header>${art(k)}<div><span class="sk-eyebrow">${schoolFor(k).name}</span><h3>${esc(k.name)}</h3></div></header><p>${esc(k.description)}</p><div class="sk-meta">${k.mana} MP <span>Hồi ${k.cooldown/1000}s</span></div><div class="sk-card-footer"><small>${assigned>=0?'Đang ở ô '+(assigned+1):has?'Đã học':k.seller==='event'?'Đổi trong Sự kiện Tứ Linh':`Cần mua tại ${seller}`}</small><button data-action="skill-assign" data-id="${k.id}" ${busy||!has||assigned===selected?'disabled':'class="rpg-primary"'}>${!has?'Chưa học':assigned===selected?'Đã gán':'Gán vào ô '+(selected+1)}</button></div>${trainingCard(s,k,has,busy)}</article>`;}).join('')}</div>`;
 }
 export function renderSkillShop(hud){
  const s=hud.state,owned=s.data.skills?.owned??[],seller=hud.skillVendor || 'sora',mage=seller==='mage';
@@ -43,7 +43,7 @@ function trainingCard(s,k,has,busy){
  if(!has)return '';
  const {level,cap}=skillProgress(s,k.id),m=s.data.skills?.materials??{},max=level>=SKILL_TRAINING.maxLevel,breakthrough=level===cap&&!max,cost=breakthrough?cap/10:SKILL_TRAINING.powderPerUpgrade,item=breakthrough?'breakthrough_book':'skill_powder';
  const enough=(m[item]??0)>=cost;
- const base=[...BOOK_SKILLS,...MAGE_SKILLS].find(b=>b.id===k.id);
+ const base=[...BOOK_SKILLS,...MAGE_SKILLS,...EVENT_SKILLS].find(b=>b.id===k.id);
  const next=scaledSkill(base,{data:{skills:{levels:{[k.id]:{level:level+1,cap}}}}});
  return `<div class="sk-training"><div class="sk-level"><b>Lv ${level}</b><span>Mốc đã mở: ${cap}</span></div><div class="sk-level-track"><i style="width:${Math.min(100,level/cap*100)}%"></i></div>${max?'<p>Đã đạt cấp tối đa.</p>':`<p class="sk-next">${breakthrough?`Đột phá mở mốc Lv ${cap+10}. Cấp hiện tại vẫn là ${level}; sau đó dùng bột để nâng tiếp.`:`<b>Lv ${level+1}:</b> ${esc(next.description)}`}</p><button class="rpg-primary sk-upgrade" data-action="${breakthrough?'skill-breakthrough':'skill-upgrade'}" data-id="${k.id}" ${busy||!enough?'disabled':''}>${breakthrough?'Đột phá':'Nâng lên Lv '+(level+1)} · ${cost} ${breakthrough?'sách phép':'bột'}</button>`}</div>`;
 }

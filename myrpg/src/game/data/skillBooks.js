@@ -1,3 +1,5 @@
+import {EVENT_SKILLS} from './eventSkills.js';
+export {EVENT_SKILLS} from './eventSkills.js';
 import {scaledSkill} from './skillTraining.js';
 export const SCHOOLS = [{id:'demon',name:'Ma',color:'#d4a1ff'}, {id:'god',name:'Thần',color:'#f3d38a'}, {id:'human',name:'Nhân',color:'#8edbff'}];
 export const MAGE_SKILLS = [
@@ -162,7 +164,7 @@ export const BOOK_SKILLS = [
   }
 ];
 export const LEGACY_SKILLS = MAGE_SKILLS;
-export const ALL_SKILLS = [...BOOK_SKILLS, ...MAGE_SKILLS];
+export const ALL_SKILLS = [...BOOK_SKILLS, ...MAGE_SKILLS,...EVENT_SKILLS];
 export const STARTER_SKILLS = [];
 export const findSkill = (id,state) => scaledSkill(ALL_SKILLS.find(s => s.id === id),state);
 export function skillSlots(state) {

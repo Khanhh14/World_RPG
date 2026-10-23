@@ -1,3 +1,4 @@
+import {launchIceCannon,updateIceCannon} from './IceCannon.js';
 import { monsterIntent } from './MonsterLeash.js';
 import { PotionLoadout } from './PotionLoadout.js';
 import { CombatVFX } from './CombatVFX.js';
@@ -68,9 +69,10 @@ export class CombatSystem {
     const damage=Math.max(1,this.state.attack),p=this.origin();
     const effect=skill.effect || id, color=skill.color;
     // Aim once per cast; walking direction stays available for casts without a target.
-    const aimed=['power','bolt','whirl','beam','combo','ricochet','burn','nova','drain','shadowbind','darkrain','chainlightning','armorbreak','fanshot'].includes(effect);
+    const aimed=['power','bolt','whirl','beam','combo','ricochet','burn','nova','drain','shadowbind','darkrain','chainlightning','armorbreak','fanshot','icecone'].includes(effect);
     const aim=aimed?this.skillDirection(skill.range??320):this.facing;
     const flash=(point,radius,tint,kind,options={})=>this.flash(point,radius,tint,kind,{...options,angle:Math.atan2(aim.y,aim.x)});
+    if(effect==='icecone')launchIceCannon(this,p,aim,skill,damage*skill.multiplier);
     if(effect==='power'){this.melee(damage*(skill.multiplier ?? 1.6),skill.range ?? 112,false,aim);flash(p,skill.range ?? 112,color ?? 0xffd37a,'power');}
     if(effect==='bolt')this.volley(skill,damage);
     if(effect==='whirl'){this.melee(damage*(skill.multiplier ?? 1),skill.range ?? 125,true);flash(p,skill.range ?? 125,color ?? 0x7ce1d0,'whirl');}
@@ -549,6 +551,7 @@ export class CombatSystem {
     }
     // Không gây sát thương trong lúc menu/hội thoại/câu cá đang mở.
     if(this.busy)this.shots=[];
+    updateIceCannon(this,delta,g);
     for(let i=this.shots.length-1;i>=0;i--){
       const shot=this.shots[i];
       if(shot.launchAt>this.now)continue;

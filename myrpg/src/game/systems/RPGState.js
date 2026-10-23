@@ -189,7 +189,7 @@ export class RPGState {
     wingBonus(stat) {
         // Chỉ số bộ sưu tập luôn có hiệu lực, không phụ thuộc cánh đang hiển thị.
         return (this.data.wings?.collection ?? []).reduce((total, owned) =>
-            total + (wingStats(owned.id, owned.level)[stat] || 0), 0);
+            total + (wingStats(owned.id, owned.level)[stat] || 0) + (this.data.wings?.enchantments?.[owned.id]?.[stat] || 0), 0);
     }
 
     get maxHP() {
@@ -238,7 +238,7 @@ export class RPGState {
             this.data.gold = integer(saved.gold, 0, 9999999, 50);
             this.data.pendingBossRewards = Array.isArray(saved.pendingBossRewards) ? [...new Set(saved.pendingBossRewards.filter(entry=>typeof entry==='string'
                 ? /^[a-f0-9-]{36}$/i.test(entry)
-                : entry && ['naga','noxii','forest-guardian','thanh-long','huyen-quy'].includes(entry.bossId) && /^[a-f0-9-]{36}$/i.test(entry.requestId)))] : [];
+                : entry && ['naga','noxii','forest-guardian','thanh-long','huyen-quy','bach-ho'].includes(entry.bossId) && /^[a-f0-9-]{36}$/i.test(entry.requestId)))] : [];
             this.data.bossStoneInbox = integer(saved.bossStoneInbox,0,999999,0);
             this.data.activityRewardReceipts = Array.isArray(saved.activityRewardReceipts)
                 ? [...new Set(saved.activityRewardReceipts.filter(id=>typeof id==='string'&&/^[a-f0-9-]{36}$/i.test(id)))] : [];
@@ -439,6 +439,7 @@ export class RPGState {
     }
 
     canBuy(id, quantity = 1) {
+        if(this.data.pendingWingAction?.action==='enchant')return {ok:false,message:'Mở Cánh để hoàn tất phù phép đang chờ.'};
         if(this.data.pendingEventExchange)return {ok:false,message:'Mở Sự kiện để hoàn tất giao dịch đang chờ.'};
         if(this.data.pendingSale || this.selling)return {ok:false,message:'Đang chờ xác nhận bán đồ.'};
         const error = this.canAdd(id, quantity);
@@ -496,6 +497,7 @@ export class RPGState {
     }
 
     async sellItem(id,quantity=1,position) {
+        if(this.data.pendingWingAction?.action==='enchant'||this.wingPreparing)return {ok:false,message:'Mở Cánh để hoàn tất phù phép đang chờ.'};
         if(this.data.pendingEventExchange)return {ok:false,message:'Mở Sự kiện để hoàn tất giao dịch đang chờ.'};
         if(this.selling || this.buying || this.usingItem || this.data.pendingPurchase || this.data.pendingEquipmentAction || this.data.pendingItemUse || this.data.pendingInventoryAction)return {ok:false,message:'Hãy hoàn tất giao dịch vật phẩm đang chờ.'};
         if(this.data.pendingSale)return this.recoverSale();
@@ -790,6 +792,7 @@ export class RPGState {
     }
 
     canExchangeMonsterMaterials(mapId = this.scene?.mapData?.id ?? 'west-forest') {
+        if(this.data.pendingWingAction?.action==='enchant'||this.wingPreparing)return 'Mở Cánh để hoàn tất phù phép đang chờ.';
         const materials = monsterMaterialsForMap(mapId);
         const recipe = monsterExchangeForMap(mapId);
         const total = materials.reduce(

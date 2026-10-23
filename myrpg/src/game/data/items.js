@@ -47,7 +47,7 @@ ITEMS.upgrade_stone = {
     level:1, maxStack:99, emoji:'💎',
     description:'Nguyên liệu dùng để nâng cấp trang bị.'
 };
-ITEMS.wing_essence={name:'Tinh chất cánh',type:'material',category:'upgrade',level:1,maxStack:99,icon:'wing_essence',description:'Tinh chất đổi từ 20 lông quái tại UDOI. Chưa có tác dụng sử dụng; giữ lại cho bản cập nhật sau.'};
+ITEMS.wing_essence={name:'Tinh chất cánh',type:'material',category:'upgrade',level:1,maxStack:99,icon:'wing_essence',description:'Tinh chất đổi từ 20 lông quái tại UDOI. Dùng trong Nâng cấp cánh → Phù phép: mỗi lọ ngẫu nhiên +10 HP, +1 thủ hoặc +2 công.'};
 for (const tier of POTION_TIERS) {
     const suffix = tier.level === 1 ? '' : `_${tier.level}`;
     ITEMS[`health_potion${suffix}`] = {

@@ -1,0 +1,1 @@
+export const EVENT_SKILLS=[{id:'huyen_thu_han_phao',name:'Huyễn Thú Hàn Pháo',school:'god',seller:'event',effect:'icecone',icon:'ice_cannon',mana:40,cooldown:16000,multiplier:2,range:480,spread:.55,color:0x9aeaff,description:'Triệu băng pháo bắn các khối băng hình trụ theo hình nón, gây 200% công lên mỗi quái trúng đòn một lần. Đổi 20 Hàn Nha trong Sự kiện Tứ Linh.'}];
