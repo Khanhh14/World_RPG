@@ -1,0 +1,9 @@
+[
+ {"day":1,"gold":200,"gems":0,"items":{"food_perch_soup":2}},
+ {"day":2,"gold":300,"gems":10,"items":{"wing_stone_1":2}},
+ {"day":3,"gold":400,"gems":0,"items":{"upgrade_stone":2,"food_carp_stew":2}},
+ {"day":4,"gold":500,"gems":15,"items":{"wing_stone_2":2}},
+ {"day":5,"gold":650,"gems":0,"items":{"upgrade_stone":3,"food_catfish_stew":2}},
+ {"day":6,"gold":800,"gems":25,"items":{"wing_stone_3":2}},
+ {"day":7,"gold":1200,"gems":50,"items":{"upgrade_stone":5,"wing_stone_1":3,"wing_stone_2":2,"wing_stone_3":1,"food_catfish_stew":3}}
+]

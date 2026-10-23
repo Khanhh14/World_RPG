@@ -1,0 +1,261 @@
+{
+  "mana_potion": {
+    "price": 6,
+    "maxStack": 99
+  },
+  "health_potion": {
+    "price": 8,
+    "maxStack": 99
+  },
+  "boots": {
+    "price": 18,
+    "maxStack": 1
+  },
+  "gloves": {
+    "price": 18,
+    "maxStack": 1
+  },
+  "helmet": {
+    "price": 20,
+    "maxStack": 1
+  },
+  "round_shield": {
+    "price": 25,
+    "maxStack": 1
+  },
+  "wood_staff": {
+    "price": 28,
+    "maxStack": 1,
+    "classCode": "mage"
+  },
+  "iron_sword": {
+    "price": 35,
+    "maxStack": 1,
+    "classCode": "swordsman"
+  },
+  "armor": {
+    "price": 40,
+    "maxStack": 1
+  },
+  "mana_potion_2": {
+    "price": 14,
+    "maxStack": 99
+  },
+  "health_potion_2": {
+    "price": 18,
+    "maxStack": 99
+  },
+  "boots_2": {
+    "price": 50,
+    "maxStack": 1
+  },
+  "gloves_2": {
+    "price": 50,
+    "maxStack": 1
+  },
+  "helmet_2": {
+    "price": 60,
+    "maxStack": 1
+  },
+  "round_shield_2": {
+    "price": 75,
+    "maxStack": 1
+  },
+  "iron_sword_2": {
+    "price": 100,
+    "maxStack": 1,
+    "classCode": "swordsman"
+  },
+  "armor_2": {
+    "price": 120,
+    "maxStack": 1
+  },
+  "mana_potion_3": {
+    "price": 32,
+    "maxStack": 99
+  },
+  "health_potion_3": {
+    "price": 40,
+    "maxStack": 99
+  },
+  "boots_3": {
+    "price": 130,
+    "maxStack": 1
+  },
+  "gloves_3": {
+    "price": 130,
+    "maxStack": 1
+  },
+  "helmet_3": {
+    "price": 150,
+    "maxStack": 1
+  },
+  "round_shield_3": {
+    "price": 190,
+    "maxStack": 1
+  },
+  "iron_sword_3": {
+    "price": 260,
+    "maxStack": 1,
+    "classCode": "swordsman"
+  },
+  "armor_3": {
+    "price": 300,
+    "maxStack": 1
+  },
+  "mana_potion_4": {
+    "price": 60,
+    "maxStack": 99
+  },
+  "health_potion_4": {
+    "price": 75,
+    "maxStack": 99
+  },
+  "boots_4": {
+    "price": 300,
+    "maxStack": 1
+  },
+  "gloves_4": {
+    "price": 300,
+    "maxStack": 1
+  },
+  "helmet_4": {
+    "price": 350,
+    "maxStack": 1
+  },
+  "round_shield_4": {
+    "price": 440,
+    "maxStack": 1
+  },
+  "iron_sword_4": {
+    "price": 600,
+    "maxStack": 1,
+    "classCode": "swordsman"
+  },
+  "armor_4": {
+    "price": 700,
+    "maxStack": 1
+  },
+  "mana_potion_5": {
+    "price": 95,
+    "maxStack": 99
+  },
+  "health_potion_5": {
+    "price": 120,
+    "maxStack": 99
+  },
+  "boots_5": {
+    "price": 650,
+    "maxStack": 1
+  },
+  "gloves_5": {
+    "price": 650,
+    "maxStack": 1
+  },
+  "helmet_5": {
+    "price": 750,
+    "maxStack": 1
+  },
+  "round_shield_5": {
+    "price": 950,
+    "maxStack": 1
+  },
+  "iron_sword_5": {
+    "price": 1300,
+    "maxStack": 1,
+    "classCode": "swordsman"
+  },
+  "armor_5": {
+    "price": 1500,
+    "maxStack": 1
+  },
+  "wood_staff_2": {
+    "price": 100,
+    "maxStack": 1,
+    "classCode": "mage"
+  },
+  "wood_staff_3": {
+    "price": 260,
+    "maxStack": 1,
+    "classCode": "mage"
+  },
+  "wood_staff_4": {
+    "price": 600,
+    "maxStack": 1,
+    "classCode": "mage"
+  },
+  "wood_staff_5": {
+    "price": 1300,
+    "maxStack": 1,
+    "classCode": "mage"
+  },
+  "starter_axe": {
+    "price": 35,
+    "maxStack": 1,
+    "classCode": "fighter"
+  },
+  "starter_axe_2": {
+    "price": 100,
+    "maxStack": 1,
+    "classCode": "fighter"
+  },
+  "starter_axe_3": {
+    "price": 260,
+    "maxStack": 1,
+    "classCode": "fighter"
+  },
+  "starter_axe_4": {
+    "price": 600,
+    "maxStack": 1,
+    "classCode": "fighter"
+  },
+  "starter_axe_5": {
+    "price": 1300,
+    "maxStack": 1,
+    "classCode": "fighter"
+  },
+  "mushroom_basket": {
+    "price": 200,
+    "maxStack": 1
+  },
+  "magic_orb": {
+    "price": 40,
+    "maxStack": 1
+  },
+  "magic_orb_2": {
+    "price": 120,
+    "maxStack": 1
+  },
+  "magic_orb_3": {
+    "price": 300,
+    "maxStack": 1
+  },
+  "magic_orb_4": {
+    "price": 700,
+    "maxStack": 1
+  },
+  "magic_orb_5": {
+    "price": 1500,
+    "maxStack": 1
+  },
+  "offhand_dagger": {
+    "price": 40,
+    "maxStack": 1
+  },
+  "offhand_dagger_2": {
+    "price": 120,
+    "maxStack": 1
+  },
+  "offhand_dagger_3": {
+    "price": 300,
+    "maxStack": 1
+  },
+  "offhand_dagger_4": {
+    "price": 700,
+    "maxStack": 1
+  },
+  "offhand_dagger_5": {
+    "price": 1500,
+    "maxStack": 1
+  }
+}

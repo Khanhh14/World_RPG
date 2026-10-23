@@ -1,0 +1,10 @@
+const router = require('express').Router();
+const controller = require('../controllers/auth.controller');
+const { requireAuth } = require('../middleware/auth.middleware');
+const { attemptLimit } = require('../middleware/request.middleware');
+router.use((req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
+router.post('/register', attemptLimit({ limit: 10 }), controller.register);
+router.post('/login', attemptLimit({ limit: 20 }), controller.login);
+router.get('/me', requireAuth, controller.me);
+router.post('/logout', controller.logout);
+module.exports = router;

@@ -1,0 +1,9 @@
+{
+  "merchant":{"mapId":"yuna-city","x":1224,"feetY":528,"range":110},
+  "powderPerUpgrade":3,
+  "maxLevel":1000,
+  "materials":[
+    {"id":"skill_powder","name":"Bột nâng cấp kỹ năng","emoji":"✨","goldPrice":500,"gemPrice":5},
+    {"id":"breakthrough_book","name":"Sách phép đột phá","emoji":"📕","goldPrice":2000,"gemPrice":20}
+  ]
+}

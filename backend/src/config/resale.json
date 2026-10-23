@@ -1,0 +1,374 @@
+{
+  "boar_hide": {
+    "unitPrice": 10,
+    "local": true,
+    "mapId": "west-forest"
+  },
+  "wolf_fang": {
+    "unitPrice": 10,
+    "local": true,
+    "mapId": "west-forest"
+  },
+  "forest_gel": {
+    "unitPrice": 10,
+    "local": true,
+    "mapId": "west-forest"
+  },
+  "scorpion_tail": {
+    "unitPrice": 10,
+    "local": true,
+    "mapId": "west-forest"
+  },
+  "imp_horn": {
+    "unitPrice": 10,
+    "local": true,
+    "mapId": "noxii-entrance"
+  },
+  "stone_snail_shell": {
+    "unitPrice": 10,
+    "local": true,
+    "mapId": "noxii-entrance"
+  },
+  "steel_snail_shell": {
+    "unitPrice": 10,
+    "local": true,
+    "mapId": "noxii-entrance"
+  },
+  "upgrade_stone": {
+    "unitPrice": 10,
+    "local": true
+  },
+  "health_potion": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "mana_potion": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "health_potion_2": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "mana_potion_2": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "health_potion_3": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "mana_potion_3": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "health_potion_4": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "mana_potion_4": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "health_potion_5": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "mana_potion_5": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "iron_sword": {
+    "unitPrice": 17,
+    "local": false
+  },
+  "iron_sword_2": {
+    "unitPrice": 50,
+    "local": false
+  },
+  "iron_sword_3": {
+    "unitPrice": 130,
+    "local": false
+  },
+  "iron_sword_4": {
+    "unitPrice": 300,
+    "local": false
+  },
+  "iron_sword_5": {
+    "unitPrice": 650,
+    "local": false
+  },
+  "round_shield": {
+    "unitPrice": 12,
+    "local": false
+  },
+  "round_shield_2": {
+    "unitPrice": 37,
+    "local": false
+  },
+  "round_shield_3": {
+    "unitPrice": 95,
+    "local": false
+  },
+  "round_shield_4": {
+    "unitPrice": 220,
+    "local": false
+  },
+  "round_shield_5": {
+    "unitPrice": 475,
+    "local": false
+  },
+  "armor": {
+    "unitPrice": 20,
+    "local": false
+  },
+  "armor_2": {
+    "unitPrice": 60,
+    "local": false
+  },
+  "armor_3": {
+    "unitPrice": 150,
+    "local": false
+  },
+  "armor_4": {
+    "unitPrice": 350,
+    "local": false
+  },
+  "armor_5": {
+    "unitPrice": 750,
+    "local": false
+  },
+  "helmet": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "helmet_2": {
+    "unitPrice": 30,
+    "local": false
+  },
+  "helmet_3": {
+    "unitPrice": 75,
+    "local": false
+  },
+  "helmet_4": {
+    "unitPrice": 175,
+    "local": false
+  },
+  "helmet_5": {
+    "unitPrice": 375,
+    "local": false
+  },
+  "boots": {
+    "unitPrice": 9,
+    "local": false
+  },
+  "boots_2": {
+    "unitPrice": 25,
+    "local": false
+  },
+  "boots_3": {
+    "unitPrice": 65,
+    "local": false
+  },
+  "boots_4": {
+    "unitPrice": 150,
+    "local": false
+  },
+  "boots_5": {
+    "unitPrice": 325,
+    "local": false
+  },
+  "gloves": {
+    "unitPrice": 9,
+    "local": false
+  },
+  "gloves_2": {
+    "unitPrice": 25,
+    "local": false
+  },
+  "gloves_3": {
+    "unitPrice": 65,
+    "local": false
+  },
+  "gloves_4": {
+    "unitPrice": 150,
+    "local": false
+  },
+  "gloves_5": {
+    "unitPrice": 325,
+    "local": false
+  },
+  "wood_staff": {
+    "unitPrice": 14,
+    "local": false
+  },
+  "magic_orb": {
+    "unitPrice": 20,
+    "local": false
+  },
+  "magic_orb_2": {
+    "unitPrice": 60,
+    "local": false
+  },
+  "magic_orb_3": {
+    "unitPrice": 150,
+    "local": false
+  },
+  "magic_orb_4": {
+    "unitPrice": 350,
+    "local": false
+  },
+  "magic_orb_5": {
+    "unitPrice": 750,
+    "local": false
+  },
+  "offhand_dagger": {
+    "unitPrice": 20,
+    "local": false
+  },
+  "offhand_dagger_2": {
+    "unitPrice": 60,
+    "local": false
+  },
+  "offhand_dagger_3": {
+    "unitPrice": 150,
+    "local": false
+  },
+  "offhand_dagger_4": {
+    "unitPrice": 350,
+    "local": false
+  },
+  "offhand_dagger_5": {
+    "unitPrice": 750,
+    "local": false
+  },
+  "starter_axe": {
+    "unitPrice": 17,
+    "local": false
+  },
+  "starter_fishing_rod": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "fish_perch": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "fish_carp": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "fish_catfish": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "fish_gold": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "wood_staff_2": {
+    "unitPrice": 50,
+    "local": false
+  },
+  "wood_staff_3": {
+    "unitPrice": 130,
+    "local": false
+  },
+  "wood_staff_4": {
+    "unitPrice": 300,
+    "local": false
+  },
+  "wood_staff_5": {
+    "unitPrice": 650,
+    "local": false
+  },
+  "starter_axe_2": {
+    "unitPrice": 50,
+    "local": false
+  },
+  "starter_axe_3": {
+    "unitPrice": 130,
+    "local": false
+  },
+  "starter_axe_4": {
+    "unitPrice": 300,
+    "local": false
+  },
+  "starter_axe_5": {
+    "unitPrice": 650,
+    "local": false
+  },
+  "mushroom_basket": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "yuna_mushroom": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "food_perch_soup": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "food_carp_stew": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "food_catfish_stew": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "blue_feather": {
+    "unitPrice": 10,
+    "local": true,
+    "mapId": "dia-long-forest"
+  },
+  "yellow_feather": {
+    "unitPrice": 10,
+    "local": true,
+    "mapId": "dia-long-forest"
+  },
+  "red_feather": {
+    "unitPrice": 10,
+    "local": true,
+    "mapId": "dia-long-forest"
+  },
+  "wing_essence": {
+    "unitPrice": 10,
+    "local": true,
+    "earnedMapId": "dia-long-forest",
+    "exchangeCost": 20
+  },
+  "diet_long_kiem": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "huyen_long_truong": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "khai_long_son_phu": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "huyen_than_armor": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "huyen_than_helmet": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "huyen_than_boots": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "huyen_than_gloves": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "hoa_tien_ky": {
+    "unitPrice": 10,
+    "local": false
+  }
+}

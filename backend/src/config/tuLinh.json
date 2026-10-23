@@ -1,0 +1,88 @@
+{
+  "id": "tu-linh",
+  "name": "Tứ Linh",
+  "cost": 20,
+  "materials": [
+    {
+      "id": "nhan_long",
+      "name": "Nhân Long",
+      "active": true,
+      "source": "Thanh Long"
+    },
+    {
+      "id": "hoa_phung",
+      "name": "Hỏa Phụng",
+      "active": false
+    },
+    {
+      "id": "huyen_giap",
+      "name": "Huyền Giáp",
+      "active": true,
+      "source": "Huyền Quy"
+    },
+    {
+      "id": "han_nha",
+      "name": "Hàn Nha",
+      "active": false
+    }
+  ],
+  "weapons": {
+    "swordsman": {
+      "id": "diet_long_kiem",
+      "name": "Diệt Long Kiếm",
+      "attack": 120,
+      "icon": "dragon_sword"
+    },
+    "mage": {
+      "id": "huyen_long_truong",
+      "name": "Huyễn Long Trượng",
+      "attack": 120,
+      "icon": "dragon_staff"
+    },
+    "fighter": {
+      "id": "khai_long_son_phu",
+      "name": "Khai Long Sơn Phủ",
+      "attack": 120,
+      "icon": "dragon_axe"
+    }
+  },
+  "description": "Thu thập linh vật, đổi vũ khí và trang bị Tứ Linh.",
+  "recipes": [
+    {
+      "id": "nhan-long-weapon",
+      "materialId": "nhan_long",
+      "cost": 20,
+      "classWeapon": true
+    },
+    {
+      "id": "huyen_than_armor",
+      "materialId": "huyen_giap",
+      "cost": 10,
+      "itemId": "huyen_than_armor"
+    },
+    {
+      "id": "huyen_than_helmet",
+      "materialId": "huyen_giap",
+      "cost": 10,
+      "itemId": "huyen_than_helmet"
+    },
+    {
+      "id": "huyen_than_boots",
+      "materialId": "huyen_giap",
+      "cost": 10,
+      "itemId": "huyen_than_boots"
+    },
+    {
+      "id": "huyen_than_gloves",
+      "materialId": "huyen_giap",
+      "cost": 10,
+      "itemId": "huyen_than_gloves"
+    },
+    {
+      "id": "hoa_tien_ky",
+      "materialId": "hoa_phung",
+      "cost": 20,
+      "itemId": "hoa_tien_ky"
+    }
+  ]
+}
