@@ -1,3 +1,4 @@
+import {TU_LINH_WEAPONS,tuLinhWeaponTexture} from '../data/tuLinhWeapons.js';
 import { ITEMS } from '../data/items.js';
 import { offhandTexture } from '../world/OffhandTextures.js';
 import { wingTexture } from '../world/WingTextures.js';
@@ -103,8 +104,8 @@ export class Player {
             this.currentWeapon = weapon;
             if (weapon) {
                 const frame = this.getWeaponFrame(weapon);
-                if (frame !== null) {
-                    this.weaponSprite = this.scene.add.image(this.x, this.sprite.y, 'dungeon', frame)
+                if (frame !== null || TU_LINH_WEAPONS[weapon]) {
+                    this.weaponSprite = this.scene.add.image(this.x, this.sprite.y, TU_LINH_WEAPONS[weapon]?tuLinhWeaponTexture(this.scene,weapon):'dungeon', TU_LINH_WEAPONS[weapon]?undefined:frame)
                         .setScale(this.sprite.scaleX)
                         .setOrigin(0.5, 0.5);
                 }

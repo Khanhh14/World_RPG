@@ -19,6 +19,7 @@ export class DailySystem {
  }
  async run(action,sourceId){
   const s=this.state;
+  if(s.data.pendingEventExchange)throw new Error('Mở Sự kiện để hoàn tất giao dịch đang chờ.');
   if(this.busy)return null;
   if(s.usingItem||s.wingBusy||s.bossRewardBusy)throw new Error('Nhân vật đang đồng bộ vật phẩm. Hãy thử lại sau một chút.');
   if(!s.data.pendingDailyAction){

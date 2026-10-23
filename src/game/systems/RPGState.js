@@ -257,6 +257,8 @@ export class RPGState {
                 };
             }
             this.data.pendingPurchase = saved.pendingPurchase || null;
+            const eventExchange=saved.pendingEventExchange;
+            if(eventExchange?.eventId==='tu-linh'&&/^[a-f0-9-]{36}$/i.test(eventExchange.requestId??''))this.data.pendingEventExchange=eventExchange;
             const sale=saved.pendingSale;
             if(sale && /^[a-f0-9-]{36}$/i.test(sale.requestId??'') && ITEMS[sale.itemId] && Number.isInteger(sale.quantity) && sale.quantity>0 && sale.quantity<=99 && ['local','inventory'].includes(sale.source))this.data.pendingSale=sale;
             this.data.pendingItemUse = saved.pendingItemUse || null;
@@ -437,6 +439,7 @@ export class RPGState {
     }
 
     canBuy(id, quantity = 1) {
+        if(this.data.pendingEventExchange)return {ok:false,message:'Mở Sự kiện để hoàn tất giao dịch đang chờ.'};
         if(this.data.pendingSale || this.selling)return {ok:false,message:'Đang chờ xác nhận bán đồ.'};
         const error = this.canAdd(id, quantity);
 
@@ -493,6 +496,7 @@ export class RPGState {
     }
 
     async sellItem(id,quantity=1,position) {
+        if(this.data.pendingEventExchange)return {ok:false,message:'Mở Sự kiện để hoàn tất giao dịch đang chờ.'};
         if(this.selling || this.buying || this.usingItem || this.data.pendingPurchase || this.data.pendingEquipmentAction || this.data.pendingItemUse || this.data.pendingInventoryAction)return {ok:false,message:'Hãy hoàn tất giao dịch vật phẩm đang chờ.'};
         if(this.data.pendingSale)return this.recoverSale();
         const worn=Object.values(this.data.equipment).filter(value=>value===id).length;
@@ -650,6 +654,7 @@ export class RPGState {
     }
 
     async beginInventoryAction(action, details) {
+        if(this.data.pendingEventExchange)return {ok:false,message:'Mở Sự kiện để hoàn tất giao dịch đang chờ.'};
         if(this.data.pendingSale || this.selling)return {ok:false,message:'Hãy hoàn tất giao dịch bán đồ trước.'};
         if (this.usingItem) return {ok:false,message:'Đang xử lý vật phẩm…'};
         if (this.data.pendingInventoryAction) return await this.recoverInventoryAction();
@@ -824,6 +829,7 @@ export class RPGState {
     }
 
     async useItem(id) {
+        if(this.data.pendingEventExchange)return 'Mở Sự kiện để hoàn tất giao dịch đang chờ.';
         const item = ITEMS[id];
 
         if (this.data.pendingEquipmentAction) return await this.recoverEquipmentAction();

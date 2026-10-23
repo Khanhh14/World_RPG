@@ -26,7 +26,7 @@ export class BossRewards {
     s.applyServerCharacter(result.character);
     const next={...s.data,pendingBossRewards:s.data.pendingBossRewards.filter(x=>(typeof x==='string'?x:x.requestId)!==id),bossStoneInbox:s.data.bossStoneInbox+result.reward.stones};
     this.persist(next);s.data.pendingBossRewards=next.pendingBossRewards;s.data.bossStoneInbox=next.bossStoneInbox;s.bossRewardError='';s.changed();
-    this.collect(false);this.toast(`Thưởng ${pending.bossId==='naga'?'NaGa':pending.bossId==='forest-guardian'?'Thủ hộ khu rừng':pending.bossId==='thanh-long'?'Thanh Long':'Hộ Vệ Hắc Thạch'}: +${result.reward.gold} vàng · +${result.reward.exp} EXP · +${result.reward.stones} đá cường hóa`+(s.data.bossStoneInbox?' (đá đang chờ trong B)':''));
+    this.collect(false);this.toast(`Thưởng ${pending.bossId==='naga'?'NaGa':pending.bossId==='forest-guardian'?'Thủ hộ khu rừng':pending.bossId==='thanh-long'?'Thanh Long':'Hộ Vệ Hắc Thạch'}: +${result.reward.gold} vàng · +${result.reward.exp} EXP · +${result.reward.stones} đá cường hóa`+(result.eventItems?.nhan_long?' · +1 Nhân Long (Sự kiện)':'')+(s.data.bossStoneInbox?' (đá đang chờ trong B)':''));
    }
    this.collect(false);
   }catch(e){s.bossRewardError=e.message;this.toast('Thưởng đang chờ. Mở B → Thử nhận lại.');}
