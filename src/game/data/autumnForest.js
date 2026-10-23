@@ -18,5 +18,6 @@ export const autumnForest={
   ...pack('Sóc hạt dẻ','squirrel',[[7,8],[12,8],[7,13],[12,13],[7,19],[12,19]]),
   ...pack('Nhím lá vàng','hedgehog',[[31,8],[36,8],[31,13],[36,13],[31,19],[36,19]])
  ],
- portals:[{x:1056,feetY:1632,label:'Về Làng Khởi Đầu',target:'Game',spawn:{x:984,y:272}}]
+ portals:[{x:1056,feetY:1632,label:'Về Làng Khởi Đầu',target:'Game',spawn:{x:984,y:272}},
+  {kind:'doorway',x:1056,feetY:240,width:84,height:60,label:'Hang Thủ hộ khu rừng',target:'GuardianCave',spawn:{x:864,y:1248}}]
 };

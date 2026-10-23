@@ -1,3 +1,4 @@
+import { GuardianCave } from './scenes/GuardianCave.js';
 import { AutumnForest } from './scenes/AutumnForest.js';
 import { DiaLongForest } from './scenes/DiaLongForest.js';
 import { getCharacterProfile } from './systems/characterSession.js';
@@ -17,8 +18,8 @@ import { AtlastLake } from './scenes/AtlastLake.js';
 // Hàm này chỉ được withAuth gọi sau khi xác thực thành công.
 function StartGame(user, parent = 'game-container') {
     const runtime=getCharacterProfile()?.runtime;
-    const all=[VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave,NoxiiEntrance,NoxiiCave,DiaLongForest,AutumnForest];
-    const byKey={Game:VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave,NoxiiEntrance,NoxiiCave,DiaLongForest,AutumnForest};
+    const all=[VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave,NoxiiEntrance,NoxiiCave,DiaLongForest,AutumnForest,GuardianCave];
+    const byKey={Game:VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave,NoxiiEntrance,NoxiiCave,DiaLongForest,AutumnForest,GuardianCave};
     const first=byKey[runtime?.hp>0?RUNTIME_SCENES[runtime.mapId]:'Game']||VillageGame;
     const config = {
         type: AUTO,
