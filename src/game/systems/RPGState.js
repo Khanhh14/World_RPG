@@ -276,7 +276,7 @@ export class RPGState {
             this.data.pendingSkillAction = saved.pendingSkillAction || null;
             this.data.pendingKills = Array.isArray(saved.pendingKills) ? saved.pendingKills.filter(entry => typeof entry === 'string'
                 ? /^[a-f0-9-]{36}$/i.test(entry)
-                : entry && /^[a-f0-9-]{36}$/i.test(entry.eventId) && ['west-forest', 'noxii-entrance', 'dia-long-forest'].includes(entry.mapId)) : [];
+                : entry && /^[a-f0-9-]{36}$/i.test(entry.eventId) && ['west-forest', 'noxii-entrance', 'dia-long-forest', 'autumn-forest'].includes(entry.mapId)) : [];
 
             for (const id of Object.keys(ITEMS)) {
                 this.data.inventory[id] = integer(
