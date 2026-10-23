@@ -238,7 +238,7 @@ export class RPGState {
             this.data.gold = integer(saved.gold, 0, 9999999, 50);
             this.data.pendingBossRewards = Array.isArray(saved.pendingBossRewards) ? [...new Set(saved.pendingBossRewards.filter(entry=>typeof entry==='string'
                 ? /^[a-f0-9-]{36}$/i.test(entry)
-                : entry && ['naga','noxii','forest-guardian','thanh-long'].includes(entry.bossId) && /^[a-f0-9-]{36}$/i.test(entry.requestId)))] : [];
+                : entry && ['naga','noxii','forest-guardian','thanh-long','huyen-quy'].includes(entry.bossId) && /^[a-f0-9-]{36}$/i.test(entry.requestId)))] : [];
             this.data.bossStoneInbox = integer(saved.bossStoneInbox,0,999999,0);
             this.data.activityRewardReceipts = Array.isArray(saved.activityRewardReceipts)
                 ? [...new Set(saved.activityRewardReceipts.filter(id=>typeof id==='string'&&/^[a-f0-9-]{36}$/i.test(id)))] : [];
@@ -558,6 +558,12 @@ export class RPGState {
         if (!pending || this.usingItem) return 'Đang xử lý vật phẩm…';
         this.usingItem = true;
         try {
+            let beforeHP=this.data.hp,beforeMP=this.data.mp;
+            const operation=()=>{
+                beforeHP=this.data.hp;beforeMP=this.data.mp;
+                const context={hp:Math.round(beforeHP),mp:Math.round(beforeMP),enhancements:{...this.data.enhancements}};
+                return inventoryApi.use({...pending,context});
+            };
             const applyResult = result => {
                 if (result.itemId !== pending.itemId) throw new Error('Máy chủ trả về một giao dịch vật phẩm không khớp.');
                 if (Number.isSafeInteger(result.runtimeVersion)) {
@@ -567,17 +573,17 @@ export class RPGState {
                 }
                 if (result.quantity > 0) this.data.inventory[pending.itemId] = result.quantity;
                 else delete this.data.inventory[pending.itemId];
-                this.data.hp = Math.min(this.maxHP, Number(result.hp));
-                this.data.mp = Math.min(this.maxMP, Number(result.mana));
+                this.data.hp = this.data.hp<=0?0:Math.max(0,Math.min(this.maxHP,Number(result.hp)+this.data.hp-beforeHP));
+                this.data.mp = Math.max(0,Math.min(this.maxMP,Number(result.mana)+this.data.mp-beforeMP));
                 this.data.foodBuff = result.foodBuff || this.data.foodBuff;
                 this.data.pendingItemUse = null;
                 this.changed();
             };
             const runtimeSave = this.scene?.registry?.get('runtime-save');
             if (runtimeSave?.withExternalUpdate) {
-                await runtimeSave.withExternalUpdate(() => inventoryApi.use(pending), applyResult);
+                await runtimeSave.withExternalUpdate(operation, applyResult);
             } else {
-                applyResult(await inventoryApi.use(pending));
+                applyResult(await operation());
             }
             return `Đã sử dụng ${ITEMS[pending.itemId]?.name?.toLowerCase() || pending.itemId}.`;
         } catch (error) {

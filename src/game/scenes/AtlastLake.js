@@ -10,10 +10,10 @@ export class AtlastLake extends BaseWorldScene {
             ...atlastLake,
             portals: atlastLake.portals.map(portal => ({
                 ...portal,
-                spawn: {
+                spawn: portal.target==='Game'?{
                     x: (village.cols - 5) * village.tileSize,
                     y: 15.5 * village.tileSize - 24
-                }
+                }:{...portal.spawn}
             }))
         });
     }

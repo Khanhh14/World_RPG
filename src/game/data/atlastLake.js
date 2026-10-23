@@ -44,5 +44,5 @@ export const atlastLake = {
     portals: [{
         x: 144, feetY: 960, label: 'Về Làng Khởi Đầu',
         target: 'Game', spawn: { x: 1872, y: 720 }
-    }]
+    },{x:2016,feetY:960,label:'Động Huyền Quy · Đáy hồ',target:'HuyenQuyCave',spawn:{x:864,y:1248}}]
 };

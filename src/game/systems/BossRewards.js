@@ -8,7 +8,7 @@ export class BossRewards {
   if(JSON.stringify(read)!==JSON.stringify(next))throw new Error('Không lưu được thưởng boss trên trình duyệt.');
  }
  async queue(bossId='naga'){
-  if (!['naga','noxii','forest-guardian','thanh-long'].includes(bossId)) throw new Error('Boss không hợp lệ.');
+  if (!['naga','noxii','forest-guardian','thanh-long','huyen-quy'].includes(bossId)) throw new Error('Boss không hợp lệ.');
   const s=this.state;s.data.pendingBossRewards.push({bossId,requestId:crypto.randomUUID()});
   // Giữ yêu cầu trong bộ nhớ nếu storage lỗi để nút Thử nhận lại có thể tiếp tục.
   try{this.persist(s.data);}catch(e){s.bossRewardError=e.message;s.changed();this.toast('Chưa lưu được yêu cầu. Mở B để thử nhận lại.');return;}
@@ -26,7 +26,7 @@ export class BossRewards {
     s.applyServerCharacter(result.character);
     const next={...s.data,pendingBossRewards:s.data.pendingBossRewards.filter(x=>(typeof x==='string'?x:x.requestId)!==id),bossStoneInbox:s.data.bossStoneInbox+result.reward.stones};
     this.persist(next);s.data.pendingBossRewards=next.pendingBossRewards;s.data.bossStoneInbox=next.bossStoneInbox;s.bossRewardError='';s.changed();
-    this.collect(false);this.toast(`Thưởng ${pending.bossId==='naga'?'NaGa':pending.bossId==='forest-guardian'?'Thủ hộ khu rừng':pending.bossId==='thanh-long'?'Thanh Long':'Hộ Vệ Hắc Thạch'}: +${result.reward.gold} vàng · +${result.reward.exp} EXP · +${result.reward.stones} đá cường hóa`+(result.eventItems?.nhan_long?' · +1 Nhân Long (Sự kiện)':'')+(s.data.bossStoneInbox?' (đá đang chờ trong B)':''));
+    this.collect(false);this.toast(`Thưởng ${pending.bossId==='naga'?'NaGa':pending.bossId==='forest-guardian'?'Thủ hộ khu rừng':pending.bossId==='thanh-long'?'Thanh Long':pending.bossId==='huyen-quy'?'Huyền Quy':'Hộ Vệ Hắc Thạch'}: +${result.reward.gold} vàng · +${result.reward.exp} EXP · +${result.reward.stones} đá cường hóa`+(result.eventItems?.nhan_long?' · +1 Nhân Long (Sự kiện)':result.eventItems?.huyen_giap?' · +1 Huyền Giáp (Sự kiện)':'')+(s.data.bossStoneInbox?' (đá đang chờ trong B)':''));
    }
    this.collect(false);
   }catch(e){s.bossRewardError=e.message;this.toast('Thưởng đang chờ. Mở B → Thử nhận lại.');}
