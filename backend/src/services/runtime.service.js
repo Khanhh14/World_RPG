@@ -1,6 +1,6 @@
 const fail=(status,message)=>Object.assign(new Error(message),{status});
 // Kích thước thật của các map; chỉ nhận tọa độ hữu hạn trong bản đồ đã biết.
-const maps={'village':[2112,1536],'west-forest':[2688,2112],'atlast-lake':[2304,1728],'yuna-outskirts':[2496,1632],'yuna-city':[2592,2016],'naga-cave':[1728,1536],'noxii-entrance':[2304,1728],'noxii-cave':[1728,1536],'dia-long-forest':[2304,1920],'autumn-forest':[2112,1728],'guardian-cave':[1728,1536],'huyen-quy-cave':[1728,1536],'han-nha-mon':[1728,1536]};
+const maps={'village':[2112,1536],'west-forest':[2688,2112],'atlast-lake':[2304,1728],'yuna-outskirts':[2496,1632],'yuna-city':[2592,2016],'naga-cave':[1728,1536],'noxii-entrance':[2304,1728],'noxii-cave':[1728,1536],'dia-long-forest':[2304,1920],'autumn-forest':[2112,1728],'guardian-cave':[1728,1536],'huyen-quy-cave':[1728,1536],'han-nha-mon':[1728,1536],'hiuuling-river':[2304,1728]};
 function view(r){return {characterId:String(r.character_id),hp:Number(r.hp),mp:Number(r.mana),mapId:r.map_id,x:Number(r.position_x),y:Number(r.position_y),version:Number(r.version)};}
 function validate(p){
  const bounds=maps[p?.mapId];

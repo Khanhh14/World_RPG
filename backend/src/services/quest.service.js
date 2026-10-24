@@ -22,7 +22,7 @@ const objectives = {
   },
 };
 
-const killRewards = { 'west-forest': { exp: 30, gold: 10 }, 'noxii-entrance': { exp: 45, gold: 15 }, 'dia-long-forest': { exp: 68, gold: 23 }, 'autumn-forest': { exp: 30, gold: 10 } };
+const killRewards = { 'hiuuling-river': { exp: 45, gold: 15 }, 'west-forest': { exp: 30, gold: 10 }, 'noxii-entrance': { exp: 45, gold: 15 }, 'dia-long-forest': { exp: 68, gold: 23 }, 'autumn-forest': { exp: 30, gold: 10 } };
 const questIds = Object.keys(objectives);
 const initialProgress = id => objectives[id].event === 'visit' ? { visited: [] } : { count: 0 };
 const parseProgress = value => {
@@ -168,7 +168,7 @@ function createQuestService(db) {
       const { eventType, mapId, eventId } = input;
       if (!['visit', 'monster_kill'].includes(eventType)) throw failure(400, 'Sự kiện nhiệm vụ không hợp lệ.');
       if (typeof eventId !== 'string' || !/^[a-f0-9-]{36}$/i.test(eventId)) throw failure(400, 'Mã sự kiện nhiệm vụ không hợp lệ.');
-      if (typeof mapId !== 'string' || !['village', 'west-forest', 'atlast-lake', 'noxii-entrance', 'dia-long-forest', 'autumn-forest'].includes(mapId)) {
+      if (typeof mapId !== 'string' || !['village', 'west-forest', 'atlast-lake', 'noxii-entrance', 'dia-long-forest', 'autumn-forest', 'hiuuling-river'].includes(mapId)) {
         throw failure(400, 'Khu vực nhiệm vụ không hợp lệ.');
       }
       if (eventType === 'monster_kill' && !Object.hasOwn(killRewards, mapId)) throw failure(400, 'Không thể ghi nhận hạ quái tại khu vực này.');
