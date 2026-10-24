@@ -238,7 +238,7 @@ export class RPGState {
             this.data.gold = integer(saved.gold, 0, 9999999, 50);
             this.data.pendingBossRewards = Array.isArray(saved.pendingBossRewards) ? [...new Set(saved.pendingBossRewards.filter(entry=>typeof entry==='string'
                 ? /^[a-f0-9-]{36}$/i.test(entry)
-                : entry && ['naga','noxii','forest-guardian','thanh-long','huyen-quy','bach-ho'].includes(entry.bossId) && /^[a-f0-9-]{36}$/i.test(entry.requestId)))] : [];
+                : entry && ['naga','noxii','forest-guardian','thanh-long','huyen-quy','bach-ho','hoa-phuong'].includes(entry.bossId) && /^[a-f0-9-]{36}$/i.test(entry.requestId)))] : [];
             this.data.bossStoneInbox = integer(saved.bossStoneInbox,0,999999,0);
             this.data.activityRewardReceipts = Array.isArray(saved.activityRewardReceipts)
                 ? [...new Set(saved.activityRewardReceipts.filter(id=>typeof id==='string'&&/^[a-f0-9-]{36}$/i.test(id)))] : [];

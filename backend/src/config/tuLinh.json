@@ -12,7 +12,8 @@
     {
       "id": "hoa_phung",
       "name": "Hỏa Phụng",
-      "active": false
+      "active": true,
+      "source": "Hỏa Phượng"
     },
     {
       "id": "huyen_giap",

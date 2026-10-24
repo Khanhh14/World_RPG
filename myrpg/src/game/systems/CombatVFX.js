@@ -131,6 +131,7 @@ export class CombatVFX {
    g.lineStyle(3,0x7d7166,fade*(1-k)*.12).strokeCircle(px,py,10+k*18);
   }
   // A spectral planted banner identifies the source of the fire domain.
+  if(f.noBanner)return;
   const poleX=x-5,poleY=y-18;
   g.lineStyle(4,0x51392a,fade).lineBetween(poleX,poleY+19,poleX,poleY-53);
   g.lineStyle(1.5,0xf0c87a,fade).lineBetween(poleX-1,poleY+18,poleX-1,poleY-55);

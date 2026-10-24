@@ -1,5 +1,5 @@
 import { runtimeRequest } from '../../api/runtimeApi.js';
-export const RUNTIME_SCENES={'village':'Game','west-forest':'WestForest','atlast-lake':'AtlastLake','yuna-outskirts':'YunaOutskirts','yuna-city':'YunaCity','naga-cave':'NagaCave','noxii-entrance':'NoxiiEntrance','noxii-cave':'NoxiiCave','dia-long-forest':'DiaLongForest','autumn-forest':'AutumnForest','guardian-cave':'GuardianCave','huyen-quy-cave':'HuyenQuyCave','han-nha-mon':'HanNhaMon','hiuuling-river':'HiuuLingRiver'};
+export const RUNTIME_SCENES={'village':'Game','west-forest':'WestForest','atlast-lake':'AtlastLake','yuna-outskirts':'YunaOutskirts','yuna-city':'YunaCity','naga-cave':'NagaCave','noxii-entrance':'NoxiiEntrance','noxii-cave':'NoxiiCave','dia-long-forest':'DiaLongForest','autumn-forest':'AutumnForest','guardian-cave':'GuardianCave','huyen-quy-cave':'HuyenQuyCave','han-nha-mon':'HanNhaMon','hiuuling-river':'HiuuLingRiver','hoa-phuong-cave':'HoaPhuongCave'};
 const key=id=>`tiny-rpg-runtime:${id}`;
 export async function loadRuntime(characterId){
  const {runtime}=await runtimeRequest();

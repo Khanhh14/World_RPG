@@ -1,3 +1,4 @@
+import {HoaPhuongCave} from './scenes/HoaPhuongCave.js';
 import {HiuuLingRiver} from './scenes/HiuuLingRiver.js';
 import {HanNhaMon} from './scenes/HanNhaMon.js';
 import { HuyenQuyCave } from './scenes/HuyenQuyCave.js';
@@ -21,8 +22,8 @@ import { AtlastLake } from './scenes/AtlastLake.js';
 // Hàm này chỉ được withAuth gọi sau khi xác thực thành công.
 function StartGame(user, parent = 'game-container') {
     const runtime=getCharacterProfile()?.runtime;
-    const all=[VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave,NoxiiEntrance,NoxiiCave,DiaLongForest,AutumnForest,GuardianCave,HuyenQuyCave,HanNhaMon,HiuuLingRiver];
-    const byKey={Game:VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave,NoxiiEntrance,NoxiiCave,DiaLongForest,AutumnForest,GuardianCave,HuyenQuyCave,HanNhaMon,HiuuLingRiver};
+    const all=[VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave,NoxiiEntrance,NoxiiCave,DiaLongForest,AutumnForest,GuardianCave,HuyenQuyCave,HanNhaMon,HiuuLingRiver,HoaPhuongCave];
+    const byKey={Game:VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave,NoxiiEntrance,NoxiiCave,DiaLongForest,AutumnForest,GuardianCave,HuyenQuyCave,HanNhaMon,HiuuLingRiver,HoaPhuongCave};
     const first=byKey[runtime?.hp>0?RUNTIME_SCENES[runtime.mapId]:'Game']||VillageGame;
     const config = {
         type: AUTO,
