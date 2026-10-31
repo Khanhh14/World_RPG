@@ -339,6 +339,24 @@
     "earnedMapId": "dia-long-forest",
     "exchangeCost": 20
   },
+  "dragon_bone": {
+    "unitPrice": 18,
+    "local": true,
+    "mapId": "dragon-ruins",
+    "exchangeCost": 1
+  },
+  "ancient_dragon_scale": {
+    "unitPrice": 22,
+    "local": true,
+    "mapId": "dragon-ruins",
+    "exchangeCost": 1
+  },
+  "jade_dragon_core": {
+    "unitPrice": 30,
+    "local": true,
+    "mapId": "dragon-ruins",
+    "exchangeCost": 1
+  },
   "diet_long_kiem": {
     "unitPrice": 10,
     "local": false

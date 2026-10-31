@@ -16,6 +16,20 @@ export class DiaLongForestWorld extends TinyOutdoorWorldBuilder{
    const a=i*Math.PI/6,x=1176+Math.cos(a)*378,y=355+Math.sin(a)*245;
    arena.lineStyle(3,0xe0c989,.7).lineBetween(x-6,y+6,x,y-6).lineBetween(x,y-6,x+6,y+6);
   }
+  const gate=this.add.graphics().setDepth(3),gateX=2040,gateY=720;
+  gate.fillStyle(0x18332d,.8).fillEllipse(gateX,gateY-8,164,50);
+  gate.lineStyle(5,0xb89c59,.88).strokeCircle(gateX,gateY-60,72);
+  gate.lineStyle(2,0x71c8b3,.8).strokeCircle(gateX,gateY-60,57);
+  gate.lineStyle(5,0xb89c59,.9).beginPath().moveTo(gateX-58,gateY)
+   .lineTo(gateX-51,gateY-74).lineTo(gateX-32,gateY-112)
+   .lineTo(gateX,gateY-128).lineTo(gateX+32,gateY-112)
+   .lineTo(gateX+51,gateY-74).lineTo(gateX+58,gateY).strokePath();
+  gate.lineStyle(4,0xe0c989,.86).beginPath().moveTo(gateX-26,gateY-62)
+   .lineTo(gateX-13,gateY-77).lineTo(gateX,gateY-52)
+   .lineTo(gateX+16,gateY-72).lineTo(gateX+26,gateY-56).strokePath();
+  gate.fillStyle(0x68c9ab,.85).fillCircle(gateX+29,gateY-78,4);
+  this.blocker(gateX-57,gateY-31,16,58);
+  this.blocker(gateX+57,gateY-31,16,58);
   this.add.text(1176,72,'LÃNH ĐỊA THANH LONG',{fontFamily:'Arial',fontSize:'15px',color:'#ffedbe',backgroundColor:'#263d32',padding:{x:8,y:5}}).setOrigin(.5).setDepth(9000);
   const camp=this.add.graphics().setDepth(3);
   camp.lineStyle(2,0xe3d5a2,.4).strokeEllipse(1176,1656,130,52);

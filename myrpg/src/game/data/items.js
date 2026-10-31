@@ -32,8 +32,13 @@ export const DIA_LONG_MATERIALS = [
     {id:'yellow_feather',name:'Lông vàng',emoji:'🪶',description:'Lông rơi từ Khỉ vàng ở Khu Rừng Địa Long. Gộp 20 lông bất kỳ đổi tại UDOI.'},
     {id:'red_feather',name:'Lông đỏ',emoji:'🪶',description:'Lông rơi từ Chó đỏ ở Khu Rừng Địa Long. Gộp 20 lông bất kỳ đổi tại UDOI.'}
 ];
-export const MONSTER_MATERIALS = [...FOREST_MATERIALS, ...NOXII_MATERIALS, ...DIA_LONG_MATERIALS];
-export const monsterMaterialsForMap = mapId => mapId === 'dia-long-forest' ? DIA_LONG_MATERIALS : mapId === 'noxii-entrance' ? NOXII_MATERIALS : mapId === 'west-forest' ? FOREST_MATERIALS : [];
+export const DRAGON_RUINS_MATERIALS = [
+    {id:'dragon_bone',name:'Mảnh Long Cốt',emoji:'🦴',description:'Mảnh xương hóa thạch rơi từ Long Cốt Vệ Sĩ tại Phế Tích Địa Long.'},
+    {id:'ancient_dragon_scale',name:'Vảy Địa Long Cổ',emoji:'🐉',description:'Vảy rồng cổ rơi từ Địa Long Vảy Ngọc tại Phế Tích Địa Long.'},
+    {id:'jade_dragon_core',name:'Ngọc Tủy Long Mạch',emoji:'💠',description:'Ngọc tủy quý hiếm rơi từ Long Ưng Tàn Tích tại Phế Tích Địa Long.'}
+];
+export const MONSTER_MATERIALS = [...FOREST_MATERIALS, ...NOXII_MATERIALS, ...DIA_LONG_MATERIALS, ...DRAGON_RUINS_MATERIALS];
+export const monsterMaterialsForMap = mapId => mapId === 'dragon-ruins' ? DRAGON_RUINS_MATERIALS : mapId === 'dia-long-forest' ? DIA_LONG_MATERIALS : mapId === 'noxii-entrance' ? NOXII_MATERIALS : mapId === 'west-forest' ? FOREST_MATERIALS : [];
 export const monsterExchangeForMap = mapId => mapId === 'dia-long-forest'
     ? {cost:20,reward:'wing_essence',name:'Tinh chất cánh'}
     : {cost:10,reward:'upgrade_stone',name:'đá cường hóa'};

@@ -28,5 +28,8 @@ export const diaLongForest={
   ...pack('Chó đỏ','dog',[[35,11],[40,11],[34,17],[40,18]]),
   ...pack('Chim Xanh','bird',[[9,24],[16,23],[32,24],[39,25]])
  ],
- portals:[{x:1176,feetY:1824,label:'Về Ngoại ô YuNa',target:'YunaOutskirts',spawn:{x:1224,y:272}}]
+ portals:[
+  {x:2040,feetY:720,label:'Phế Tích Địa Long',target:'DragonRuins',spawn:{x:1008,y:1416}},
+  {x:1176,feetY:1824,label:'Về Ngoại ô YuNa',target:'YunaOutskirts',spawn:{x:1224,y:272}}
+ ]
 };
