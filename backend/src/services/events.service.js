@@ -4,12 +4,13 @@ const equipment=require('../config/tuLinhEquipment.json');
 const huntEvent=require('../config/huntEvent.json');
 const skillTraining=require('../config/skillTraining.json');
 const {characterView}=require('./progress.service');
+const {availableWingEssence}=require('./wingEnchant');
 const fail=(status,message)=>Object.assign(new Error(message),{status});
 const parse=v=>typeof v==='string'?JSON.parse(v):v;
 const uuid=value=>typeof value==='string'&&/^[a-f0-9-]{36}$/i.test(value);
 const eventEquipment={...huntEvent.offhand,...Object.fromEntries(Object.values(huntEvent.classWeapons).map(item=>[item.id,item]))};
 async function eventLog(c,id){
- const [rows]=await c.execute("SELECT action_type, payload FROM character_economy_events WHERE character_id = ? AND action_type IN ('boss_reward','event_exchange','monster_kill','event_milestone_claim')",[id]);
+ const [rows]=await c.execute("SELECT action_type, payload FROM character_economy_events WHERE character_id = ? AND action_type IN ('boss_reward','event_exchange','monster_kill','event_milestone_claim','wing_enchant','shop_sell')",[id]);
  return rows;
 }
 function eventBalances(events){
@@ -73,6 +74,7 @@ async function addInventoryItem(c,char,itemId,quantity){
  }
 }
 async function grantItem(c,char,id,quantity){
+ if(id==='wing_essence')return;
  if(/^wing_stone_[1-4]$/.test(id)){
   await c.execute('INSERT IGNORE INTO character_wing_materials (character_id, item_id, quantity) VALUES (?, ?, 0)',[char.id,id]);
   const [changed]=await c.execute('UPDATE character_wing_materials SET quantity = quantity + ? WHERE character_id = ? AND item_id = ? AND quantity + ? <= 999',[quantity,char.id,id,quantity]);
@@ -99,7 +101,7 @@ function createEventsService(db){
  }
  async function snapshot(c,char){
   const [books]=await c.execute('SELECT skill_id FROM character_skill_books WHERE character_id = ?',[char.id]),log=await eventLog(c,char.id);
-  return {character:characterView(char),events:[
+  return {character:characterView(char),wingEssence:availableWingEssence(log),events:[
    {...catalog,equipment,eventSkills,ownedEventSkills:books.map(b=>b.skill_id),classCode:char.class_code,balances:eventBalances(log)},
    huntSnapshot(log,char)
   ]};

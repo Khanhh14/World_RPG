@@ -2,10 +2,11 @@ import {eventsApi} from '../../api/eventsApi.js';
 import {EVENT_SKILLS} from '../data/eventSkills.js';
 import {ITEMS} from '../data/items.js';
 export class EventsSystem{
- constructor(scene){this.scene=scene;this.state=scene.rpgState;this.alive=true;this.view=null;this.error='';this.busy=false;this.loading=false;this.onChange=()=>{};scene.events.once('shutdown',()=>{this.alive=false;});if(this.state.data.pendingEventExchange||this.state.data.pendingEventClaim)void this.load();}
+ constructor(scene){this.scene=scene;this.state=scene.rpgState;this.alive=true;this.view=null;this.error='';this.busy=false;this.loading=false;this.selectedHuntGroup='monster';this.onChange=()=>{};scene.events.once('shutdown',()=>{this.alive=false;});if(this.state.data.pendingEventExchange||this.state.data.pendingEventClaim)void this.load();}
  notify(){if(this.alive)this.onChange();}
  apply(result){
   if(String(result.character?.id)!==String(this.state.data.characterId)||!Array.isArray(result.events))throw new Error('Dữ liệu sự kiện không thuộc nhân vật.');
+  if(Number.isSafeInteger(result.wingEssence)&&result.wingEssence>=0)this.state.data.inventory.wing_essence=result.wingEssence;
   this.state.applyServerCharacter(result.character);this.view=result.events;this.error='';
  }
  async load(){
