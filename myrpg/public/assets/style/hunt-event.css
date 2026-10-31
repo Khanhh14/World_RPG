@@ -104,5 +104,5 @@
 .te-loot-copy small{display:none}
 .te-loot-count{grid-column:2;align-self:start;font-size:9px}
 .te-hunt-special-note{padding:2px 4px;color:#dbcb95;font-size:8px}
-.te-hunt-claim{margin-top:10px}
-@media(max-width:650px){.te-hunt-switch{gap:7px;margin-bottom:15px}.te-hunt-switch button{gap:7px;padding:9px 8px}.te-hunt-switch button>span:first-child{width:29px;height:29px;font-size:16px}.te-hunt-switch button strong{font-size:10px}.te-hunt-switch button small{font-size:8px}.te-hunt-milestones{grid-template-columns:minmax(0,1fr)}.te-loot{flex-basis:102px}.te-hunt-card h5{font-size:21px}}
+.te-hunt-claim{width:auto;min-width:148px;align-self:flex-end;margin-top:10px;padding:8px 18px!important}
+@media(max-width:650px){.te-hunt-switch{gap:7px;margin-bottom:15px}.te-hunt-switch button{gap:7px;padding:9px 8px}.te-hunt-switch button>span:first-child{width:29px;height:29px;font-size:16px}.te-hunt-switch button strong{font-size:10px}.te-hunt-switch button small{font-size:8px}.te-hunt-milestones{grid-template-columns:minmax(0,1fr)}.te-loot{flex-basis:102px}.te-hunt-card h5{font-size:21px}.te-hunt-claim{min-width:128px}}
