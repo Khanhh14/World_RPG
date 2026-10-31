@@ -2,7 +2,7 @@ import {eventsApi} from '../../api/eventsApi.js';
 import {EVENT_SKILLS} from '../data/eventSkills.js';
 import {ITEMS} from '../data/items.js';
 export class EventsSystem{
- constructor(scene){this.scene=scene;this.state=scene.rpgState;this.alive=true;this.view=null;this.error='';this.busy=false;this.loading=false;this.onChange=()=>{};scene.events.once('shutdown',()=>{this.alive=false;});if(this.state.data.pendingEventExchange)void this.load();}
+ constructor(scene){this.scene=scene;this.state=scene.rpgState;this.alive=true;this.view=null;this.error='';this.busy=false;this.loading=false;this.onChange=()=>{};scene.events.once('shutdown',()=>{this.alive=false;});if(this.state.data.pendingEventExchange||this.state.data.pendingEventClaim)void this.load();}
  notify(){if(this.alive)this.onChange();}
  apply(result){
   if(String(result.character?.id)!==String(this.state.data.characterId)||!Array.isArray(result.events))throw new Error('Dữ liệu sự kiện không thuộc nhân vật.');
@@ -12,6 +12,7 @@ export class EventsSystem{
   if(this.loading||this.busy)return;this.loading=true;this.notify();
   try{this.apply(await eventsApi.load());}catch(e){this.error=e.message;}finally{this.loading=false;this.notify();}
   if(this.state.data.pendingEventExchange)await this.exchange();
+  if(this.state.data.pendingEventClaim)await this.claim(this.state.data.pendingEventClaim.milestoneId);
  }
  save(next){
   if(!this.state.storage)throw new Error('Chưa lưu được yêu cầu đổi. Hãy cho phép lưu trên trình duyệt.');
@@ -40,6 +41,27 @@ export class EventsSystem{
   }catch(e){
    this.error=e.message;
    if([400,403,409].includes(e.status)){s.data.pendingEventExchange=null;s.changed();}
+  }finally{this.busy=false;this.notify();}
+ }
+ async claim(milestoneId){
+  const s=this.state;if(this.busy)return;
+  if(s.usingItem||s.buying||s.selling||s.bossRewardBusy||s.data.pendingPurchase||s.data.pendingSale||s.data.pendingEquipmentAction||s.data.pendingItemUse||s.data.pendingInventoryAction||s.data.pendingDailyAction){this.error='Hãy hoàn tất giao dịch vật phẩm đang chờ trước.';this.notify();return;}
+  this.busy=true;this.error='';this.notify();
+  try{
+   let pending=s.data.pendingEventClaim;
+   if(!pending){
+    pending={eventId:'hunt-monsters',milestoneId,requestId:crypto.randomUUID()};
+    this.save({...s.data,pendingEventClaim:pending});s.data.pendingEventClaim=pending;s.changed();
+   }
+   const result=await eventsApi.claim(pending);
+   if(result.requestId!==pending.requestId||result.milestoneId!==pending.milestoneId||String(result.character?.id)!==String(s.data.characterId))throw new Error('Phản hồi quà sự kiện không khớp.');
+   this.apply(result);s.applyServerItems(result.items);
+   await this.scene.wingsSystem?.load();await this.scene.skillsSystem?.load();
+   this.save({...s.data,pendingEventClaim:null});s.data.pendingEventClaim=null;s.changed();
+   this.scene.hud?.toast(result.alreadyClaimed?'Mốc quà này đã được nhận trước đó.':'Đã nhận quà mốc sự kiện thành công.');
+  }catch(e){
+   this.error=e.message;
+   if([400,403,409].includes(e.status)){s.data.pendingEventClaim=null;s.changed();}
   }finally{this.busy=false;this.notify();}
  }
 }

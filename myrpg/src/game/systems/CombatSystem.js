@@ -220,6 +220,18 @@ export class CombatSystem {
     const error=this.specialError();if(error){this.notify(error);return false;}
     const skill=this.specialSkill,target=this.nearestTarget(skill.range);
     if(skill.id==='firefield')return this.castFireField(skill,target);
+    if(skill.id==='shockwave'){
+      const p=this.origin();if(!p)return false;
+      if(!this.state.spendMana(skill.mana))return false;
+      this.runtime.cooldowns['offhand-special']=this.clock+skill.cooldown;
+      for(const enemy of this.targets.values()){
+        if(enemy.hp<=0||enemy.returning||!enemy.entity.sprite.active)continue;
+        const point=this.targetPoint(enemy);
+        if(distance(point,p)<=skill.radius&&this.clearLine(p,point))this.hit(enemy,this.state.attack*skill.multiplier);
+      }
+      this.flash(p,skill.radius,0x9cdbef,'nova');
+      return true;
+    }
     if(!target){this.notify('Chưa có mục tiêu trong tầm kỹ năng đặc biệt.');return false;}
     if(!this.state.spendMana(skill.mana))return false;
     this.runtime.cooldowns['offhand-special']=this.clock+skill.cooldown;

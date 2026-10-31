@@ -1,4 +1,4 @@
-const special={...require('../config/offhands.json'),...require('../config/tuLinhEquipment.json')};
+const special={...require('../config/offhands.json'),...require('../config/tuLinhEquipment.json'),...require('../config/huntEvent.json').offhand};
 const wings=require('../config/wings.json');
 const slots=['weapon','shield','armor','helmet','boots','gloves'];
 const fail=message=>Object.assign(new Error(message),{status:400});

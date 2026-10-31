@@ -422,4 +422,6 @@ Phaser 3 là một framework mạnh mẽ và dễ học để tạo game 2D. V�
 
 Tiến trình giao diện vẫn được lưu tạm trên trình duyệt theo ID tài khoản; nhiệm vụ và phần thưởng được lưu trên MySQL theo nhân vật.
 
+Trong **Sự kiện → Săn Quái & Boss**, hạ quái thường đạt các mốc 100, 300, 500, 1.000, 1.500, 2.000; hạ boss đạt các mốc 10, 20, 40, 70, 100. Mỗi mốc nhận một lần, tiến độ và giao dịch quà được lưu theo nhân vật trên máy chủ. Quà gồm vàng, đá quý, vật phẩm nâng cấp/cánh/kỹ năng và vũ khí sự kiện theo class.
+
 Sau khi đã có các bảng `quests` và `character_quests`, chạy `backend/quest-progress.sql` một lần trên MySQL của game để tạo bảng chống ghi nhận sự kiện nhiệm vụ lặp. Khởi động lại backend sau khi chạy migration. Backend tự tạo tiến độ cho ba nhiệm vụ theo thứ tự: khám phá ba khu vực, câu 15 con cá ở Hồ Atlast, rồi hạ 20 quái ở Khu Rừng Phía Tây. Game chỉ hiển thị nhiệm vụ hiện tại; nhiệm vụ tiếp theo mở sau khi nhận thưởng nhiệm vụ trước. Tiến độ được ghi nhận khi vào khu vực, nhận cá thành công hoặc hạ quái; phần thưởng EXP/vàng chỉ được cộng khi bấm **Nhận thưởng**.

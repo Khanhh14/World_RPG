@@ -14,7 +14,8 @@ export class ActivityUI {
  constructor(scene){
   this.scene=scene;this.alive=true;this.isOpen=false;this.tab='daily';this.message='';this.settingsKey=`tiny-rpg-settings:${scene.rpgState.data.characterId}`;
   try{const stored=JSON.parse(localStorage.getItem(this.settingsKey)||'{}');this.settings=Object.fromEntries(Object.entries(defaults).map(([k,v])=>[k,typeof stored[k]==='boolean'?stored[k]:v]));}catch{this.settings={...defaults};}
-  if(!document.getElementById('rpg-activities-css')){const link=document.createElement('link');link.id='rpg-activities-css';link.rel='stylesheet';link.href='/assets/style/activities.css?v=tu-linh-2';document.head.append(link);}
+  if(!document.getElementById('rpg-activities-css')){const link=document.createElement('link');link.id='rpg-activities-css';link.rel='stylesheet';link.href='/assets/style/activities.css?v=hunt-event-2';document.head.append(link);}
+  if(!document.getElementById('rpg-hunt-event-css')){const link=document.createElement('link');link.id='rpg-hunt-event-css';link.rel='stylesheet';link.href='/assets/style/hunt-event.css?v=1';document.head.append(link);}
   this.toolbar=document.createElement('nav');this.toolbar.className='ga-toolbar';this.toolbar.setAttribute('aria-label','Tiện ích trò chơi');
   this.toolbar.innerHTML=PANELS.filter(([id])=>['daily','events'].includes(id)).map(([id,symbol,name])=>`<button type="button" data-open="${id}" aria-label="${name}"><span aria-hidden="true">${symbol}</span><small>${name}</small><i data-dot="${id}" hidden></i></button>`).join('');
   this.panels={};
@@ -68,6 +69,7 @@ export class ActivityUI {
    if(button.dataset.action==='events-select'){this.events.selectedEventId=button.dataset.event;this.render();return;}
    if(button.dataset.action==='events-refresh'){await this.events.load();return;}
    if(button.dataset.action==='events-exchange'){await this.events.exchange(button.dataset.recipe);return;}
+   if(button.dataset.action==='events-claim'){await this.events.claim(button.dataset.milestone);return;}
    if(button.dataset.action==='collect-pending'){
     for(const box of [...(this.daily.view?.boxes??[])])await this.daily.collect(box.sourceId);
     this.message='Đã nhận đầy đủ vật phẩm điểm danh.';this.render();return;

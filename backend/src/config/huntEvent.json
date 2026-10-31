@@ -1,0 +1,50 @@
+{
+  "id": "hunt-monsters",
+  "name": "Săn Quái & Boss",
+  "description": "Hạ quái thường và boss để nhận mốc thưởng. Mỗi mốc chỉ nhận một lần.",
+  "monsterMilestones": [
+    { "id": "monster-100", "threshold": 100, "reward": { "gold": 300, "gems": 5, "items": { "upgrade_stone": 2, "food_perch_soup": 1 } } },
+    { "id": "monster-300", "threshold": 300, "reward": { "gold": 500, "gems": 8, "items": { "upgrade_stone": 3, "wing_stone_1": 2, "food_carp_stew": 1 } } },
+    { "id": "monster-500", "threshold": 500, "reward": { "gold": 800, "gems": 12, "items": { "upgrade_stone": 5, "wing_stone_2": 2, "skill_powder": 3, "food_catfish_stew": 1 } } },
+    { "id": "monster-1000", "threshold": 1000, "reward": { "gold": 1500, "gems": 20, "items": { "upgrade_stone": 8, "wing_stone_3": 2, "wing_essence": 1, "breakthrough_book": 1 } } },
+    { "id": "monster-1500", "threshold": 1500, "reward": { "gold": 2500, "gems": 30, "items": { "upgrade_stone": 12, "wing_stone_4": 2, "wing_essence": 2, "skill_powder": 5, "breakthrough_book": 2, "food_catfish_stew": 3 } } },
+    { "id": "monster-2000", "threshold": 2000, "reward": { "gold": 5000, "gems": 50, "items": { "upgrade_stone": 20, "wing_stone_1": 3, "wing_stone_2": 3, "wing_stone_3": 3, "wing_stone_4": 3, "wing_essence": 5, "skill_powder": 10, "breakthrough_book": 5 }, "offhand": "shockwave_charm" } }
+  ],
+  "bossMilestones": [
+    { "id": "boss-10", "threshold": 10, "reward": { "gold": 1000, "gems": 10, "items": { "upgrade_stone": 3, "food_catfish_stew": 2 } } },
+    { "id": "boss-20", "threshold": 20, "reward": { "gold": 2000, "gems": 20, "items": { "upgrade_stone": 5, "wing_stone_1": 3, "skill_powder": 3, "food_catfish_stew": 2 } } },
+    { "id": "boss-40", "threshold": 40, "reward": { "gold": 4000, "gems": 35, "items": { "upgrade_stone": 10, "wing_stone_2": 3, "wing_essence": 2, "skill_powder": 5, "breakthrough_book": 1 } } },
+    { "id": "boss-70", "threshold": 70, "reward": { "gold": 7000, "gems": 60, "items": { "upgrade_stone": 15, "wing_stone_3": 3, "wing_essence": 3, "skill_powder": 8, "breakthrough_book": 2 } } },
+    { "id": "boss-100", "threshold": 100, "reward": { "gold": 12000, "gems": 100, "items": { "upgrade_stone": 25, "wing_stone_1": 4, "wing_stone_2": 4, "wing_stone_3": 4, "wing_stone_4": 4, "wing_essence": 5, "skill_powder": 15, "breakthrough_book": 5 }, "classWeapon": true } }
+  ],
+  "offhand": {
+    "shockwave_charm": {
+      "name": "Linh Phù Chấn Động",
+      "type": "shield",
+      "category": "special",
+      "offhandKind": "orb",
+      "icon": "orb",
+      "level": 6,
+      "price": 0,
+      "maxStack": 1,
+      "defense": 20,
+      "maxHP": 300,
+      "specialSkill": {
+        "id": "shockwave",
+        "name": "Chấn Động",
+        "mana": 30,
+        "cooldown": 15000,
+        "radius": 150,
+        "multiplier": 0.75,
+        "icon": "nova"
+      },
+      "description": "+20 thủ · +300 HP tối đa. Kỹ năng F: tạo vùng chấn động quanh người, gây 75% công lên quái trong vùng.",
+      "sellPrice": 10
+    }
+  },
+  "classWeapons": {
+    "swordsman": { "id": "doat_hon_kiem", "name": "Đoạt Hồn Kiếm", "type": "weapon", "category": "event-weapon", "classCode": "swordsman", "icon": "doat_hon_kiem", "attack": 120, "level": 6, "maxStack": 1, "price": 0, "sellPrice": 10, "description": "+120 công. Vũ khí sự kiện dành cho Kiếm sĩ." },
+    "mage": { "id": "doat_hon_truong", "name": "Đoạt Hồn Trượng", "type": "weapon", "category": "event-weapon", "classCode": "mage", "icon": "doat_hon_truong", "attack": 120, "level": 6, "maxStack": 1, "price": 0, "sellPrice": 10, "description": "+120 công. Vũ khí sự kiện dành cho Pháp sư." },
+    "fighter": { "id": "doat_hon_phu", "name": "Đoạt Hồn Phủ", "type": "weapon", "category": "event-weapon", "classCode": "fighter", "icon": "doat_hon_phu", "attack": 120, "level": 6, "maxStack": 1, "price": 0, "sellPrice": 10, "description": "+120 công. Vũ khí sự kiện dành cho Đấu sĩ." }
+  }
+}

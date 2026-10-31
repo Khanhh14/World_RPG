@@ -1,4 +1,5 @@
 import {TU_LINH_WEAPONS,tuLinhWeaponTexture} from '../data/tuLinhWeapons.js';
+import {HUNT_EVENT_WEAPONS} from '../data/huntEventItems.js';
 import {resalePrice} from '../data/resale.js';
 import { offhandTexture } from '../world/OffhandTextures.js';
 import { MAX_ENHANCEMENT, enhancedItem } from '../data/enhancement.js';
@@ -393,7 +394,7 @@ export class RPGHUD {
         // Offset được đổi từ pixel thế giới sang kích thước canvas.
         const worldScale = Math.abs(sprite?.scaleX) || 3;
         const gap = 18 * scale / worldScale;
-        const eventWeaponFrame=TU_LINH_WEAPONS[equipment.weapon]?this.scene.textures.getFrame(tuLinhWeaponTexture(this.scene,equipment.weapon)):null;
+        const eventWeaponFrame=TU_LINH_WEAPONS[equipment.weapon]||HUNT_EVENT_WEAPONS[equipment.weapon]?this.scene.textures.getFrame(tuLinhWeaponTexture(this.scene,equipment.weapon)):null;
         const weapon = () => draw(eventWeaponFrame??getFrame(wf), x + direction * gap, y + 6 * scale / worldScale, scale, this.previewLeft);
         const offhand = ITEMS[equipment.shield];
         const shieldFrame = offhand?.offhandKind ? this.scene.textures.getFrame(offhandTexture(this.scene, offhand)) : getFrame(sf);

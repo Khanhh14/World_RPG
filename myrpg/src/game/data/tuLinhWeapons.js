@@ -9,6 +9,9 @@ export const WEAPON_PIXELS={
  huyen_long_truong:[[7,5,3,11,'#3b373e'],[8,5,1,11,'#dab972'],[3,2,10,2,'#dfbe77'],[4,1,2,6,'#dfbe77'],[11,0,2,6,'#dfbe77'],[5,5,7,2,'#dfbe77'],[6,0,5,5,'#30465a'],[7,1,3,3,'#a4c6f2'],[7,1,1,2,'#f5f3d2'],[7,9,3,1,'#a5d6d2'],[7,13,3,1,'#a5d6d2']],
  khai_long_son_phu:[[7,1,3,15,'#342f36'],[8,1,1,15,'#d9b873'],[1,1,5,8,'#253f47'],[10,1,5,8,'#253f47'],[2,2,4,5,'#68b8ad'],[10,2,4,5,'#68b8ad'],[1,3,2,4,'#c4e8dc'],[13,3,2,4,'#c4e8dc'],[4,3,8,2,'#dbb86b'],[6,4,4,3,'#e5c77c'],[7,4,2,2,'#96dcd1'],[7,10,3,1,'#80b9ac']]
 };
+WEAPON_PIXELS.doat_hon_kiem=WEAPON_PIXELS.diet_long_kiem;
+WEAPON_PIXELS.doat_hon_truong=WEAPON_PIXELS.huyen_long_truong;
+WEAPON_PIXELS.doat_hon_phu=WEAPON_PIXELS.khai_long_son_phu;
 export function tuLinhWeaponIcon(id,size=40){return `<svg aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 16 16" shape-rendering="crispEdges" style="flex-shrink:0">${(WEAPON_PIXELS[id]||[]).map(([x,y,w,h,color])=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${color}"/>`).join('')}</svg>`;}
 export function tuLinhWeaponTexture(scene,id){
  const key=`event-${id}`;if(scene.textures.exists(key))return key;

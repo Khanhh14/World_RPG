@@ -116,6 +116,7 @@ export class RPGState {
             pendingBossRewards: [],
             bossStoneInbox: 0,
             pendingKills: [],
+            pendingEventClaim: null,
             pendingDailyAction: null,
             activityRewardReceipts: [],
             mushroomHarvest: {},
@@ -259,6 +260,8 @@ export class RPGState {
             this.data.pendingPurchase = saved.pendingPurchase || null;
             const eventExchange=saved.pendingEventExchange;
             if(eventExchange?.eventId==='tu-linh'&&/^[a-f0-9-]{36}$/i.test(eventExchange.requestId??''))this.data.pendingEventExchange=eventExchange;
+            const eventClaim=saved.pendingEventClaim;
+            if(eventClaim?.eventId==='hunt-monsters'&&typeof eventClaim.milestoneId==='string'&&/^[a-f0-9-]{36}$/i.test(eventClaim.requestId??''))this.data.pendingEventClaim=eventClaim;
             const sale=saved.pendingSale;
             if(sale && /^[a-f0-9-]{36}$/i.test(sale.requestId??'') && ITEMS[sale.itemId] && Number.isInteger(sale.quantity) && sale.quantity>0 && sale.quantity<=99 && ['local','inventory'].includes(sale.source))this.data.pendingSale=sale;
             this.data.pendingItemUse = saved.pendingItemUse || null;
