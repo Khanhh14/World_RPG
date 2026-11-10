@@ -30,7 +30,15 @@ const potionValue = id => {
   const values = match[1] === 'health' ? [50, 100, 200, 350, 500] : [25, 50, 100, 175, 250];
   return { kind: match[1], amount: values[level - 1] };
 };
-const equipmentSlots = new Set(['weapon', 'shield', 'armor', 'helmet', 'boots', 'gloves']);
+const equipmentSlots = new Set(['weapon', 'shield', 'armor', 'helmet', 'boots', 'gloves', 'tome']);
+const tomes = [
+  ['tome_wind', 'Cổ Tịch Phong Hành', 'wind', '+5% tốc độ di chuyển mỗi cấp.'],
+  ['tome_chain', 'Cổ Tịch Liên Kích', 'chain', 'Giảm 4% hồi đòn thường mỗi cấp.'],
+  ['tome_critical', 'Cổ Tịch Bạo Kích', 'critical', '+3% tỉ lệ chí mạng đòn thường mỗi cấp. Chí mạng gây 150% sát thương.'],
+  ['tome_echo', 'Cổ Tịch Toàn Ảnh', 'echo', 'Đòn thường lan trong bán kính 95 quanh mục tiêu, gây 25% sát thương.'],
+  ['tome_range', 'Cổ Tịch Viễn Kích', 'range', '+20 tầm đánh thường mỗi cấp.'],
+  ['tome_aura', 'Cổ Tịch Linh Vực', 'aura', 'Đòn thường tạo vùng quanh nhân vật, bán kính 120, gây 20% sát thương.'],
+];
 
 function createInventoryService(db) {
   async function transaction(userId, operation) {
@@ -177,6 +185,15 @@ function createInventoryService(db) {
     }));
   }
 
+  async function ensureTomeDefinitions(c) {
+    for (const [id, name, icon, description] of tomes) {
+      await c.execute(
+        'INSERT IGNORE INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [id, name, 'tome', 1, 0, 1, 0, icon, description, 0],
+      );
+    }
+  }
+
   function freeInventorySlot(rows) {
     // characterItems() chuẩn hóa slot_key thành slot trước khi truyền vào đây.
     const occupied = new Set(rows.filter(row => row.location === 'inventory').map(row => String(row.slot)));
@@ -220,6 +237,7 @@ function createInventoryService(db) {
   return {
     async load(userId) {
       return transaction(userId, async (c, character) => {
+        await ensureTomeDefinitions(c);
         const rows = await allItemRows(c, character.id);
         return {
           characterId: String(character.id),
@@ -405,7 +423,9 @@ function createInventoryService(db) {
         const items = await characterItems(c, character.id);
         const definition = items.find(item => item.id === input.itemId)?.type;
         if (!equipmentSlots.has(definition)) throw fail(400, 'Vật phẩm này không phải trang bị hợp lệ.');
-        const equipped = items.find(item => item.location === 'equipment' && item.slot === definition);
+        const equipped = items.find(item => item.location === 'equipment'
+          && (definition === 'tome' ? item.id === input.itemId : item.slot === definition));
+        const equipmentKey = definition === 'tome' ? `tome:${input.itemId}` : definition;
 
         if (input.action === 'equip') {
           const eventWeapon=Object.entries(tuLinhWeapons).find(([,w])=>w.id===input.itemId);
@@ -430,7 +450,7 @@ function createInventoryService(db) {
             // Giải phóng ô trang bị cũ trước khi thêm món mới; tránh vi phạm UNIQUE.
             await c.execute(
               "INSERT INTO character_items (character_id, item_definition_id, quantity, location, slot_key) VALUES (?, ?, 1, 'equipment', ?)",
-              [character.id, input.itemId, definition],
+              [character.id, input.itemId, equipmentKey],
             );
           } else if (equipped) {
             const temporarySlot = temporaryInventorySlot(items);
@@ -440,7 +460,7 @@ function createInventoryService(db) {
             );
             await c.execute(
               "UPDATE character_items SET location = 'equipment', slot_key = ? WHERE id = ? AND character_id = ?",
-              [definition, target.rowId, character.id],
+              [equipmentKey, target.rowId, character.id],
             );
             await c.execute(
               "UPDATE character_items SET slot_key = ? WHERE id = ? AND character_id = ?",
@@ -449,7 +469,7 @@ function createInventoryService(db) {
           } else {
             await c.execute(
               "UPDATE character_items SET location = 'equipment', slot_key = ? WHERE id = ? AND character_id = ?",
-              [definition, target.rowId, character.id],
+              [equipmentKey, target.rowId, character.id],
             );
           }
         } else {

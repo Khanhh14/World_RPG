@@ -270,10 +270,15 @@ export class CombatSystem {
   attack(){
     if(this.busy||this.remaining('basic'))return false;
     const mage=this.state.data.classCode==='mage';
-    const target=this.nearestTarget(mage?320:92);
+    const range=(mage?320:92)+this.state.tomeBonus('attackRange');
+    const target=this.nearestTarget(range);
     if(!target)return false;
-    this.runtime.cooldowns.basic=this.clock+550;
-    if(mage)this.projectile(this.state.attack,320,0xe7cfff,target);
+    this.runtime.cooldowns.basic=this.clock+Math.max(150,550*(1-this.state.tomeBonus('basicCooldownReduction')));
+    const damage=this.basicAttackDamage();
+    if(mage){
+      const shot=this.projectile(damage,range,0xe7cfff,target);
+      if(shot)shot.basicAttack=true;
+    }
     else {
       const player=this.scene.player.sprite,point=this.targetPoint(target);
       this.facing={x:point.x-player.x,y:point.y-player.y};
@@ -281,10 +286,39 @@ export class CombatSystem {
       this.facing.x/=length;this.facing.y/=length;
       player.setFlipX(this.facing.x<0);
       this.flash(this.origin(),78,0xffd990,'slash');
-      this.hit(target,this.state.attack);
+      this.hit(target,damage);
+      this.applyBasicTomeEffects(target,damage);
       this.flash(point,28,0xf8dd99,'impact');
     }
     return true;
+  }
+  basicAttackDamage(){
+    const criticalChance=this.state.tomeBonus('criticalChance');
+    if(criticalChance<=0)return this.state.attack;
+    return Math.random()<criticalChance
+      ?this.state.attack*(this.state.tomeBonus('criticalMultiplier')||1.5)
+      :this.state.attack;
+  }
+  applyBasicTomeEffects(target,damage){
+    const point=this.targetPoint(target),origin=this.origin();
+    const echoDamage=this.state.tomeBonus('echoDamage'),echoRadius=this.state.tomeBonus('echoRadius');
+    if(echoDamage&&echoRadius){
+      for(const other of this.targets.values()){
+        if(other===target||other.hp<=0||other.returning||!other.entity.sprite.active)continue;
+        const otherPoint=this.targetPoint(other);
+        if(distance(point,otherPoint)<=echoRadius&&this.clearLine(point,otherPoint))this.hit(other,damage*echoDamage);
+      }
+      this.flash(point,echoRadius,0xb77be5,'nova');
+    }
+    const auraDamage=this.state.tomeBonus('auraDamage'),auraRadius=this.state.tomeBonus('auraRadius');
+    if(auraDamage&&auraRadius&&origin){
+      for(const other of this.targets.values()){
+        if(other.hp<=0||other.returning||!other.entity.sprite.active)continue;
+        const otherPoint=this.targetPoint(other);
+        if(distance(origin,otherPoint)<=auraRadius&&this.clearLine(origin,otherPoint))this.hit(other,damage*auraDamage);
+      }
+      this.flash(origin,auraRadius,0x55a9d8,'nova');
+    }
   }
   skillDirection(range){
     const p=this.origin(),target=this.nearestTarget(range);
@@ -531,7 +565,7 @@ export class CombatSystem {
       const target=this.nearestTarget(320);
       if(target){
         const point=this.targetPoint(target),player=this.origin(),mage=this.state.data.classCode==='mage';
-        const attackRange=mage?320:78;
+        const attackRange=(mage?320:78)+this.state.tomeBonus('attackRange');
         const dx=point.x-player.x,dy=point.y-player.y,targetDistance=Math.hypot(dx,dy);
         if(!mage&&targetDistance>attackRange){
           this.autoMoveDirection={x:dx/targetDistance,y:dy/targetDistance};
@@ -584,6 +618,7 @@ export class CombatSystem {
       if(target){
         const point=this.targetPoint(target);
         this.hit(target,shot.damage);this.flash(point,42,shot.color,'nova');
+        if(shot.basicAttack)this.applyBasicTomeEffects(target,shot.damage);
         if(shot.ricochetRemaining>0){
           shot.visitedTargets.add(target);
           const next=this.nearbyTargets(point,shot.ricochetRange,shot.visitedTargets)[0];

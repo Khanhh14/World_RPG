@@ -48,10 +48,8 @@ export class Player {
             y = autoMove.y;
         }
         const length = Math.hypot(x, y);
-        this.sprite.setVelocity(
-            length ? x / length * this.speed : 0,
-            length ? y / length * this.speed : 0
-        );
+        const speed=this.speed*(1+(this.scene.rpgState?.tomeBonus('moveSpeed')??0));
+        this.sprite.setVelocity(length ? x / length * speed : 0, length ? y / length * speed : 0);
         if (x) this.sprite.setFlipX(x < 0);
         this.updateAppearance();
     }

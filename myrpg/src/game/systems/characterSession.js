@@ -1,4 +1,4 @@
-import { ITEMS, MONSTER_MATERIALS } from '../data/items.js';
+import { ITEMS, MONSTER_MATERIALS, TOME_ITEMS } from '../data/items.js';
 let profile = null;
 let accountId = null;
 export const getCharacterAccountId = () => accountId;
@@ -16,10 +16,12 @@ export function createCharacterState(StateClass, userId) {
   Object.assign(seed, { level: profile.level, exp: profile.exp, gold: profile.gold, hp: profile.hp, mp: profile.mana, gems: Number(profile.gems || 0), inventory: {}, visited: [], explorationClaimed: false });
   seed.foodBuff = profile.foodBuff || null;
   for (const slot of Object.keys(seed.equipment || {})) seed.equipment[slot] = null;
+  seed.activeTomes = [];
   for (const item of profile.items || []) {
     if (!ITEMS[item.id]) continue;
     seed.inventory[item.id] = (seed.inventory[item.id] || 0) + item.quantity;
     if (item.location === 'equipment' && Object.hasOwn(seed.equipment || {}, item.slot)) seed.equipment[item.slot] = item.id;
+    if (item.location === 'equipment' && TOME_ITEMS[item.id]) seed.activeTomes.push(item.id);
   }
   const prefix = `tiny-rpg-character-${profile.id}:`;
   let storage; try { storage = globalThis.localStorage; } catch { storage = null; }
@@ -37,10 +39,12 @@ export function createCharacterState(StateClass, userId) {
   const localMonsterMaterials=Object.fromEntries(MONSTER_MATERIALS.map(m=>[m.id,state.data.inventory[m.id]??0]));
   seed.inventory = {};
   for (const slot of Object.keys(seed.equipment || {})) seed.equipment[slot] = null;
+  seed.activeTomes = [];
   for (const item of profile.items || []) {
     if (!ITEMS[item.id]) continue;
     seed.inventory[item.id] = (seed.inventory[item.id] || 0) + item.quantity;
     if (item.location === 'equipment' && Object.hasOwn(seed.equipment || {}, item.slot)) seed.equipment[item.slot] = item.id;
+    if (item.location === 'equipment' && TOME_ITEMS[item.id]) seed.activeTomes.push(item.id);
   }
   // Cường hóa và thưởng đá hiện lưu theo nhân vật trên trình duyệt.
   seed.inventory.upgrade_stone=localUpgradeStones;
@@ -48,6 +52,7 @@ export function createCharacterState(StateClass, userId) {
   Object.assign(seed.inventory,localMonsterMaterials);
   state.data.inventory = seed.inventory;
   state.data.equipment = seed.equipment;
+  state.data.activeTomes = seed.activeTomes;
   Object.assign(state.data, { characterId: profile.id, name: profile.name, classCode: profile.classCode, className: profile.class.name, playerFrame: profile.class.frame });
   // MySQL là nguồn chính cho kinh tế; localStorage chỉ giữ giao diện/túi đồ hiện có.
   state.applyServerCharacter(profile);

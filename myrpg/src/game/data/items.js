@@ -89,9 +89,39 @@ for (const spec of gear) for (let i=0;i<5;i++) {
 // Giữ id cũ để không mất trượng trong bản lưu trước.
 ITEMS.wood_staff={name:'Trượng tập sự',frame:129,type:'weapon',category:'weapon',level:1,price:28,maxStack:1,attack:3,description:'+3 công. Có thể trang bị ở mọi cấp nhân vật.'};
 Object.assign(ITEMS, OFFHAND_ITEMS, TU_LINH_WEAPONS, TU_LINH_EQUIPMENT, HUNT_EVENT_ITEMS);
+export const TOME_ITEMS = {
+    tome_wind:{name:'Cổ Tịch Phong Hành',icon:'wind',moveSpeed:0.05,description:'+5% tốc độ di chuyển mỗi cấp.'},
+    tome_chain:{name:'Cổ Tịch Liên Kích',icon:'chain',basicCooldownReduction:0.04,description:'Giảm 4% hồi đòn thường mỗi cấp.'},
+    tome_critical:{name:'Cổ Tịch Bạo Kích',icon:'critical',criticalChance:0.03,criticalMultiplier:1.5,description:'+3% tỉ lệ chí mạng đòn thường mỗi cấp. Chí mạng gây 150% sát thương.'},
+    tome_echo:{name:'Cổ Tịch Toàn Ảnh',icon:'echo',echoDamage:0.25,echoRadius:95,description:'Đòn thường lan trong bán kính 95 quanh mục tiêu, gây 25% sát thương.'},
+    tome_range:{name:'Cổ Tịch Viễn Kích',icon:'range',attackRange:20,description:'+20 tầm đánh thường mỗi cấp.'},
+    tome_aura:{name:'Cổ Tịch Linh Vực',icon:'aura',auraDamage:0.20,auraRadius:120,description:'Đòn thường tạo vùng quanh nhân vật, bán kính 120, gây 20% sát thương.'}
+};
+for (const [id,tome] of Object.entries(TOME_ITEMS)) {
+    ITEMS[id]={...tome,type:'tome',category:'tome',level:1,maxStack:1};
+}
 export const SHOP_ITEMS=Object.keys(ITEMS)
-    .filter(id => !['monster-drop','upgrade','event-weapon','event-gear'].includes(ITEMS[id].category) && !ITEMS[id].eventId)
+    .filter(id => !['monster-drop','upgrade','event-weapon','event-gear','tome'].includes(ITEMS[id].category) && !ITEMS[id].eventId)
     .sort((a,b)=>ITEMS[a].level-ITEMS[b].level || ITEMS[a].price-ITEMS[b].price);
+
+const tomeColors={
+    wind:['#4dc8ad','#d4fff0'],chain:['#658bdf','#ecf2ff'],critical:['#db6574','#ffe5e8'],
+    echo:['#bd7be5','#faeaff'],range:['#e8aa51','#fff0c9'],aura:['#55a9d8','#e3f7ff']
+};
+const tomeMarks={
+    wind:'<path d="M3 5C6 2 9 8 13 4M2 9C6 6 9 12 14 8M4 13C7 10 9 14 12 11" fill="none" stroke="#fff4cc" stroke-width="1.4"/>',
+    chain:'<path d="M4 4L7 7M9 9L12 12M9 4L12 7M4 9L7 12" stroke="#fff3bd" stroke-width="2"/><path d="M6 3L9 6M7 10L10 13M10 3L13 6M3 10L6 13" stroke="#26364f" stroke-width=".8"/>',
+    critical:'<path d="M8 2L9.5 6.5L14 8L9.5 9.5L8 14L6.5 9.5L2 8L6.5 6.5Z" fill="#fff0b5"/><path d="M12 2V5M10.5 3.5H13.5" stroke="#fff" stroke-width=".8"/>',
+    echo:'<path d="M8 3L13 8L8 13L3 8Z" fill="#fff0bb"/><path d="M1 5C3 5 3 11 1 11M15 5C13 5 13 11 15 11" fill="none" stroke="#f8eaff" stroke-width="1"/>',
+    range:'<path d="M2 8L12 3V6L15 8L12 10V13Z" fill="#fff0bb"/><path d="M3 8H11" stroke="#7b4a2e" stroke-width="1"/>',
+    aura:'<circle cx="8" cy="8" r="2" fill="#fff2b7"/><circle cx="8" cy="8" r="5" fill="none" stroke="#e8faff" stroke-width="1.2"/><circle cx="8" cy="8" r="7" fill="none" stroke="#bceeff" stroke-width=".7"/>'
+};
+export function tomeIcon(id,size=40) {
+    const tome= TOME_ITEMS[id];
+    if(!tome)return '';
+    const [cover,mark]=tomeColors[tome.icon];
+    return `<svg aria-hidden="true" class="rpg-tome-icon" width="${size}" height="${size}" viewBox="0 0 16 16" style="image-rendering:pixelated;flex-shrink:0" shape-rendering="crispEdges"><path d="M2 1H12L15 3V14H4L2 12Z" fill="#263d37" stroke="#172a25" stroke-width=".7"/><path d="M3 2H11V13H3Z" fill="${cover}" stroke="#f0d998" stroke-width=".7"/><path d="M11 2L14 4V13H11Z" fill="${mark}" opacity=".72"/><path d="M4.5 3.5H9.5V11.5H4.5Z" fill="#17342d" opacity=".55"/>${tomeMarks[tome.icon]}<path d="M2 12H4V14H2Z" fill="#d9bd79"/></svg>`;
+}
 
 // Biểu tượng pixel cho các loại giáp chưa có ảnh riêng trong Tiny Dungeon.
 export function gearIcon(kind, level=1, size=40) {

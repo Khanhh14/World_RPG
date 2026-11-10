@@ -12,6 +12,7 @@ import {
     ITEMS,
     EQUIPMENT_SLOTS,
     BAG_CAPACITY,
+    TOME_ITEMS,
     MONSTER_MATERIALS,
     monsterMaterialsForMap,
     monsterExchangeForMap,
@@ -121,6 +122,7 @@ export class RPGState {
             activityRewardReceipts: [],
             mushroomHarvest: {},
             foodBuff: null,
+            activeTomes: [],
 
             inventory: {
                 health_potion: 5,
@@ -191,6 +193,11 @@ export class RPGState {
         // Chỉ số bộ sưu tập luôn có hiệu lực, không phụ thuộc cánh đang hiển thị.
         return (this.data.wings?.collection ?? []).reduce((total, owned) =>
             total + (wingStats(owned.id, owned.level)[stat] || 0) + (this.data.wings?.enchantments?.[owned.id]?.[stat] || 0), 0);
+    }
+
+    tomeBonus(stat) {
+        return (this.data.activeTomes ?? []).reduce((total,id) =>
+            total + (TOME_ITEMS[id]?.[stat] || 0), 0);
     }
 
     get maxHP() {
@@ -292,6 +299,9 @@ export class RPGState {
                     0
                 );
             }
+            this.data.activeTomes = Array.isArray(saved.activeTomes)
+                ? [...new Set(saved.activeTomes.filter(id => TOME_ITEMS[id] && this.data.inventory[id] > 0))]
+                : [];
 
             for (const [slot] of EQUIPMENT_SLOTS) {
                 this.data.enhancements[slot] = enhancementLevel(saved.enhancements?.[slot]);
@@ -622,11 +632,13 @@ export class RPGState {
     applyServerItems(items) {
         const inventory = Object.fromEntries(Object.keys(ITEMS).map(id => [id, 0]));
         const equipment = Object.fromEntries(EQUIPMENT_SLOTS.map(([slot]) => [slot, null]));
+        const activeTomes = [];
         for (const item of items) {
             if (!ITEMS[item.id] || !Number.isSafeInteger(item.quantity) || item.quantity < 1) continue;
             inventory[item.id] += item.quantity;
             const slot = item.slot || item.type;
             if (item.location === 'equipment' && Object.hasOwn(equipment, slot)) equipment[slot] = item.id;
+            if (item.location === 'equipment' && ITEMS[item.id]?.type === 'tome') activeTomes.push(item.id);
         }
         // Vật phẩm rơi và đá cường hóa dùng bản lưu riêng của nhân vật.
         for (const material of MONSTER_MATERIALS) inventory[material.id] = this.data.inventory[material.id] ?? 0;
@@ -634,6 +646,7 @@ export class RPGState {
         inventory.wing_essence = this.data.inventory.wing_essence ?? 0;
         this.data.inventory = inventory;
         for (const [slot] of EQUIPMENT_SLOTS) this.data.equipment[slot] = equipment[slot];
+        this.data.activeTomes = [...new Set(activeTomes)];
     }
 
     async recoverEquipmentAction() {
@@ -854,6 +867,11 @@ export class RPGState {
             if (item.category === 'mp' && this.data.mp >= this.maxMP) return 'Năng lượng đã đầy, bình chưa bị sử dụng.';
             if (item.category === 'food' && !FOOD_RECIPES.some(recipe => recipe.id === id)) return 'Món ăn này không hợp lệ.';
             return await this.useConsumable(id);
+        }
+
+        if (item.type === 'tome') {
+            const equipped = this.data.activeTomes.includes(id);
+            return await this.changeEquipment(id, equipped ? 'unequip' : 'equip');
         }
 
         if (!EQUIPMENT_SLOTS.some(([slot]) => slot === item.type)) {
