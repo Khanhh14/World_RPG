@@ -189,8 +189,8 @@ function createInventoryService(db) {
   async function ensureTomeDefinitions(c) {
     for (const [id, name, icon, description] of tomes) {
       await c.execute(
-        'INSERT INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE max_stack = VALUES(max_stack)',
-        [id, name, 'tome', 1, 0, 99, 0, icon, description, 0],
+        "INSERT INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES (?, ?, 'material', 1, 0, 99, 0, ?, ?, 0) ON DUPLICATE KEY UPDATE type = 'material', max_stack = VALUES(max_stack)",
+        [id, name, icon, description],
       );
     }
   }
@@ -437,8 +437,9 @@ function createInventoryService(db) {
         }
 
         const items = await characterItems(c, character.id);
-        const definition = items.find(item => item.id === input.itemId)?.type;
-        if (!equipmentSlots.has(definition)) throw fail(400, 'Vật phẩm này không phải trang bị hợp lệ.');
+        const isTome = tomes.some(([id]) => id === input.itemId);
+        const definition = isTome ? 'tome' : items.find(item => item.id === input.itemId)?.type;
+        if (!isTome && !equipmentSlots.has(definition)) throw fail(400, 'Vật phẩm này không phải trang bị hợp lệ.');
         const equipped = items.find(item => item.location === 'equipment'
           && (definition === 'tome' ? item.id === input.itemId : item.slot === definition));
         const equipmentKey = definition === 'tome' ? `tome:${input.itemId}` : definition;
