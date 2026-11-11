@@ -14,7 +14,7 @@ export const yunaCity={
   {id:'yuna-city-scholar',name:'Học giả Sora',role:'skill-merchant',frame:84,col:40.5,row:14,lines:['Ta lưu giữ bí thuật của Ma, Thần và Nhân. Mỗi hệ có ba kỹ năng; hãy chọn sách phù hợp với lối chiến đấu của bạn.']},
   {id:'yuna-city-smith',name:'Thợ rèn Doran',frame:88,col:9.5,row:34,lines:['Mở ba lô và nhấn Nâng cấp cạnh ô trang bị.','Cấp cường hóa vẫn giữ khi thay món mới.']},
   {id:'yuna-city-herbalist',name:'Dược sư Lina',frame:85,col:25.5,row:34,lines:['Hãy mang theo bình máu và mana khi thám hiểm.','Bạn có thể chọn cấp bình dùng cho các ô nhanh.']},
-  {id:'yuna-city-citizen',name:'Cư dân Miko',frame:87,col:40.5,row:34,lines:['Quảng trường là nơi nghỉ chân của các lữ khách.','Vũ sư Airi ở Ngoại ô YuNa bán đá nâng cấp cánh.']}
+  {id:'yuna-city-citizen',name:'Cư dân Miko',role:'tome-merchant',frame:87,col:40.5,row:34,lines:['Ta bán Rương Cổ Tịch, mở rương nhận ngẫu nhiên một quyển.','Mỗi rương có giá 2.000 vàng.']}
  ],
  portals:[{x:2496,feetY:1008,label:'Về Ngoại ô YuNa',target:'YunaOutskirts',spawn:{x:264,y:888}}]
 };

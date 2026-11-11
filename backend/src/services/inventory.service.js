@@ -31,6 +31,7 @@ const potionValue = id => {
   return { kind: match[1], amount: values[level - 1] };
 };
 const equipmentSlots = new Set(['weapon', 'shield', 'armor', 'helmet', 'boots', 'gloves', 'tome']);
+const tomeChestId = 'tome_chest';
 const tomes = [
   ['tome_wind', 'Cổ Tịch Phong Hành', 'wind', '+5% tốc độ di chuyển mỗi cấp.'],
   ['tome_chain', 'Cổ Tịch Liên Kích', 'chain', 'Giảm 4% hồi đòn thường mỗi cấp.'],
@@ -188,8 +189,8 @@ function createInventoryService(db) {
   async function ensureTomeDefinitions(c) {
     for (const [id, name, icon, description] of tomes) {
       await c.execute(
-        'INSERT IGNORE INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [id, name, 'tome', 1, 0, 1, 0, icon, description, 0],
+        'INSERT INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE max_stack = VALUES(max_stack)',
+        [id, name, 'tome', 1, 0, 99, 0, icon, description, 0],
       );
     }
   }
@@ -229,9 +230,10 @@ function createInventoryService(db) {
     const potion = potionValue(input.itemId);
     const itemId = legacyFoodIds[input.itemId] || input.itemId;
     const food = foodById.get(itemId);
-    if (!potion && !food) throw fail(400, 'Vật phẩm này không thể sử dụng.');
+    const tomeChest = itemId === tomeChestId;
+    if (!potion && !food && !tomeChest) throw fail(400, 'Vật phẩm này không thể sử dụng.');
     if (potion && !Object.hasOwn(shopCatalog, input.itemId)) throw fail(400, 'Bình thuốc không tồn tại.');
-    return { potion, food, itemId };
+    return { potion, food, tomeChest, itemId };
   }
 
   return {
@@ -247,9 +249,10 @@ function createInventoryService(db) {
       });
     },
     async use(userId, input = {}) {
-      const { potion, food, itemId } = validateRequest(input);
+      const { potion, food, tomeChest, itemId } = validateRequest(input);
       const context=validateVitalContext(input.context);
       return transaction(userId, async (c, character) => {
+        if (tomeChest) await ensureTomeDefinitions(c);
         const [receipts] = await c.execute(
           'SELECT action_type, payload FROM character_economy_events WHERE character_id = ? AND request_id = ?',
           [character.id, input.requestId],
@@ -265,7 +268,9 @@ function createInventoryService(db) {
             requestId: input.requestId, itemId: input.itemId,
             quantity: rows.reduce((sum, row) => sum + Number(row.quantity), 0),
             hp: vitals.hp, mana: vitals.mana, runtimeVersion: vitals.runtimeVersion,
-            foodBuff: payload.foodBuff || null, replayed: true,
+            foodBuff: payload.foodBuff || null, rewardId: payload.rewardId || null,
+            ...(tomeChest ? { items: inventorySnapshot(await allItemRows(c, character.id)) } : {}),
+            replayed: true,
           };
         }
 
@@ -276,8 +281,15 @@ function createInventoryService(db) {
         const quantity = await consumeOne(c, character.id, rows);
         const vitals = await currentVitals(c, character, context);
         let hp = vitals.hp, mana = vitals.mana, foodBuff = null;
+        let rewardId = null;
           if (potion?.kind === 'health') hp = Math.max(hp,Math.min(vitals.maxHp, hp + potion.amount));
         if (potion?.kind === 'mana') mana = Math.max(mana,Math.min(vitals.maxMana, mana + potion.amount));
+        if (tomeChest) {
+          rewardId = tomes[Math.floor(Math.random() * tomes.length)][0];
+          const [tomeDefinitions] = await c.execute('SELECT id, max_stack FROM item_definitions WHERE id = ?', [rewardId]);
+          if (!tomeDefinitions.length) throw fail(503, 'Thiếu định nghĩa Cổ Tịch trong item_definitions.');
+          await addOne(c, character.id, await allItemRows(c, character.id), rewardId, tomeDefinitions[0]);
+        }
         if (food) {
           const now = Date.now();
           foodBuff = { foodId: food.id, expiresAt: now + 180000, nextTickAt: now + 1000 };
@@ -285,9 +297,13 @@ function createInventoryService(db) {
         const runtimeVersion = await saveVitals(c, character, vitals, hp, mana);
         await c.execute(
           'INSERT INTO character_economy_events (character_id, request_id, action_type, payload) VALUES (?, ?, ?, ?)',
-          [character.id, input.requestId, 'inventory_use', JSON.stringify({ itemId: input.itemId, foodBuff })],
+          [character.id, input.requestId, 'inventory_use', JSON.stringify({ itemId: input.itemId, foodBuff, rewardId })],
         );
-        return { requestId: input.requestId, itemId: input.itemId, quantity, hp, mana, runtimeVersion, foodBuff, replayed: false };
+        return {
+          requestId: input.requestId, itemId: input.itemId, quantity, hp, mana, runtimeVersion, foodBuff, rewardId,
+          ...(tomeChest ? { items: inventorySnapshot(await allItemRows(c, character.id)) } : {}),
+          replayed: false,
+        };
       });
     },
     async exchangeFood(userId, input = {}) {

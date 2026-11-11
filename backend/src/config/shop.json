@@ -218,6 +218,10 @@
     "price": 200,
     "maxStack": 1
   },
+  "tome_chest": {
+    "price": 2000,
+    "maxStack": 99
+  },
   "magic_orb": {
     "price": 40,
     "maxStack": 1

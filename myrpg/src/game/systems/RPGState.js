@@ -440,7 +440,8 @@ export class RPGState {
 
         const usedSlots = Object.entries(this.data.inventory).reduce((sum,[itemId,number])=>{
             if(!ITEMS[itemId])return sum;
-            const bag=Math.max(0,number-Object.values(this.data.equipment).filter(id=>id===itemId).length);
+            const worn=Object.values(this.data.equipment).filter(id=>id===itemId).length+(this.data.activeTomes?.includes(itemId)?1:0);
+            const bag=Math.max(0,number-worn);
             return sum+Math.ceil(bag/(ITEMS[itemId].maxStack||99));
         },0);
 
@@ -581,25 +582,31 @@ export class RPGState {
             };
             const applyResult = result => {
                 if (result.itemId !== pending.itemId) throw new Error('Máy chủ trả về một giao dịch vật phẩm không khớp.');
+                if (Array.isArray(result.items)) this.applyServerItems(result.items);
                 if (Number.isSafeInteger(result.runtimeVersion)) {
                     this.serverRuntimeVersion = result.runtimeVersion;
                     const saves = this.scene?.registry?.get('runtime-save');
                     if (saves?.current) saves.current.version = result.runtimeVersion;
                 }
-                if (result.quantity > 0) this.data.inventory[pending.itemId] = result.quantity;
-                else delete this.data.inventory[pending.itemId];
+                if (!Array.isArray(result.items)) {
+                    if (result.quantity > 0) this.data.inventory[pending.itemId] = result.quantity;
+                    else delete this.data.inventory[pending.itemId];
+                }
                 this.data.hp = this.data.hp<=0?0:Math.max(0,Math.min(this.maxHP,Number(result.hp)+this.data.hp-beforeHP));
                 this.data.mp = Math.max(0,Math.min(this.maxMP,Number(result.mana)+this.data.mp-beforeMP));
                 this.data.foodBuff = result.foodBuff || this.data.foodBuff;
                 this.data.pendingItemUse = null;
+                rewardId = result.rewardId || null;
                 this.changed();
             };
+            let rewardId = null;
             const runtimeSave = this.scene?.registry?.get('runtime-save');
             if (runtimeSave?.withExternalUpdate) {
                 await runtimeSave.withExternalUpdate(operation, applyResult);
             } else {
                 applyResult(await operation());
             }
+            if (rewardId && ITEMS[rewardId]) return `Mở rương nhận được ${ITEMS[rewardId].name}.`;
             return `Đã sử dụng ${ITEMS[pending.itemId]?.name?.toLowerCase() || pending.itemId}.`;
         } catch (error) {
             if ([400, 403, 409].includes(error.status)) {

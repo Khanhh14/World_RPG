@@ -97,11 +97,12 @@ export const TOME_ITEMS = {
     tome_range:{name:'Cổ Tịch Viễn Kích',icon:'range',attackRange:20,description:'+20 tầm đánh thường mỗi cấp.'},
     tome_aura:{name:'Cổ Tịch Linh Vực',icon:'aura',auraDamage:0.20,auraRadius:120,description:'Đòn thường tạo vùng quanh nhân vật, bán kính 120, gây 20% sát thương.'}
 };
+ITEMS.tome_chest={name:'Rương Cổ Tịch',emoji:'📦',type:'consumable',category:'tome-chest',level:1,price:2000,maxStack:99,description:'Mở rương để nhận ngẫu nhiên 1 trong 6 Cổ Tịch.'};
 for (const [id,tome] of Object.entries(TOME_ITEMS)) {
-    ITEMS[id]={...tome,type:'tome',category:'tome',level:1,maxStack:1};
+    ITEMS[id]={...tome,type:'tome',category:'tome',level:1,maxStack:99};
 }
 export const SHOP_ITEMS=Object.keys(ITEMS)
-    .filter(id => !['monster-drop','upgrade','event-weapon','event-gear','tome'].includes(ITEMS[id].category) && !ITEMS[id].eventId)
+    .filter(id => !['monster-drop','upgrade','event-weapon','event-gear','tome','tome-chest'].includes(ITEMS[id].category) && !ITEMS[id].eventId)
     .sort((a,b)=>ITEMS[a].level-ITEMS[b].level || ITEMS[a].price-ITEMS[b].price);
 
 const tomeColors={

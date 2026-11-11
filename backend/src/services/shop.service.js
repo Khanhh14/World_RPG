@@ -9,6 +9,10 @@ function createShopService(db) {
       'INSERT IGNORE INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [itemId,special.name,'shield',special.level,special.price,1,special.attack,special.icon,special.description,1]
     );
+    if(itemId==='tome_chest') await c.execute(
+      'INSERT IGNORE INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [itemId,'Rương Cổ Tịch','consumable',1,2000,99,0,'tome_chest','Mở rương để nhận ngẫu nhiên 1 trong 6 Cổ Tịch.',0]
+    );
     const [definitions] = await c.execute('SELECT id, max_stack FROM item_definitions WHERE id = ?', [itemId]);
     const maxStack = Number(definitions[0]?.max_stack);
     if (!definitions.length || !Number.isSafeInteger(maxStack) || maxStack < 1) {

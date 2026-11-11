@@ -69,6 +69,10 @@ export class DialogueSystem {
             this.player.stop(); npc.facePlayer(this.player);
             this.scene.hud?.openWingShop(npc); return;
         }
+        if (npc?.role === 'tome-merchant') {
+            this.player.stop(); npc.facePlayer(this.player);
+            this.scene.hud?.openTomeShop(npc); return;
+        }
         if (npc?.role === 'monster-material-exchange') {
             this.player.stop(); npc.facePlayer(this.player);
             this.scene.hud?.openExchange(npc); return;

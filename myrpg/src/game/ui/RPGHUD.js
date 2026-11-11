@@ -4,8 +4,7 @@ import {resalePrice} from '../data/resale.js';
 import { offhandTexture } from '../world/OffhandTextures.js';
 import { MAX_ENHANCEMENT, enhancedItem } from '../data/enhancement.js';
 import { renderSkillsPanel, renderSkillShop, renderSkillTrainingShop } from './SkillsPanel.js';
-import { renderWingsPanel, renderWingShop, wingEquipmentCard } from './WingsPanel.js';
-import { drawWingPixels } from '../world/WingTextures.js';
+import { renderWingsPanel, renderWingShop } from './WingsPanel.js';
 import { BAG_CAPACITY, canShopItem, EQUIPMENT_SLOTS, SHOP_ITEMS, TOME_ITEMS, monsterMaterialsForMap, monsterExchangeForMap, FOOD_RECIPES, gearIcon, tomeIcon } from '../data/items.js';
 import { ITEMS } from '../systems/RPGState.js';
 import { renderQuestJournal } from './QuestJournal.js';
@@ -46,7 +45,7 @@ export class RPGHUD {
             document.head.appendChild(link);
         }
         // Đổi phiên bản để trình duyệt tải CSS mới sau khi thay file.
-        const href = stylesheet + '?v=bag-resale-1';
+        const href = stylesheet + '?v=tomes-tab-1';
         if (link.getAttribute('href') !== href) link.setAttribute('href', href);
         this.root = document.createElement('div'); this.root.className = 'rpg-ui';
         this.root.innerHTML = '<div class="rpg-overview"></div><nav class="rpg-nav" aria-label="Menu nhân vật"></nav><div class="rpg-overlay" hidden><section class="rpg-modal" role="dialog" aria-modal="true" aria-labelledby="rpg-modal-title"></section></div><div class="rpg-toast" role="status" hidden></div>';
@@ -75,6 +74,11 @@ export class RPGHUD {
             if (action === 'wing-select') { this.wingSelected = id; this.renderModal(); }
             if (action === 'wing-retry') await this.scene.wingsSystem?.load();
             if (action === 'wing-buy' && this.wingNPC && this.scene.dialogue?.nearest() === this.wingNPC) await this.scene.wingsSystem?.perform('buy', { itemId: id });
+            if (action === 'tome-chest-buy' && this.tomeNPC && this.scene.dialogue?.nearest() === this.tomeNPC) {
+                const result = await this.state.buyItem('tome_chest');
+                if (this.destroyed) return;
+                this.toast(result.message);
+            }
             if (action === 'wing-equip') await this.scene.wingsSystem?.perform('equip', { wingId: id });
             if (action === 'wing-unequip') await this.scene.wingsSystem?.perform('equip', { wingId: null });
             if(action==='wing-enchant')await this.scene.wingsSystem?.perform('enchant',{wingId:id});
@@ -130,7 +134,7 @@ export class RPGHUD {
         this.onKey = event => {
             if (this.destroyed || event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
             const key = event.key.toLowerCase();
-            const tabs = { b: 'inventory', j: 'quests', c: 'skills' };
+            const tabs = { b: 'inventory', j: 'quests', c: 'skills', t: 'tomes' };
             if (tabs[key]) { event.preventDefault(); this.toggle(tabs[key]); }
             else if (key === 'escape' && this.tab) { event.preventDefault(); this.close(); }
             else if (key === 'tab' && this.tab) {
@@ -212,6 +216,11 @@ export class RPGHUD {
         this.wingNPC = npc; this.toggle('wing-shop');
         void this.scene.wingsSystem?.load();
     }
+    openTomeShop(npc) {
+        if (npc?.role !== 'tome-merchant' || this.scene.dialogue?.nearest() !== npc) return;
+        this.tomeNPC = npc;
+        this.toggle('tome-shop');
+    }
     openExchange(npc) {
         if (npc?.role !== 'monster-material-exchange' || this.scene.dialogue?.nearest() !== npc) return;
         this.exchangeNPC = npc;
@@ -221,6 +230,7 @@ export class RPGHUD {
         if (tab === 'skill-training-shop' && (!this.trainingNPC || this.scene.dialogue?.nearest() !== this.trainingNPC)) return;
         if (tab === 'skill-shop' && (!this.skillNPC || this.scene.dialogue?.nearest() !== this.skillNPC)) return;
         if (tab === 'wing-shop' && (!this.wingNPC || this.scene.dialogue?.nearest() !== this.wingNPC)) return;
+        if (tab === 'tome-shop' && (!this.tomeNPC || this.scene.dialogue?.nearest() !== this.tomeNPC)) return;
         if (tab === 'shop' && (!this.shopNPC || this.scene.dialogue?.nearest() !== this.shopNPC)) return;
         if (tab === 'exchange' && (!this.exchangeNPC || this.scene.dialogue?.nearest() !== this.exchangeNPC)) return;
         if (tab === 'food-exchange' && (!this.foodNPC || this.scene.dialogue?.nearest() !== this.foodNPC)) return;
@@ -239,7 +249,7 @@ export class RPGHUD {
     }
     close() {
         if (!this.tab) return;
-        this.previewId = null; this.tab = null; this.shopNPC = null; this.exchangeNPC = null; this.foodNPC = null; this.wingNPC = null; this.skillNPC = null; this.trainingNPC = null; this.overlay.hidden = true;
+        this.previewId = null; this.tab = null; this.shopNPC = null; this.exchangeNPC = null; this.foodNPC = null; this.wingNPC = null; this.tomeNPC = null; this.skillNPC = null; this.trainingNPC = null; this.overlay.hidden = true;
         this.scene.input.keyboard.resetKeys();
         this.scene.input.keyboard.enabled = this.keyboardWasEnabled;
         if (!this.scene.dialogue?.isOpen) this.scene.dialogueUI?.actionBar?.setVisible(true);
@@ -252,10 +262,11 @@ export class RPGHUD {
         const focusAction = focus?.dataset.action, focusId = focus?.dataset.id;
         const names = this.tab === 'quests'
             ? { quests: 'Nhật ký nhiệm vụ' }
-            : { inventory: 'Túi đồ & Trang bị', potential: 'Tiềm Năng', wings: 'Nâng cấp cánh', skills: 'Kỹ năng' };
+            : { inventory: 'Túi đồ & Trang bị', potential: 'Tiềm Năng', wings: 'Nâng cấp cánh', skills: 'Kỹ năng', tomes: 'Cổ Tịch' };
         if (this.trainingNPC && this.tab !== 'quests') names['skill-training-shop']='Bí thuật Yuna';
         if (this.skillNPC && this.tab !== 'quests') names['skill-shop'] = 'Sách kỹ năng';
         if (this.wingNPC && this.tab !== 'quests') names['wing-shop'] = 'Đá nâng cấp cánh';
+        if (this.tomeNPC && this.tab !== 'quests') names['tome-shop'] = 'Rương Cổ Tịch';
         if (this.shopNPC && this.tab !== 'quests') names.shop = 'Cửa hàng';
         if (this.exchangeNPC && this.tab === 'exchange') names.exchange = 'Đổi vật phẩm quái';
         if (this.foodNPC && this.tab === 'food-exchange') names['food-exchange'] = 'Đổi món ăn';
@@ -263,8 +274,9 @@ export class RPGHUD {
         this.modal.classList.toggle('rpg-skills-modal', this.tab === 'skills');
         this.modal.classList.toggle('rpg-skill-shop-modal', ['skill-shop','skill-training-shop'].includes(this.tab));
         this.modal.classList.toggle('rpg-wing-modal', this.tab === 'wings');
+        this.modal.classList.toggle('rpg-tomes-modal', this.tab === 'tomes');
         this.modal.classList.toggle('rpg-wing-shop-modal', this.tab === 'wing-shop');
-        this.modal.classList.toggle('rpg-shop-modal', this.tab === 'shop');
+        this.modal.classList.toggle('rpg-shop-modal', ['shop','tome-shop'].includes(this.tab));
         this.modal.classList.toggle('rpg-inventory-modal', this.tab === 'inventory');
         this.modal.classList.toggle('rpg-potential-modal', this.tab === 'potential');
         this.modal.classList.toggle('rpg-quests-modal', this.tab === 'quests');
@@ -283,7 +295,9 @@ export class RPGHUD {
         if (this.tab === 'skill-training-shop') return renderSkillTrainingShop(this);
         if (this.tab === 'skill-shop') return renderSkillShop(this);
         if (this.tab === 'wings') return renderWingsPanel(this);
+        if (this.tab === 'tomes') return this.tomesContent();
         if (this.tab === 'wing-shop') return renderWingShop(this);
+        if (this.tab === 'tome-shop') return this.tomeShopContent();
         if (this.tab === 'shop') return this.shopContent();
         if (this.tab === 'exchange') return this.exchangeContent();
         if (this.tab === 'food-exchange') return this.foodExchangeContent();
@@ -303,7 +317,7 @@ export class RPGHUD {
     }
     inventoryContent() {
         const s = this.state, d = s.data;
-        const ids = Object.keys(ITEMS).filter(id => this.bagQuantity(id) > 0);
+        const ids = Object.keys(ITEMS).filter(id => ITEMS[id]?.type !== 'tome' && this.bagQuantity(id) > 0);
         if (!ids.includes(this.selected)) this.selected = ids[0] ?? null;
         if (this.previewId && !ids.includes(this.previewId)) this.previewId = null;
         const item = ITEMS[this.selected];
@@ -325,15 +339,12 @@ export class RPGHUD {
         // Bảy cột, bốn hàng: thêm một cột vào phần trống bên phải.
         // Tự mở thêm hàng khi sở hữu nhiều loại vật phẩm hơn.
         const entries=ids.flatMap(id=>Array.from({length:Math.ceil(this.bagQuantity(id)/(ITEMS[id].maxStack||99))},(_,i)=>({id,quantity:Math.min(ITEMS[id].maxStack||99,this.bagQuantity(id)-i*(ITEMS[id].maxStack||99))})));
+        const occupiedSlots = entries.length + Object.keys(TOME_ITEMS).reduce((total, id) => total + Math.ceil(this.bagQuantity(id) / (ITEMS[id].maxStack || 99)), 0);
         const capacity = Math.max(BAG_CAPACITY, Math.ceil(entries.length / 7) * 7);
         const cells = Array.from({ length:capacity }, (_, i) => {
             const entry=entries[i],id=entry?.id,value=ITEMS[id];
             if (!value) return '<div class="rpg-slot empty" aria-hidden="true"></div>';
             return `<button type="button" class="rpg-slot ${id === this.selected ? 'selected' : ''}" data-action="select" data-id="${escape(id)}" aria-label="${escape(value.name)}, số lượng ${entry.quantity}" aria-pressed="${id === this.selected}">${itemIcon(value,36)}<span class="rpg-qty">${entry.quantity}</span></button>`;
-        }).join('');
-        const tomes = Object.keys(TOME_ITEMS).map(id => {
-            const tome=TOME_ITEMS[id],active=d.activeTomes?.includes(id),available=this.bagQuantity(id)>0;
-            return `<article class="rpg-equipment-slot rpg-tome-card ${active?'equipped':''}"><div class="rpg-equipment-header">${tomeIcon(id,44)}<div><div class="rpg-equipment-title">Cổ Tịch</div><div class="rpg-equipment-name">${escape(tome.name)}</div></div></div><p class="rpg-subtle">${escape(tome.description)}</p><div class="rpg-equipment-footer"><span class="rpg-tier">${active?'ĐANG KÍCH HOẠT':`Trong balo: ${this.bagQuantity(id)}`}</span><button type="button" class="${active?'':'rpg-primary'}" data-action="use" data-id="${id}" ${d.pendingEquipmentAction||(!active&&!available)?'disabled':''}>${active?'Tháo':available?'Kích hoạt':'Chưa có'}</button></div></article>`;
         }).join('');
         return `<div class="rpg-bag-layout">
             <section class="rpg-equipment-panel">
@@ -345,11 +356,10 @@ export class RPGHUD {
                     <div class="rpg-model-controls"><button type="button" data-action="preview-turn">Đổi hướng</button>${previewItem ? '<button type="button" data-action="preview-reset">Hủy thử</button>' : ''}</div>
                 </div>
                 ${previewItem ? `<p class="rpg-subtle">Đang thử: ${escape(previewItem.name)}. Bấm Trang bị để mặc.</p>` : ''}
-                <div class="rpg-equipment-grid">${gear}${wingEquipmentCard(this.state)}</div>
-                <div class="rpg-section-heading rpg-tomes-heading"><h3>Cổ Tịch</h3><span>${d.activeTomes?.length??0} đang kích hoạt · Có thể dùng nhiều quyển cùng lúc</span></div><div class="rpg-equipment-grid rpg-tomes-grid">${tomes}</div>
+                <div class="rpg-equipment-grid">${gear}</div>
             </section>
             <div class="rpg-bag-column">
-            <section class="rpg-bag-panel"><div class="rpg-section-heading"><h3>Ba lô</h3><span>${entries.length} / ${BAG_CAPACITY} ô</span></div>
+            <section class="rpg-bag-panel"><div class="rpg-section-heading"><h3>Ba lô</h3><span>${occupiedSlots} / ${BAG_CAPACITY} ô</span></div>
                 <div class="rpg-grid">${cells}</div>
                 ${item ? `<article class="rpg-item-detail"><header>${itemIcon(item,48)}<div><h4>${escape(item.name)}</h4><div class="rpg-tier">${item.category === 'fishing' ? 'CÂU CÁ' : `CẤP ${item.level ?? 1}`} · Có ${this.bagQuantity(this.selected)}</div></div></header>
                     <p>${escape(item.description ?? '')}</p>${this.gearStats(item) ? `<p class="rpg-tier">${this.gearStats(item)}</p>` : ''}
@@ -359,6 +369,25 @@ export class RPGHUD {
             ${this.currencyContent()}
             </div>
         </div><div class="rpg-bag-footer"><span></span></div>`;
+    }
+    tomesContent() {
+        const d = this.state.data;
+        const tomes = Object.keys(TOME_ITEMS).map(id => {
+            const tome = TOME_ITEMS[id], active = d.activeTomes?.includes(id), available = this.bagQuantity(id) > 0;
+            const owned = Number(d.inventory[id]) || 0;
+            return `<article class="rpg-equipment-slot rpg-tome-card ${active ? 'equipped' : ''}"><div class="rpg-equipment-header">${tomeIcon(id, 44)}<div><div class="rpg-equipment-title">Cổ Tịch</div><div class="rpg-equipment-name">${escape(tome.name)}</div></div></div><p class="rpg-subtle">${escape(tome.description)}</p><div class="rpg-equipment-footer"><span class="rpg-tier">${active ? 'ĐANG KÍCH HOẠT' : `Trong túi: ${this.bagQuantity(id)}`}${owned > 1 ? ` · Sở hữu: ${owned}` : ''}</span><button type="button" class="${active ? '' : 'rpg-primary'}" data-action="use" data-id="${id}" ${d.pendingEquipmentAction || (!active && !available) ? 'disabled' : ''}>${active ? 'Tháo' : available ? 'Kích hoạt' : 'Chưa có'}</button></div></article>`;
+        }).join('');
+        const chestCount = Number(d.inventory.tome_chest) || 0;
+        return `<section class="rpg-equipment-panel"><div class="rpg-section-heading"><h3>Cổ Tịch</h3><span>${d.activeTomes?.length ?? 0} đang kích hoạt · Có thể dùng nhiều quyển cùng lúc</span></div>
+            ${chestCount ? `<div class="rpg-tome-chest"><div>${itemIcon(ITEMS.tome_chest, 40)}<span>Rương Cổ Tịch · Có ${chestCount}</span></div><button type="button" class="rpg-primary" data-action="use" data-id="tome_chest" ${d.pendingItemUse || this.state.usingItem ? 'disabled' : ''}>Mở rương</button></div>` : ''}
+            <div class="rpg-equipment-grid rpg-tomes-grid">${tomes}</div></section>`;
+    }
+    tomeShopContent() {
+        const item = ITEMS.tome_chest, check = this.state.canBuy('tome_chest');
+        return `<div class="rpg-shop-gold"><strong>${escape(this.tomeNPC?.name ?? 'Cư dân Miko')}</strong><span>● ${this.state.data.gold.toLocaleString('vi-VN')} vàng</span></div>
+            <div class="rpg-shop-grid"><article class="rpg-shop-item"><header>${itemIcon(item, 48)}<div><h3>${escape(item.name)}</h3><span class="rpg-tier">RƯƠNG BÍ ẨN</span></div></header>
+                <p>${escape(item.description)} Có thể nhận trùng Cổ Tịch.</p><div class="rpg-shop-buy"><strong>● ${item.price.toLocaleString('vi-VN')} vàng</strong><button type="button" class="rpg-primary" data-action="tome-chest-buy" ${!check.ok || this.state.buying ? 'disabled' : ''}>Mua rương</button></div>
+            </article></div>`;
     }
     currencyContent() {
         const d = this.state.data;
@@ -406,15 +435,6 @@ export class RPGHUD {
         const shieldFrame = offhand?.offhandKind ? this.scene.textures.getFrame(offhandTexture(this.scene, offhand)) : getFrame(sf);
         const shield = () => draw(shieldFrame, x - direction * gap, y + scale / worldScale, scale, this.previewLeft);
         ctx.fillStyle = '#00000044'; ctx.beginPath(); ctx.ellipse(x, y + 60, 65, 15, 0, 0, Math.PI * 2); ctx.fill();
-        const wingData = this.state.data.wings;
-        const wingId = this.tab === 'wings' ? this.wingSelected : wingData?.equipped;
-        const wing = wingData?.collection?.find(item => item.id === wingId);
-        if (wing) {
-            ctx.save(); ctx.translate(x, y - 8 * scale / worldScale);
-            if (this.previewLeft) ctx.scale(-1, 1);
-            ctx.scale(scale, scale); ctx.translate(-24, -16);
-            drawWingPixels(ctx, wing.id, wing.level); ctx.restore();
-        }
         if (this.previewLeft) weapon(); else shield();
         const rendered = draw(sprite?.frame ?? getFrame(96), x, y, scale, this.previewLeft);
         if (this.previewLeft) shield(); else weapon();
