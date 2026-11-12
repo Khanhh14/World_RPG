@@ -8,7 +8,7 @@ import { renderWingsPanel, renderWingShop } from './WingsPanel.js';
 import { BAG_CAPACITY, canShopItem, EQUIPMENT_SLOTS, SHOP_ITEMS, TOME_ITEMS, monsterMaterialsForMap, monsterExchangeForMap, FOOD_RECIPES, gearIcon, tomeIcon } from '../data/items.js';
 import { ITEMS } from '../systems/RPGState.js';
 import { renderQuestJournal } from './QuestJournal.js';
-import { WORLD_MAP_GROUPS, findWorldRoute } from '../data/worldMap.js';
+import { WORLD_MAP_GROUPS, WORLD_ROUTES, findWorldRoute } from '../data/worldMap.js';
 
 const escape = value => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const icon = (frame, size = 40) => `<span class="rpg-icon" aria-hidden="true" style="width:${size}px;height:${size}px;background-size:${size*12}px ${size*11}px;background-position:-${frame%12*size}px -${Math.floor(frame/12)*size}px"></span>`;
@@ -46,7 +46,7 @@ export class RPGHUD {
             document.head.appendChild(link);
         }
         // Đổi phiên bản để trình duyệt tải CSS mới sau khi thay file.
-        const href = stylesheet + '?v=map-guide-2';
+        const href = stylesheet + '?v=map-diagram-1';
         if (link.getAttribute('href') !== href) link.setAttribute('href', href);
         this.root = document.createElement('div'); this.root.className = 'rpg-ui';
         this.root.innerHTML = '<div class="rpg-overview"></div><nav class="rpg-nav" aria-label="Menu nhân vật"></nav><div class="rpg-overlay" hidden><section class="rpg-modal" role="dialog" aria-modal="true" aria-labelledby="rpg-modal-title"></section></div><div class="rpg-world-map-overlay" hidden><section class="rpg-world-map" role="dialog" aria-modal="true" aria-labelledby="world-map-title"></section></div><div class="rpg-toast" role="status" hidden></div>';
@@ -368,6 +368,18 @@ export class RPGHUD {
         const places = WORLD_MAP_GROUPS.flatMap(group => group.places);
         const destination = places.find(place => place.id === this.mapDestination);
         const route = destination ? findWorldRoute(currentMap, destination.id) : null;
+        const routeEdges = new Set((route ?? []).map(step => [step.from, step.to].sort().join(':')));
+        const connections = [...new Map(WORLD_ROUTES.map(edge => {
+            const key = [edge.from, edge.to].sort().join(':');
+            return [key, { key, from: places.find(place => place.id === edge.from), to: places.find(place => place.id === edge.to) }];
+        })).values()].filter(edge => edge.from && edge.to);
+        const connectionsSvg = connections.map(edge => `<line class="rpg-map-connection ${routeEdges.has(edge.key) ? 'on-route' : ''}" x1="${edge.from.diagram.x}" y1="${edge.from.diagram.y}" x2="${edge.to.diagram.x}" y2="${edge.to.diagram.y}"/>`).join('');
+        const nodes = WORLD_MAP_GROUPS.flatMap((group, groupIndex) => group.places.map(place => {
+            const current = place.id === currentMap;
+            const selected = place.id === this.mapDestination;
+            const onRoute = route?.some(step => step.from === place.id || step.to === place.id);
+            return `<button type="button" class="rpg-map-node region-${groupIndex} ${current ? 'current' : ''} ${selected ? 'selected' : ''} ${onRoute ? 'on-route' : ''}" style="left:${place.diagram.x / 10}%;top:${place.diagram.y / 6.6}%" data-action="map-select" data-id="${place.id}" aria-pressed="${selected}" ${dead ? 'disabled' : ''}><strong>${escape(place.name)}</strong><span>${current ? 'Bạn đang ở đây' : selected ? 'Điểm đến' : onRoute ? 'Trên lộ trình' : 'Chọn điểm đến'}</span></button>`;
+        })).join('');
         const guide = !destination ? '<p class="rpg-map-empty">Chọn điểm đến để xem đường đi từng chặng.</p>'
             : destination.id === currentMap ? `<p class="rpg-map-empty">Bạn đang ở <strong>${escape(destination.name)}</strong>.</p>`
             : route ? `<ol class="rpg-map-route">${route.map((step, index) => {
@@ -378,11 +390,9 @@ export class RPGHUD {
         this.worldMapDialog.innerHTML = `<header><div><small>CHỈ ĐƯỜNG LIÊN KHU VỰC · M</small><h2 id="world-map-title">Bản đồ thế giới</h2></div><button type="button" data-action="map-close" aria-label="Đóng bản đồ">✕ <small>Esc</small></button></header>
             <p class="rpg-map-intro">Bản đồ này <strong>không dịch chuyển tức thời</strong>. Chọn điểm đến để xem cổng cần đi tới; dùng <b>W/A/S/D</b> hoặc <b>phím mũi tên</b> để đi bộ qua cổng. Mở lại bản đồ sau mỗi chặng để xem hướng tiếp theo.</p>
             <div class="rpg-map-current">Vị trí hiện tại: <strong>${escape(places.find(place => place.id === currentMap)?.name ?? this.mapTitle)}</strong></div>
-            <div class="rpg-map-columns"><div class="rpg-map-list">${WORLD_MAP_GROUPS.map(group => `<section class="rpg-map-group"><h3>${escape(group.name)}</h3><div class="rpg-map-places">${group.places.map(place => {
-                const current = place.id === currentMap;
-                const selected = place.id === this.mapDestination;
-                return `<button type="button" class="rpg-map-place ${current ? 'current' : ''} ${selected ? 'selected' : ''}" data-action="map-select" data-id="${place.id}" aria-pressed="${selected}" ${dead ? 'disabled' : ''}><strong>${escape(place.name)}</strong><span>${current ? 'Vị trí hiện tại' : selected ? 'Đang xem lộ trình' : 'Chọn để xem đường đi'}</span></button>`;
-            }).join('')}</div></section>`).join('')}</div><aside class="rpg-map-guide"><h3>${destination ? `Đường tới ${escape(destination.name)}` : 'Hướng dẫn đường đi'}</h3>${dead ? '<p class="rpg-map-empty">Hãy hồi sinh để xem và đi theo lộ trình.</p>' : guide}</aside></div>
+            <div class="rpg-map-legend"><span><i class="current"></i> Vị trí hiện tại</span><span><i class="selected"></i> Điểm đến</span><span><i class="connection"></i> Lối nối giữa các khu vực</span></div>
+            <div class="rpg-map-diagram-scroll"><div class="rpg-map-diagram"><svg viewBox="0 0 1000 660" preserveAspectRatio="none" aria-hidden="true">${connectionsSvg}</svg>${nodes}</div></div>
+            <aside class="rpg-map-guide"><h3>${destination ? `Đường tới ${escape(destination.name)}` : 'Hướng dẫn đường đi'}</h3>${dead ? '<p class="rpg-map-empty">Hãy hồi sinh để xem và đi theo lộ trình.</p>' : guide}</aside>
             <footer>Nhấn M để mở/đóng bản đồ · Đi bộ và dùng cổng hoặc NPC theo chỉ dẫn, không dịch chuyển trực tiếp.</footer>`;
         if (focusAction) this.worldMapDialog.querySelector(`button[data-action="${focusAction}"][data-id="${focusId}"]`)?.focus({ preventScroll: true });
         this.worldMapDialog.scrollTop = scrollTop;
