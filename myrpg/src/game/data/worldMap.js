@@ -32,3 +32,54 @@ export const WORLD_MAP_GROUPS = [
         ]
     }
 ];
+
+export const WORLD_ROUTES = [
+    { from: 'village', to: 'west-forest', gate: 'Cổng Khu Rừng Phía Tây', direction: 'phía Tây của làng' },
+    { from: 'village', to: 'atlast-lake', gate: 'Cổng Hồ Nước Atlast', direction: 'phía Đông của làng' },
+    { from: 'village', to: 'hiuuling-river', gate: 'Cổng Bờ Sông HiuuLing', direction: 'phía Nam của làng' },
+    { from: 'village', to: 'autumn-forest', gate: 'Cổng Khu Rừng Mùa Thu', direction: 'phía Bắc của làng' },
+    { from: 'west-forest', to: 'village', gate: 'Cổng Về Làng Khởi Đầu', direction: 'phía Đông khu rừng' },
+    { from: 'west-forest', to: 'yuna-outskirts', gate: 'Cổng Ngoại ô thành YuNa', direction: 'phía Tây khu rừng' },
+    { from: 'west-forest', to: 'noxii-entrance', gate: 'Cửa Hang NoXII', direction: 'phía Bắc khu rừng' },
+    { from: 'west-forest', to: 'naga-cave', gate: 'Hang động NaGa', direction: 'phía Nam khu rừng' },
+    { from: 'yuna-city', to: 'yuna-outskirts', gate: 'Cổng Ngoại ô YuNa', direction: 'phía Đông thành phố' },
+    { from: 'yuna-outskirts', to: 'yuna-city', gate: 'Cổng Thành Yuna', direction: 'phía Tây ngoại ô' },
+    { from: 'yuna-outskirts', to: 'west-forest', gate: 'Cổng Khu Rừng Phía Tây', direction: 'phía Đông ngoại ô' },
+    { from: 'yuna-outskirts', to: 'dia-long-forest', gate: 'Cổng Khu Rừng Địa Long', direction: 'phía Bắc ngoại ô' },
+    { from: 'dia-long-forest', to: 'yuna-outskirts', gate: 'Cổng Về Ngoại ô YuNa', direction: 'phía Nam khu rừng' },
+    { from: 'noxii-entrance', to: 'noxii-cave', gate: 'Cửa Hang NoXII', direction: 'phía Bắc khu cửa hang' },
+    { from: 'noxii-entrance', to: 'west-forest', gate: 'Cổng Về Khu Rừng Phía Tây', direction: 'phía Nam khu cửa hang' },
+    { from: 'noxii-cave', to: 'noxii-entrance', gate: 'Lối Ra Cửa Hang NoXII', direction: 'phía Nam hang' },
+    { from: 'naga-cave', to: 'west-forest', gate: 'Cổng Về Khu Rừng Phía Tây', direction: 'phía Nam hang' },
+    { from: 'atlast-lake', to: 'village', gate: 'Cổng Về Làng Khởi Đầu', direction: 'phía Tây hồ' },
+    { from: 'atlast-lake', to: 'huyen-quy-cave', gate: 'Động Huyền Quy · Đáy hồ', direction: 'phía Đông hồ' },
+    { from: 'huyen-quy-cave', to: 'atlast-lake', gate: 'Lối Trở Lên Hồ Atlast', direction: 'phía Nam động' },
+    { from: 'hiuuling-river', to: 'village', gate: 'Cổng Về Làng Khởi Đầu', direction: 'phía Tây bờ sông' },
+    { from: 'hiuuling-river', to: 'hoa-phuong-cave', gate: 'Hang Hỏa Phượng', direction: 'phía Đông bờ sông' },
+    { from: 'hoa-phuong-cave', to: 'hiuuling-river', gate: 'Cổng Về Bờ Sông HiuuLing', direction: 'phía Nam hang' },
+    { from: 'autumn-forest', to: 'village', gate: 'Cổng Về Làng Khởi Đầu', direction: 'phía Nam khu rừng' },
+    { from: 'autumn-forest', to: 'guardian-cave', gate: 'Hang Thủ Hộ Khu Rừng', direction: 'phía Bắc khu rừng' },
+    { from: 'autumn-forest', to: 'han-nha-mon', gate: 'Hàn Nha Môn', direction: 'phía Đông khu rừng' },
+    { from: 'guardian-cave', to: 'autumn-forest', gate: 'Cổng Về Khu Rừng Mùa Thu', direction: 'phía Nam hang' },
+    { from: 'han-nha-mon', to: 'autumn-forest', gate: 'Cổng Về Khu Rừng Mùa Thu', direction: 'phía Nam môn phái' },
+    { from: 'dia-long-forest', to: 'dragon-ruins', gate: 'Cổng Phế Tích Địa Long', direction: 'phía Đông khu rừng' },
+    { from: 'dragon-ruins', to: 'dia-long-forest', gate: 'Cổng Về Khu Rừng Địa Long', direction: 'phía Nam phế tích' },
+    { from: 'dragon-ruins', to: 'dia-long-boss', gate: 'Vòng ấn Đấu Trường Địa Long', direction: 'chính giữa vòng ấn trong phế tích' },
+    { from: 'dia-long-boss', to: 'dragon-ruins', gate: 'Cổng Về Phế Tích Địa Long', direction: 'phía Nam đấu trường' }
+];
+
+export function findWorldRoute(from, to) {
+    if (from === to) return [];
+    const queue = [[from, []]], visited = new Set([from]);
+    while (queue.length) {
+        const [current, path] = queue.shift();
+        for (const edge of WORLD_ROUTES) {
+            if (edge.from !== current || visited.has(edge.to)) continue;
+            const next = [...path, edge];
+            if (edge.to === to) return next;
+            visited.add(edge.to);
+            queue.push([edge.to, next]);
+        }
+    }
+    return null;
+}

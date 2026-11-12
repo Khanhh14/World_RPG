@@ -8,7 +8,7 @@ import { renderWingsPanel, renderWingShop } from './WingsPanel.js';
 import { BAG_CAPACITY, canShopItem, EQUIPMENT_SLOTS, SHOP_ITEMS, TOME_ITEMS, monsterMaterialsForMap, monsterExchangeForMap, FOOD_RECIPES, gearIcon, tomeIcon } from '../data/items.js';
 import { ITEMS } from '../systems/RPGState.js';
 import { renderQuestJournal } from './QuestJournal.js';
-import { WORLD_MAP_GROUPS } from '../data/worldMap.js';
+import { WORLD_MAP_GROUPS, findWorldRoute } from '../data/worldMap.js';
 
 const escape = value => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const icon = (frame, size = 40) => `<span class="rpg-icon" aria-hidden="true" style="width:${size}px;height:${size}px;background-size:${size*12}px ${size*11}px;background-position:-${frame%12*size}px -${Math.floor(frame/12)*size}px"></span>`;
@@ -46,19 +46,23 @@ export class RPGHUD {
             document.head.appendChild(link);
         }
         // Đổi phiên bản để trình duyệt tải CSS mới sau khi thay file.
-        const href = stylesheet + '?v=map-travel-1';
+        const href = stylesheet + '?v=map-guide-2';
         if (link.getAttribute('href') !== href) link.setAttribute('href', href);
         this.root = document.createElement('div'); this.root.className = 'rpg-ui';
-        this.root.innerHTML = '<div class="rpg-overview"></div><nav class="rpg-nav" aria-label="Menu nhân vật"></nav><div class="rpg-overlay" hidden><section class="rpg-modal" role="dialog" aria-modal="true" aria-labelledby="rpg-modal-title"></section></div><div class="rpg-toast" role="status" hidden></div>';
+        this.root.innerHTML = '<div class="rpg-overview"></div><nav class="rpg-nav" aria-label="Menu nhân vật"></nav><div class="rpg-overlay" hidden><section class="rpg-modal" role="dialog" aria-modal="true" aria-labelledby="rpg-modal-title"></section></div><div class="rpg-world-map-overlay" hidden><section class="rpg-world-map" role="dialog" aria-modal="true" aria-labelledby="world-map-title"></section></div><div class="rpg-toast" role="status" hidden></div>';
         document.body.appendChild(this.root);
         this.overlay = this.root.querySelector('.rpg-overlay');
         this.modal = this.root.querySelector('.rpg-modal');
+        this.worldMapOverlay = this.root.querySelector('.rpg-world-map-overlay');
+        this.worldMapDialog = this.root.querySelector('.rpg-world-map');
         this.onClick = async event => {
             const button = event.target.closest('button[data-action]');
             if (!button || !this.root.contains(button) || button.disabled) return;
             const { action, id } = button.dataset;
             if (action === 'activity') { this.scene.activityUI?.open(id); return; }
-            if (action === 'map-travel') { this.travelToMap(id); return; }
+            if (action === 'map-open') { if (this.mapOpen) this.closeWorldMap(); else this.openWorldMap(); return; }
+            if (action === 'map-close') { this.closeWorldMap(); return; }
+            if (action === 'map-select') { this.mapDestination = id; this.renderWorldMap(); return; }
             if (action === 'tab' && !(button.closest('.rpg-tabs') && this.tab === id)) this.toggle(id);
             if (action === 'close') this.close();
             if (action === 'skill-slot') { this.skillSlot = Number(id); this.renderModal(); }
@@ -136,8 +140,23 @@ export class RPGHUD {
         this.onKey = event => {
             if (this.destroyed || event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
             const key = event.key.toLowerCase();
-            const tabs = { b: 'inventory', j: 'quests', c: 'skills', t: 'tomes', m: 'map' };
-            if (tabs[key]) { event.preventDefault(); this.toggle(tabs[key]); }
+            if (this.mapOpen) {
+                if (key === 'm' || key === 'escape') {
+                    event.preventDefault(); this.closeWorldMap(); return;
+                }
+                if (key === 'tab') {
+                    const buttons = [...this.worldMapDialog.querySelectorAll('button:not(:disabled)')];
+                    const first = buttons[0], last = buttons.at(-1);
+                    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+                    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+                    return;
+                }
+                if (!['enter',' '].includes(key)) event.preventDefault();
+                return;
+            }
+            const tabs = { b: 'inventory', j: 'quests', c: 'skills', t: 'tomes' };
+            if (key === 'm') { event.preventDefault(); this.openWorldMap(); }
+            else if (tabs[key]) { event.preventDefault(); this.toggle(tabs[key]); }
             else if (key === 'escape' && this.tab) { event.preventDefault(); this.close(); }
             else if (key === 'tab' && this.tab) {
                 const buttons = [...this.modal.querySelectorAll('button:not(:disabled)')];
@@ -151,7 +170,7 @@ export class RPGHUD {
         this.unsubscribe = state.subscribe(() => this.render());
         this.render();
     }
-    get blocked() { return Boolean(this.tab) || !!this.scene.activityUI?.isOpen; }
+    get blocked() { return Boolean(this.tab || this.mapOpen) || !!this.scene.activityUI?.isOpen; }
     bar(kind, label, value, max) {
         return `<div class="rpg-bar ${kind}" role="progressbar" aria-label="${label}" aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="${value}"><div class="rpg-fill" style="width:${Math.max(0,Math.min(100,(max > 0 ? value/max*100 : 0)))}%"></div><span class="rpg-bar-label">${label} ${value} / ${max}</span></div>`;
     }
@@ -183,8 +202,9 @@ export class RPGHUD {
             : null;
         const buffStatus = buff ? `<div class="rpg-food-buff">${escape(buff.name)} · hiệu lực ${Math.ceil((d.foodBuff.expiresAt - Date.now()) / 60000)} phút</div>` : '';
         this.root.querySelector('.rpg-overview').innerHTML = `<div class="rpg-status"><div class="rpg-portrait">${icon(96,48)}<span class="rpg-level">LV ${d.level}</span></div><div class="rpg-meters"><div class="rpg-name">${escape(d.name || 'Lữ khách')}</div>${this.bar('hp','HP',d.hp,s.maxHP)}${this.bar('mp','MP',d.mp,s.maxMP)}${buffStatus}${this.bar('xp','EXP',d.exp,s.expNeeded)}</div></div>${tracker}<div class="rpg-location"><span class="rpg-location-name">${escape(this.mapTitle)}</span></div>`;
-        this.root.querySelector('.rpg-nav').innerHTML = [['map','Bản đồ','M'],['inventory','Túi đồ','B'],['quests','Nhiệm vụ','J'],['settings','Cài đặt','⚙'],['guide','Hướng dẫn','?']].map(([id,name,key]) => `<button type="button" data-action="${['settings','guide'].includes(id)?'activity':'tab'}" data-id="${id}" aria-label="${name} (${key})"><span>${name}</span><kbd>${key}</kbd>${id==='quests' && d.quests?.some(quest => quest.status === 'completed')?'<i class="rpg-dot"></i>':''}</button>`).join('');
+        this.root.querySelector('.rpg-nav').innerHTML = [['map','Bản đồ','M'],['inventory','Túi đồ','B'],['quests','Nhiệm vụ','J'],['settings','Cài đặt','⚙'],['guide','Hướng dẫn','?']].map(([id,name,key]) => `<button type="button" data-action="${id==='map'?'map-open':['settings','guide'].includes(id)?'activity':'tab'}" data-id="${id}" aria-label="${name} (${key})"><span>${name}</span><kbd>${key}</kbd>${id==='quests' && d.quests?.some(quest => quest.status === 'completed')?'<i class="rpg-dot"></i>':''}</button>`).join('');
         if (this.tab) this.renderModal();
+        if (this.mapOpen) this.renderWorldMap();
     }
     async claimQuest(questId) {
         if (this.claimingQuest || !questId) return;
@@ -264,7 +284,7 @@ export class RPGHUD {
         const focusAction = focus?.dataset.action, focusId = focus?.dataset.id;
         const names = this.tab === 'quests'
             ? { quests: 'Nhật ký nhiệm vụ' }
-            : { map: 'Bản đồ thế giới', inventory: 'Túi đồ & Trang bị', potential: 'Tiềm Năng', wings: 'Nâng cấp cánh', skills: 'Kỹ năng', tomes: 'Cổ Tịch' };
+            : { inventory: 'Túi đồ & Trang bị', potential: 'Tiềm Năng', wings: 'Nâng cấp cánh', skills: 'Kỹ năng', tomes: 'Cổ Tịch' };
         if (this.trainingNPC && this.tab !== 'quests') names['skill-training-shop']='Bí thuật Yuna';
         if (this.skillNPC && this.tab !== 'quests') names['skill-shop'] = 'Sách kỹ năng';
         if (this.wingNPC && this.tab !== 'quests') names['wing-shop'] = 'Đá nâng cấp cánh';
@@ -284,7 +304,6 @@ export class RPGHUD {
         this.modal.classList.toggle('rpg-quests-modal', this.tab === 'quests');
         this.modal.classList.toggle('rpg-exchange-modal', this.tab === 'exchange');
         this.modal.classList.toggle('rpg-food-exchange-modal', this.tab === 'food-exchange');
-        this.modal.classList.toggle('rpg-map-modal', this.tab === 'map');
         this.modal.innerHTML = `<header class="rpg-modal-header"><h2 id="rpg-modal-title">${names[this.tab]}</h2><button type="button" data-action="close" aria-label="Đóng menu">✕ <small>Esc</small></button></header>${tabs}${this.content()}`;
         this.drawCharacterPreview();
         if (focusWasInside && focusAction) {
@@ -309,24 +328,64 @@ export class RPGHUD {
         }
         if (this.tab === 'quests') return renderQuestJournal(this.state);
         if (this.tab === 'potential') return this.potentialContent();
-        if (this.tab === 'map') return this.mapContent();
         return '';
     }
-    mapContent() {
+    openWorldMap() {
+        if (this.destroyed || this.scene.dialogue?.isOpen || this.state.data.hp <= 0) {
+            if (this.state.data.hp <= 0) this.toast('Nhân vật đã gục ngã, hiện không thể mở bản đồ.');
+            return;
+        }
+        if (this.mapOpen) return;
+        if (this.tab) this.close();
+        this.mapOpen = true;
+        this.mapPreviousFocus = document.activeElement;
+        this.mapKeyboardWasEnabled = this.scene.input.keyboard.enabled;
+        this.scene.input.keyboard.enabled = false;
+        this.scene.input.keyboard.resetKeys();
+        this.scene.player?.stop();
+        this.scene.dialogueUI?.actionBar?.setVisible(false);
+        this.mapDestination = null;
+        this.worldMapOverlay.hidden = false;
+        this.renderWorldMap();
+        this.worldMapDialog.querySelector('[data-action="map-close"]')?.focus();
+    }
+    closeWorldMap() {
+        if (!this.mapOpen) return;
+        this.mapOpen = false;
+        this.worldMapOverlay.hidden = true;
+        this.scene.input.keyboard.resetKeys();
+        this.scene.input.keyboard.enabled = this.mapKeyboardWasEnabled;
+        if (!this.scene.dialogue?.isOpen) this.scene.dialogueUI?.actionBar?.setVisible(true);
+        if (this.mapPreviousFocus?.isConnected) this.mapPreviousFocus.focus();
+    }
+    renderWorldMap() {
+        const focus = document.activeElement?.closest('button');
+        const focusId = focus?.dataset.id;
+        const focusAction = focus?.dataset.action;
+        const scrollTop = this.worldMapDialog.scrollTop;
         const currentMap = this.scene.mapData.id;
         const dead = this.state.data.hp <= 0;
-        return `<p class="rpg-subtle">Chọn khu vực để dịch chuyển miễn phí. Có thể dùng bản đồ khi nhân vật còn HP.</p>
-            ${WORLD_MAP_GROUPS.map(group => `<section class="rpg-map-group"><h3>${escape(group.name)}</h3><div class="rpg-map-places">${group.places.map(place => {
+        const places = WORLD_MAP_GROUPS.flatMap(group => group.places);
+        const destination = places.find(place => place.id === this.mapDestination);
+        const route = destination ? findWorldRoute(currentMap, destination.id) : null;
+        const guide = !destination ? '<p class="rpg-map-empty">Chọn điểm đến để xem đường đi từng chặng.</p>'
+            : destination.id === currentMap ? `<p class="rpg-map-empty">Bạn đang ở <strong>${escape(destination.name)}</strong>.</p>`
+            : route ? `<ol class="rpg-map-route">${route.map((step, index) => {
+                const from = places.find(place => place.id === step.from), to = places.find(place => place.id === step.to);
+                return `<li><span class="rpg-map-step-number">${index + 1}</span><div><strong>Chặng ${index + 1}/${route.length}: ${escape(from?.name ?? step.from)} → ${escape(to?.name ?? step.to)}</strong><p>Đi tới <b>${escape(step.gate)}</b> ở ${escape(step.direction)}, rồi bước vào cổng. ${index < route.length - 1 ? 'Sau khi tới nơi, mở M để xem chặng kế tiếp.' : 'Đây là chặng cuối.'}</p></div></li>`;
+            }).join('')}</ol>`
+                : '<p class="rpg-map-empty">Chưa có tuyến đường đi bộ đã khai báo tới khu vực này.</p>';
+        this.worldMapDialog.innerHTML = `<header><div><small>CHỈ ĐƯỜNG LIÊN KHU VỰC · M</small><h2 id="world-map-title">Bản đồ thế giới</h2></div><button type="button" data-action="map-close" aria-label="Đóng bản đồ">✕ <small>Esc</small></button></header>
+            <p class="rpg-map-intro">Bản đồ này <strong>không dịch chuyển tức thời</strong>. Chọn điểm đến để xem cổng cần đi tới; dùng <b>W/A/S/D</b> hoặc <b>phím mũi tên</b> để đi bộ qua cổng. Mở lại bản đồ sau mỗi chặng để xem hướng tiếp theo.</p>
+            <div class="rpg-map-current">Vị trí hiện tại: <strong>${escape(places.find(place => place.id === currentMap)?.name ?? this.mapTitle)}</strong></div>
+            <div class="rpg-map-columns"><div class="rpg-map-list">${WORLD_MAP_GROUPS.map(group => `<section class="rpg-map-group"><h3>${escape(group.name)}</h3><div class="rpg-map-places">${group.places.map(place => {
                 const current = place.id === currentMap;
-                return `<button type="button" class="rpg-map-place ${current ? 'current' : ''}" data-action="map-travel" data-id="${place.id}" ${current || dead ? 'disabled' : ''}><strong>${escape(place.name)}</strong><span>${current ? 'Bạn đang ở đây' : 'Dịch chuyển miễn phí'}</span>${current ? '<b>Đang đứng tại đây</b>' : '<b aria-hidden="true">→</b>'}</button>`;
-            }).join('')}</div></section>`).join('')}`;
-    }
-    travelToMap(id) {
-        const place = WORLD_MAP_GROUPS.flatMap(group => group.places).find(item => item.id === id);
-        if (!place || place.id === this.scene.mapData.id || this.state.data.hp <= 0 || this.scene.dialogue?.isOpen) return;
-        this.scene.player?.stop();
-        this.close();
-        this.scene.scene.start(place.scene, { spawn: { ...place.spawn } });
+                const selected = place.id === this.mapDestination;
+                return `<button type="button" class="rpg-map-place ${current ? 'current' : ''} ${selected ? 'selected' : ''}" data-action="map-select" data-id="${place.id}" aria-pressed="${selected}" ${dead ? 'disabled' : ''}><strong>${escape(place.name)}</strong><span>${current ? 'Vị trí hiện tại' : selected ? 'Đang xem lộ trình' : 'Chọn để xem đường đi'}</span></button>`;
+            }).join('')}</div></section>`).join('')}</div><aside class="rpg-map-guide"><h3>${destination ? `Đường tới ${escape(destination.name)}` : 'Hướng dẫn đường đi'}</h3>${dead ? '<p class="rpg-map-empty">Hãy hồi sinh để xem và đi theo lộ trình.</p>' : guide}</aside></div>
+            <footer>Nhấn M để mở/đóng bản đồ · Đi bộ và dùng cổng hoặc NPC theo chỉ dẫn, không dịch chuyển trực tiếp.</footer>`;
+        if (focusAction) this.worldMapDialog.querySelector(`button[data-action="${focusAction}"][data-id="${focusId}"]`)?.focus({ preventScroll: true });
+        this.worldMapDialog.scrollTop = scrollTop;
     }
     // RPGState hiện tại lưu tổng đồ sở hữu trong inventory (gồm đồ đang mặc).
     // Ba lô chỉ hiển thị số lượng chưa được đặt vào ô trang bị.
@@ -548,7 +607,7 @@ export class RPGHUD {
     }
     destroy() {
         if (this.destroyed) return;
-        this.close();this.destroyed=true;this.unsubscribe();clearTimeout(this.toastTimer);
+        this.closeWorldMap();this.close();this.destroyed=true;this.unsubscribe();clearTimeout(this.toastTimer);
         window.removeEventListener('keydown',this.onKey);this.root.removeEventListener('click',this.onClick);this.root.remove();
     }
 }
