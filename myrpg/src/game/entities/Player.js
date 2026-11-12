@@ -150,7 +150,7 @@ export class Player {
         const weaponFrames = {
             'iron_sword': 103, 'iron_sword_2': 104, 'iron_sword_3': 105,
             'iron_sword_4': 106, 'iron_sword_5': 107, 'starter_axe': 118,
-            'wood_staff': 129
+            'wood_staff': 129, dragon_sword: 107, dragon_axe: 118, dragon_staff: 129
         };
         return weaponFrames[weaponId] ?? null;
     }
@@ -159,7 +159,7 @@ export class Player {
         // Khiên: frames 102, 101
         const shieldFrames = {
             'round_shield': 102, 'round_shield_2': 101, 'round_shield_3': 102,
-            'round_shield_4': 101, 'round_shield_5': 102
+            'round_shield_4': 101, 'round_shield_5': 102, dragon_shield: 102
         };
         return shieldFrames[shieldId] ?? null;
     }

@@ -43,15 +43,15 @@ const tomes = [
 const dragonChestId = 'dragon_chest';
 const dragonWeaponByClass = { swordsman: 'dragon_sword', mage: 'dragon_staff', fighter: 'dragon_axe' };
 const dragonItems = [
-  [dragonChestId, 'Rương Địa Long', 'consumable', 99, 0, 'dragon_chest', 'Mở rương nhận trọn bộ trang bị Địa Long.'],
-  ['dragon_armor', 'Áo Giáp Địa Long', 'armor', 1, 0, 'dragon_armor', '+85 thủ · +450 HP tối đa.'],
-  ['dragon_helmet', 'Mũ Địa Long', 'helmet', 1, 0, 'dragon_helmet', '+55 thủ · +250 HP tối đa.'],
-  ['dragon_boots', 'Giày Địa Long', 'boots', 1, 0, 'dragon_boots', '+45 thủ.'],
-  ['dragon_gloves', 'Găng Địa Long', 'gloves', 1, 65, 'dragon_gloves', '+65 công · +45 thủ.'],
-  ['dragon_shield', 'Khiên Địa Long', 'shield', 1, 50, 'dragon_shield', '+50 công · +60 thủ · +300 HP tối đa.'],
-  ['dragon_sword', 'Long Nha Kiếm', 'weapon', 1, 180, 'dragon_sword', '+180 công. Vũ khí Địa Long dành cho Kiếm sĩ.'],
-  ['dragon_staff', 'Long Tủy Trượng', 'weapon', 1, 180, 'dragon_staff', '+180 công. Vũ khí Địa Long dành cho Pháp sư.'],
-  ['dragon_axe', 'Long Cốt Phủ', 'weapon', 1, 180, 'dragon_axe', '+180 công. Vũ khí Địa Long dành cho Đấu sĩ.'],
+  [dragonChestId, 'Rương Địa Long', 'consumable', 99, 0, 'chest', 'Mở rương nhận ngẫu nhiên 1 trang bị Địa Long.'],
+  ['dragon_armor', 'Áo Giáp Địa Long', 'armor', 1, 0, 'armor', '+85 thủ · +450 HP tối đa.'],
+  ['dragon_helmet', 'Mũ Địa Long', 'helmet', 1, 0, 'helmet', '+55 thủ · +250 HP tối đa.'],
+  ['dragon_boots', 'Giày Địa Long', 'boots', 1, 0, 'boots', '+45 thủ.'],
+  ['dragon_gloves', 'Găng Địa Long', 'gloves', 1, 65, 'gloves', '+65 công · +45 thủ.'],
+  ['dragon_shield', 'Khiên Địa Long', 'shield', 1, 50, 'shield', '+50 công · +60 thủ · +300 HP tối đa.'],
+  ['dragon_sword', 'Long Nha Kiếm', 'weapon', 1, 180, 'sword', '+180 công. Vũ khí Địa Long dành cho Kiếm sĩ.'],
+  ['dragon_staff', 'Long Tủy Trượng', 'weapon', 1, 180, 'staff', '+180 công. Vũ khí Địa Long dành cho Pháp sư.'],
+  ['dragon_axe', 'Long Cốt Phủ', 'weapon', 1, 180, 'axe', '+180 công. Vũ khí Địa Long dành cho Đấu sĩ.'],
 ];
 
 function createInventoryService(db) {
@@ -317,17 +317,14 @@ function createInventoryService(db) {
           await addOne(c, character.id, await allItemRows(c, character.id), rewardId, tomeDefinitions[0]);
         }
         if (dragonChest) {
-          rewardId = dragonWeaponByClass[character.class_code];
-          if (!rewardId) throw fail(403, 'Class nhân vật chưa có vũ khí Địa Long phù hợp.');
-          const rewards = ['dragon_armor', 'dragon_helmet', 'dragon_boots', 'dragon_gloves', 'dragon_shield', rewardId];
-          const rewardNames = [];
-          for (const id of rewards) {
-            const [rewardDefinitions] = await c.execute('SELECT id, max_stack FROM item_definitions WHERE id = ?', [id]);
-            if (!rewardDefinitions.length) throw fail(503, 'Thiếu định nghĩa trang bị Địa Long trong item_definitions.');
-            await addOne(c, character.id, await allItemRows(c, character.id), id, rewardDefinitions[0]);
-            rewardNames.push(dragonItems.find(item => item[0] === id)[1]);
-          }
-          rewardMessage = `Nhận trọn bộ Địa Long: ${rewardNames.join(', ')}.`;
+          const classWeapon = dragonWeaponByClass[character.class_code];
+          if (!classWeapon) throw fail(403, 'Class nhân vật chưa có vũ khí Địa Long phù hợp.');
+          const rewards = ['dragon_armor', 'dragon_helmet', 'dragon_boots', 'dragon_gloves', 'dragon_shield', classWeapon];
+          rewardId = rewards[Math.floor(Math.random() * rewards.length)];
+          const [rewardDefinitions] = await c.execute('SELECT id, max_stack FROM item_definitions WHERE id = ?', [rewardId]);
+          if (!rewardDefinitions.length) throw fail(503, 'Thiếu định nghĩa trang bị Địa Long trong item_definitions.');
+          await addOne(c, character.id, await allItemRows(c, character.id), rewardId, rewardDefinitions[0]);
+          rewardMessage = `Mở rương nhận được ${dragonItems.find(item => item[0] === rewardId)[1]}.`;
         }
         if (food) {
           const now = Date.now();

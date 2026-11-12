@@ -97,8 +97,8 @@ export const TOME_ITEMS = {
     tome_range:{name:'Cổ Tịch Viễn Kích',icon:'range',attackRange:20,description:'+20 tầm đánh thường mỗi cấp.'},
     tome_aura:{name:'Cổ Tịch Linh Vực',icon:'aura',auraDamage:0.20,auraRadius:120,description:'Đòn thường tạo vùng quanh nhân vật, bán kính 120, gây 20% sát thương.'}
 };
-ITEMS.tome_chest={name:'Rương Cổ Tịch',emoji:'📦',type:'consumable',category:'tome-chest',level:1,price:2000,maxStack:99,description:'Mở rương để nhận ngẫu nhiên 1 trong 6 Cổ Tịch.'};
-ITEMS.dragon_chest={name:'Rương Địa Long',emoji:'🐉',type:'consumable',category:'dragon-chest',level:1,price:0,maxStack:99,description:'Mở rương để nhận trọn bộ trang bị Địa Long. Vũ khí phù hợp với class nhân vật.'};
+ITEMS.tome_chest={name:'Rương Cổ Tịch',icon:'chest',type:'consumable',category:'tome-chest',level:1,price:2000,maxStack:99,description:'Mở rương để nhận ngẫu nhiên 1 trong 6 Cổ Tịch.'};
+ITEMS.dragon_chest={name:'Rương Địa Long',icon:'chest',type:'consumable',category:'dragon-chest',level:1,price:0,maxStack:99,description:'Mở rương để nhận ngẫu nhiên 1 trang bị Địa Long. Vũ khí phù hợp với class nhân vật.'};
 for (const [id,tome] of Object.entries(TOME_ITEMS)) {
     ITEMS[id]={...tome,type:'tome',category:'tome',level:1,maxStack:99};
 }
@@ -142,6 +142,8 @@ export function gearIcon(kind, level=1, size=40) {
     if(TU_LINH_WEAPONS[kind])return tuLinhWeaponIcon(kind,size);
     const colors=['#b9c5c9','#91c5e5','#bb9cde','#dea572','#e3ca78'];
     const base=colors[Math.max(0,Math.min(4,level-1))];
+    const aliases={dragon_armor:'armor',dragon_helmet:'helmet',dragon_boots:'boots',dragon_gloves:'gloves',dragon_shield:'shield',dragon_sword:'sword',dragon_staff:'staff',dragon_axe:'axe',dragon_chest:'chest'};
+    kind=aliases[kind]||kind;
     const shapes={
         ...Object.fromEntries([['blue_feather','#66c5eb'],['yellow_feather','#f3cb62'],['red_feather','#e67468']].map(([key,color])=>[key,`<path d="M10 1H14V5H13V8H11V10H8V12H5V14H2V12H4V9H6V6H8V3H10Z" fill="${color}"/><path d="M12 3L3 14" stroke="#fff0c1" stroke-width="1.3"/><path d="M8 5V9H12M6 8V11H9" fill="none" stroke="#36576a"/>`])),
         wing_essence:'<path d="M6 1H10V3H9V5L13 8V14H3V8L7 5V3H6Z" fill="#bdd8cf"/><path d="M4 9H12V13H4Z" fill="#99a2ee"/><path d="M5 9L8 12L11 9M8 8V12" fill="none" stroke="#e8e4ff"/><path d="M6 1H10V3H6Z" fill="#d4aa61"/>',
@@ -150,7 +152,12 @@ export function gearIcon(kind, level=1, size=40) {
         armor:'<path d="M5 2H7V4H9V2H11L15 5V9H12V14H4V9H1V5Z"/><path d="M5 5H11V12H5Z" fill="#627985"/><path d="M7 5H9V12H7Z" fill="#d9e3df"/>',
         helmet:'<path d="M5 2H11V3H13V6H14V14H10V10H6V14H2V6H3V3H5Z"/><path d="M4 7H12V9H4Z" fill="#243b3c"/><path d="M7 2H9V13H7Z" fill="#e1e7dd"/>',
         boots:'<path d="M2 2H6V9H8V14H1V11H2ZM10 2H14V9H15V14H9V11H10Z"/><path d="M1 12H8V14H1ZM9 12H15V14H9Z" fill="#806447"/><path d="M3 4H6V5H3ZM11 4H14V5H11Z" fill="#e7d6a6"/>',
-        gloves:'<path d="M2 3H6V7H8V11H6V14H2V12H1V7H2ZM10 3H14V7H15V12H14V14H10V11H8V7H10Z"/><path d="M2 11H6V13H2ZM10 11H14V13H10Z" fill="#846d4c"/>'
+        gloves:'<path d="M2 3H6V7H8V11H6V14H2V12H1V7H2ZM10 3H14V7H15V12H14V14H10V11H8V7H10Z"/><path d="M2 11H6V13H2ZM10 11H14V13H10Z" fill="#846d4c"/>',
+        shield:'<path d="M2 2H14V8L12 12L8 15L4 12L2 8Z"/><path d="M4 4H12V8L11 11L8 13L5 11L4 8Z" fill="#496d7c"/><path d="M7 3H9V12H7ZM3 7H13V9H3Z" fill="#e1cf8c"/>',
+        sword:'<path d="M10 1H14V5L9 10L7 8Z"/><path d="M9 3H12L8 8L7 7Z" fill="#eff3db"/><path d="M5 8L8 11L6 13L3 10Z"/><path d="M2 12L4 14L2 16L0 14Z" fill="#a96f43"/>',
+        staff:'<path d="M8 5L13 1L15 3L11 8Z"/><path d="M9 6L14 2L15 3L10 8Z" fill="#eff0de"/><path d="M7 7L9 9L4 15L2 13Z"/><circle cx="13" cy="3" r="2" fill="#8f9ff0"/>',
+        axe:'<path d="M7 7L11 2L15 4L13 8L10 9Z"/><path d="M11 3L14 4L12 7L10 7Z" fill="#eff0de"/><path d="M8 8L10 10L4 16L2 14Z"/><path d="M6 10L8 12L5 15L3 13Z" fill="#a96f43"/>',
+        chest:'<path d="M2 5H14V14H2Z"/><path d="M1 4H15V7H1Z" fill="#e1bd6e"/><path d="M3 8H13V13H3Z" fill="#9b6236"/><path d="M7 8H9V11H7Z" fill="#f3d982"/><path d="M3 2H13V4H3Z" fill="#d2a654"/><path d="M4 1H12V3H4Z" fill="#f0d283"/>'
     };
     return `<svg aria-hidden="true" class="rpg-gear-icon" width="${size}" height="${size}" viewBox="0 0 16 16" style="image-rendering:pixelated;flex-shrink:0" shape-rendering="crispEdges"><g fill="${base}" stroke="#243b3c" stroke-width=".5">${shapes[kind]??shapes.armor}</g></svg>`;
 }

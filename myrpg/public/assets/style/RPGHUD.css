@@ -50,6 +50,7 @@
 .rpg-ui .rpg-modal{width:min(740px,100%);max-height:calc(100dvh - 32px);overflow:auto;min-width:0;background:linear-gradient(145deg,#213b30,#11261f);border:2px solid #b89a60;border-radius:14px;box-shadow:0 16px 80px #0008;padding:16px;scrollbar-width:thin;scrollbar-color:#71815c #10271f}
 .rpg-ui .rpg-modal.rpg-inventory-modal{width:min(820px,100%)}
 .rpg-ui .rpg-modal.rpg-tomes-modal{width:min(820px,100%)}
+.rpg-ui .rpg-modal.rpg-map-modal{width:min(760px,100%)}
 .rpg-ui .rpg-modal.rpg-potential-modal,.rpg-ui .rpg-modal.rpg-quests-modal{width:min(520px,100%)}
 .rpg-ui .rpg-modal.rpg-shop-modal{width:min(900px,100%)}
 .rpg-ui .rpg-modal-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
@@ -58,11 +59,20 @@
 .rpg-ui .rpg-tabs{display:flex;gap:6px;border-bottom:1px solid #4d604b;padding-bottom:10px;margin-bottom:12px;flex-wrap:wrap}
 .rpg-ui .rpg-tabs button{font-size:12px;padding:7px 10px}
 .rpg-ui .rpg-tabs button.active,.rpg-ui .rpg-shop-filters button.active{background:#b6985e;color:#182c21;border-color:#e4c585;font-weight:bold}
+.rpg-ui .rpg-map-group{margin:14px 0}
+.rpg-ui .rpg-map-group>h3{margin:0 0 8px;color:#ebce85}
+.rpg-ui .rpg-map-places{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.rpg-ui .rpg-map-place{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;text-align:left;min-height:58px}
+.rpg-ui .rpg-map-place strong{font-size:13px}
+.rpg-ui .rpg-map-place span{color:var(--muted);font-size:11px}
+.rpg-ui .rpg-map-place>b{grid-column:2;grid-row:1 / span 2;color:#ebce85;font-size:17px}
+.rpg-ui .rpg-map-place.current{border-color:#c5a45f;background:#2f4934}
+.rpg-ui .rpg-map-place.current>b{font-size:10px}
 .rpg-ui .rpg-food-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 .rpg-ui .rpg-food-item header{align-items:center}
 .rpg-ui .rpg-food-item .rpg-shop-buy{align-items:stretch;flex-direction:column}
 .rpg-ui .rpg-food-item .rpg-shop-buy button{min-height:38px}
-@media(max-width:700px){.rpg-ui .rpg-food-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.rpg-ui .rpg-food-grid,.rpg-ui .rpg-map-places{grid-template-columns:1fr}}
 /* Trang bị + balo */
 .rpg-ui .rpg-bag-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
 .rpg-ui .rpg-equipment-panel,.rpg-ui .rpg-bag-panel{min-width:0;padding:12px;background:linear-gradient(160deg,#19362b,#0d211b);border:1px solid #486551;border-radius:10px;box-shadow:inset 0 1px #ffffff08}

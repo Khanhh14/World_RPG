@@ -44,7 +44,7 @@ function createBossRewardService(db){return {
     await reward(c,char,config.exp,config.gold);
     if(input.bossId==='dia-long'){
      await c.execute(
-      "INSERT IGNORE INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES ('dragon_chest', 'Rương Địa Long', 'consumable', 1, 0, 99, 0, 'dragon_chest', 'Mở rương nhận trọn bộ trang bị Địa Long.', 0)"
+      "INSERT IGNORE INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES ('dragon_chest', 'Rương Địa Long', 'consumable', 1, 0, 99, 0, 'chest', 'Mở rương nhận ngẫu nhiên 1 trang bị Địa Long.', 0)"
      );
      const [definitions]=await c.execute("SELECT id, max_stack FROM item_definitions WHERE id = 'dragon_chest'");
      if(!definitions.length)throw fail(503,'Thiếu định nghĩa Rương Địa Long trong item_definitions.');
