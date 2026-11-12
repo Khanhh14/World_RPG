@@ -38,7 +38,7 @@ export class DragonRuinsWorld extends WorldBuilder{
   }
 
   this.dragonSeal(centerX,15*size);
-  this.gate(centerX,rows*size);
+  this.gate(centerX,rows*size,this.data.id==='dia-long-boss'?'VỀ PHẾ TÍCH ĐỊA LONG':'VỀ KHU RỪNG ĐỊA LONG');
   this.cracks();
  }
 
@@ -74,7 +74,7 @@ export class DragonRuinsWorld extends WorldBuilder{
   g.fillStyle(0xe4c979,.85).fillCircle(x+74,y-25,5);
  }
 
- gate(x,y){
+ gate(x,y,label){
   const g=this.add.graphics().setDepth(100+y);
   g.fillStyle(0x10232a,.9).fillRect(x-76,y-122,152,120);
   g.fillStyle(0x393d3b,1).fillRect(x-96,y-132,28,132).fillRect(x+68,y-132,28,132);
@@ -85,7 +85,7 @@ export class DragonRuinsWorld extends WorldBuilder{
   g.lineStyle(2,0x8be0cf,.8).strokeCircle(x,y-84,14);
   g.lineStyle(3,0xd3bb72,.72).beginPath().moveTo(x-14,y-84).lineTo(x-5,y-94)
    .lineTo(x+3,y-78).lineTo(x+14,y-88).strokePath();
-  this.add.text(x,y-174,'VỀ KHU RỪNG ĐỊA LONG',{
+  this.add.text(x,y-174,label,{
    fontFamily:'Arial',fontSize:'13px',color:'#f0daa0',
    backgroundColor:'#172a2c',padding:{x:7,y:4}
   }).setOrigin(.5,1).setDepth(9000);

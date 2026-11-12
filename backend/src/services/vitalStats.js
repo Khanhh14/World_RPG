@@ -12,6 +12,9 @@ function validateVitalContext(context){
 }
 function itemVitals(id){
  if(special[id])return {slot:special[id].type,hp:special[id].maxHP||0,mp:special[id].maxMP||0};
+ if(id==='dragon_armor')return {slot:'armor',hp:450,mp:0};
+ if(id==='dragon_helmet')return {slot:'helmet',hp:250,mp:0};
+ if(id==='dragon_shield')return {slot:'shield',hp:300,mp:0};
  const m=/^(armor|helmet)(?:_([2-5]))?$/.exec(id);
  if(!m)return {slot:null,hp:0,mp:0};
  const i=Number(m[2]||1)-1;return {slot:m[1],hp:(m[1]==='armor'?[10,20,35,55,80]:[5,10,15,25,35])[i],mp:0};

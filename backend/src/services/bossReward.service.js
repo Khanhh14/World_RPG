@@ -2,6 +2,7 @@ const {characterView,reward}=require('./progress.service');
 const fail=(status,message)=>Object.assign(new Error(message),{status});
 const BOSS_CONFIG=Object.freeze({
  'hoa-phuong':{name:'Hỏa Phượng',cooldownMs:1200000,exp:5000,gold:3000,stones:5},
+ 'dia-long':{name:'Địa Long',cooldownMs:1200000,exp:5000,gold:2000,stones:0},
  'bach-ho':{name:'Bạch Hổ',cooldownMs:1200000,exp:5000,gold:3000,stones:5},
  'huyen-quy':{name:'Huyền Quy',cooldownMs:1200000,exp:5000,gold:3000,stones:5},
  'thanh-long':{name:'Thanh Long',cooldownMs:1200000,exp:5000,gold:3000,stones:5},
@@ -41,12 +42,31 @@ function createBossRewardService(db){return {
    }else{
     if(await cooldown(c,char.id,input.bossId)>0)throw fail(409,`${config.name} chưa hồi sinh. Hãy chờ đủ ${config.cooldownMs/60000} phút.`);
     await reward(c,char,config.exp,config.gold);
+    if(input.bossId==='dia-long'){
+     await c.execute(
+      "INSERT IGNORE INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES ('dragon_chest', 'Rương Địa Long', 'consumable', 1, 0, 99, 0, 'dragon_chest', 'Mở rương nhận trọn bộ trang bị Địa Long.', 0)"
+     );
+     const [definitions]=await c.execute("SELECT id, max_stack FROM item_definitions WHERE id = 'dragon_chest'");
+     if(!definitions.length)throw fail(503,'Thiếu định nghĩa Rương Địa Long trong item_definitions.');
+     const [stacks]=await c.execute("SELECT id, quantity, slot_key FROM character_items WHERE character_id = ? AND item_definition_id = 'dragon_chest' AND location = 'inventory' FOR UPDATE",[char.id]);
+     const stack=stacks.find(item=>Number(item.quantity)<Number(definitions[0].max_stack));
+     if(stack)await c.execute('UPDATE character_items SET quantity = quantity + 1 WHERE id = ? AND character_id = ?',[stack.id,char.id]);
+     else{
+      const [occupiedRows]=await c.execute("SELECT slot_key FROM character_items WHERE character_id = ? AND location = 'inventory' FOR UPDATE",[char.id]);
+      const occupied=new Set(occupiedRows.map(item=>String(item.slot_key)));
+      let slot=null;for(let i=0;i<28;i++)if(!occupied.has(String(i))){slot=String(i);break;}
+      if(slot===null)throw fail(409,'Túi đồ đầy. Hãy chừa một ô trống rồi nhận thưởng Địa Long.');
+      await c.execute("INSERT INTO character_items (character_id, item_definition_id, quantity, location, slot_key) VALUES (?, 'dragon_chest', 1, 'inventory', ?)",[char.id,slot]);
+     }
+    }
     await c.execute('INSERT INTO character_economy_events (character_id, request_id, action_type, payload) VALUES (?, ?, ?, ?)',
      [char.id,input.requestId,'boss_reward',JSON.stringify({bossId:input.bossId,gold:config.gold,exp:config.exp,stones:config.stones,...(input.bossId==='thanh-long'?{eventItems:{nhan_long:1}}:input.bossId==='huyen-quy'?{eventItems:{huyen_giap:1}}:input.bossId==='bach-ho'?{eventItems:{han_nha:1}}:input.bossId==='hoa-phuong'?{eventItems:{hoa_phung:1}}:{})})]);
    }
    await c.commit();
+   const [itemRows]=input.bossId==='dia-long'?await c.execute('SELECT item_definition_id AS id, quantity, location, slot_key AS slot FROM character_items WHERE character_id = ? ORDER BY id',[char.id]):[[]];
    return {character:characterView(char),bossId:input.bossId,requestId:input.requestId,
     eventItems:receipts.length?(typeof receipts[0].payload==='string'?JSON.parse(receipts[0].payload):receipts[0].payload).eventItems||{}:input.bossId==='thanh-long'?{nhan_long:1}:input.bossId==='huyen-quy'?{huyen_giap:1}:input.bossId==='bach-ho'?{han_nha:1}:input.bossId==='hoa-phuong'?{hoa_phung:1}:{},
+    ...(input.bossId==='dia-long'?{items:itemRows.map(item=>({id:item.id,quantity:Number(item.quantity),location:item.location,slot:item.slot})),chestId:'dragon_chest'}:{}),
     reward:{gold:config.gold,exp:config.exp,stones:config.stones},replayed:!!receipts.length};
   }catch(e){await c.rollback().catch(()=>{});throw e;}finally{c.release();}
  }

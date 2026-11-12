@@ -40,6 +40,19 @@ const tomes = [
   ['tome_range', 'Cổ Tịch Viễn Kích', 'range', '+20 tầm đánh thường mỗi cấp.'],
   ['tome_aura', 'Cổ Tịch Linh Vực', 'aura', 'Đòn thường tạo vùng quanh nhân vật, bán kính 120, gây 20% sát thương.'],
 ];
+const dragonChestId = 'dragon_chest';
+const dragonWeaponByClass = { swordsman: 'dragon_sword', mage: 'dragon_staff', fighter: 'dragon_axe' };
+const dragonItems = [
+  [dragonChestId, 'Rương Địa Long', 'consumable', 99, 0, 'dragon_chest', 'Mở rương nhận trọn bộ trang bị Địa Long.'],
+  ['dragon_armor', 'Áo Giáp Địa Long', 'armor', 1, 0, 'dragon_armor', '+85 thủ · +450 HP tối đa.'],
+  ['dragon_helmet', 'Mũ Địa Long', 'helmet', 1, 0, 'dragon_helmet', '+55 thủ · +250 HP tối đa.'],
+  ['dragon_boots', 'Giày Địa Long', 'boots', 1, 0, 'dragon_boots', '+45 thủ.'],
+  ['dragon_gloves', 'Găng Địa Long', 'gloves', 1, 65, 'dragon_gloves', '+65 công · +45 thủ.'],
+  ['dragon_shield', 'Khiên Địa Long', 'shield', 1, 50, 'dragon_shield', '+50 công · +60 thủ · +300 HP tối đa.'],
+  ['dragon_sword', 'Long Nha Kiếm', 'weapon', 1, 180, 'dragon_sword', '+180 công. Vũ khí Địa Long dành cho Kiếm sĩ.'],
+  ['dragon_staff', 'Long Tủy Trượng', 'weapon', 1, 180, 'dragon_staff', '+180 công. Vũ khí Địa Long dành cho Pháp sư.'],
+  ['dragon_axe', 'Long Cốt Phủ', 'weapon', 1, 180, 'dragon_axe', '+180 công. Vũ khí Địa Long dành cho Đấu sĩ.'],
+];
 
 function createInventoryService(db) {
   async function transaction(userId, operation) {
@@ -195,6 +208,15 @@ function createInventoryService(db) {
     }
   }
 
+  async function ensureDragonDefinitions(c) {
+    for (const [id, name, type, maxStack, attackBonus, icon, description] of dragonItems) {
+      await c.execute(
+        'INSERT INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES (?, ?, ?, 6, 0, ?, ?, ?, ?, 0) ON DUPLICATE KEY UPDATE name = VALUES(name), type = VALUES(type), max_stack = VALUES(max_stack), attack_bonus = VALUES(attack_bonus), icon_key = VALUES(icon_key), description = VALUES(description), available_in_shop = 0',
+        [id, name, type, maxStack, attackBonus, icon, description],
+      );
+    }
+  }
+
   function freeInventorySlot(rows) {
     // characterItems() chuẩn hóa slot_key thành slot trước khi truyền vào đây.
     const occupied = new Set(rows.filter(row => row.location === 'inventory').map(row => String(row.slot)));
@@ -231,7 +253,8 @@ function createInventoryService(db) {
     const itemId = legacyFoodIds[input.itemId] || input.itemId;
     const food = foodById.get(itemId);
     const tomeChest = itemId === tomeChestId;
-    if (!potion && !food && !tomeChest) throw fail(400, 'Vật phẩm này không thể sử dụng.');
+    const dragonChest = itemId === dragonChestId;
+    if (!potion && !food && !tomeChest && !dragonChest) throw fail(400, 'Vật phẩm này không thể sử dụng.');
     if (potion && !Object.hasOwn(shopCatalog, input.itemId)) throw fail(400, 'Bình thuốc không tồn tại.');
     return { potion, food, tomeChest, itemId };
   }
@@ -250,9 +273,12 @@ function createInventoryService(db) {
     },
     async use(userId, input = {}) {
       const { potion, food, tomeChest, itemId } = validateRequest(input);
+      const dragonChest = itemId === dragonChestId;
+      const rewardChest = tomeChest || dragonChest;
       const context=validateVitalContext(input.context);
       return transaction(userId, async (c, character) => {
         if (tomeChest) await ensureTomeDefinitions(c);
+        if (dragonChest) await ensureDragonDefinitions(c);
         const [receipts] = await c.execute(
           'SELECT action_type, payload FROM character_economy_events WHERE character_id = ? AND request_id = ?',
           [character.id, input.requestId],
@@ -268,8 +294,8 @@ function createInventoryService(db) {
             requestId: input.requestId, itemId: input.itemId,
             quantity: rows.reduce((sum, row) => sum + Number(row.quantity), 0),
             hp: vitals.hp, mana: vitals.mana, runtimeVersion: vitals.runtimeVersion,
-            foodBuff: payload.foodBuff || null, rewardId: payload.rewardId || null,
-            ...(tomeChest ? { items: inventorySnapshot(await allItemRows(c, character.id)) } : {}),
+            foodBuff: payload.foodBuff || null, rewardId: payload.rewardId || null, rewardMessage: payload.rewardMessage || null,
+            ...(rewardChest ? { items: inventorySnapshot(await allItemRows(c, character.id)) } : {}),
             replayed: true,
           };
         }
@@ -281,7 +307,7 @@ function createInventoryService(db) {
         const quantity = await consumeOne(c, character.id, rows);
         const vitals = await currentVitals(c, character, context);
         let hp = vitals.hp, mana = vitals.mana, foodBuff = null;
-        let rewardId = null;
+        let rewardId = null, rewardMessage = null;
           if (potion?.kind === 'health') hp = Math.max(hp,Math.min(vitals.maxHp, hp + potion.amount));
         if (potion?.kind === 'mana') mana = Math.max(mana,Math.min(vitals.maxMana, mana + potion.amount));
         if (tomeChest) {
@@ -290,6 +316,19 @@ function createInventoryService(db) {
           if (!tomeDefinitions.length) throw fail(503, 'Thiếu định nghĩa Cổ Tịch trong item_definitions.');
           await addOne(c, character.id, await allItemRows(c, character.id), rewardId, tomeDefinitions[0]);
         }
+        if (dragonChest) {
+          rewardId = dragonWeaponByClass[character.class_code];
+          if (!rewardId) throw fail(403, 'Class nhân vật chưa có vũ khí Địa Long phù hợp.');
+          const rewards = ['dragon_armor', 'dragon_helmet', 'dragon_boots', 'dragon_gloves', 'dragon_shield', rewardId];
+          const rewardNames = [];
+          for (const id of rewards) {
+            const [rewardDefinitions] = await c.execute('SELECT id, max_stack FROM item_definitions WHERE id = ?', [id]);
+            if (!rewardDefinitions.length) throw fail(503, 'Thiếu định nghĩa trang bị Địa Long trong item_definitions.');
+            await addOne(c, character.id, await allItemRows(c, character.id), id, rewardDefinitions[0]);
+            rewardNames.push(dragonItems.find(item => item[0] === id)[1]);
+          }
+          rewardMessage = `Nhận trọn bộ Địa Long: ${rewardNames.join(', ')}.`;
+        }
         if (food) {
           const now = Date.now();
           foodBuff = { foodId: food.id, expiresAt: now + 180000, nextTickAt: now + 1000 };
@@ -297,11 +336,11 @@ function createInventoryService(db) {
         const runtimeVersion = await saveVitals(c, character, vitals, hp, mana);
         await c.execute(
           'INSERT INTO character_economy_events (character_id, request_id, action_type, payload) VALUES (?, ?, ?, ?)',
-          [character.id, input.requestId, 'inventory_use', JSON.stringify({ itemId: input.itemId, foodBuff, rewardId })],
+          [character.id, input.requestId, 'inventory_use', JSON.stringify({ itemId: input.itemId, foodBuff, rewardId, rewardMessage })],
         );
         return {
-          requestId: input.requestId, itemId: input.itemId, quantity, hp, mana, runtimeVersion, foodBuff, rewardId,
-          ...(tomeChest ? { items: inventorySnapshot(await allItemRows(c, character.id)) } : {}),
+          requestId: input.requestId, itemId: input.itemId, quantity, hp, mana, runtimeVersion, foodBuff, rewardId, rewardMessage,
+          ...(rewardChest ? { items: inventorySnapshot(await allItemRows(c, character.id)) } : {}),
           replayed: false,
         };
       });
@@ -447,6 +486,8 @@ function createInventoryService(db) {
         if (input.action === 'equip') {
           const eventWeapon=Object.entries(tuLinhWeapons).find(([,w])=>w.id===input.itemId);
           if(eventWeapon&&eventWeapon[0]!==character.class_code)throw fail(403,'Vũ khí Tứ Linh này không dành cho class của bạn.');
+          const dragonWeaponClass=Object.entries(dragonWeaponByClass).find(([,id])=>id===input.itemId);
+          if(dragonWeaponClass&&dragonWeaponClass[0]!==character.class_code)throw fail(403,'Vũ khí Địa Long này không dành cho class của bạn.');
           const target = items.find(item => item.id === input.itemId && item.location === 'inventory' && item.quantity > 0);
           if (!target) throw fail(409, 'Trang bị này không có trong túi đồ CSDL.');
           if (equipped?.id === input.itemId) throw fail(409, 'Vật phẩm này đã được trang bị.');

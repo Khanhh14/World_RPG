@@ -246,7 +246,7 @@ export class RPGState {
             this.data.gold = integer(saved.gold, 0, 9999999, 50);
             this.data.pendingBossRewards = Array.isArray(saved.pendingBossRewards) ? [...new Set(saved.pendingBossRewards.filter(entry=>typeof entry==='string'
                 ? /^[a-f0-9-]{36}$/i.test(entry)
-                : entry && ['naga','noxii','forest-guardian','thanh-long','huyen-quy','bach-ho','hoa-phuong'].includes(entry.bossId) && /^[a-f0-9-]{36}$/i.test(entry.requestId)))] : [];
+                : entry && ['naga','noxii','forest-guardian','thanh-long','huyen-quy','bach-ho','hoa-phuong','dia-long'].includes(entry.bossId) && /^[a-f0-9-]{36}$/i.test(entry.requestId)))] : [];
             this.data.bossStoneInbox = integer(saved.bossStoneInbox,0,999999,0);
             this.data.activityRewardReceipts = Array.isArray(saved.activityRewardReceipts)
                 ? [...new Set(saved.activityRewardReceipts.filter(id=>typeof id==='string'&&/^[a-f0-9-]{36}$/i.test(id)))] : [];
@@ -597,15 +597,17 @@ export class RPGState {
                 this.data.foodBuff = result.foodBuff || this.data.foodBuff;
                 this.data.pendingItemUse = null;
                 rewardId = result.rewardId || null;
+                rewardMessage = result.rewardMessage || null;
                 this.changed();
             };
-            let rewardId = null;
+            let rewardId = null, rewardMessage = null;
             const runtimeSave = this.scene?.registry?.get('runtime-save');
             if (runtimeSave?.withExternalUpdate) {
                 await runtimeSave.withExternalUpdate(operation, applyResult);
             } else {
                 applyResult(await operation());
             }
+            if (rewardMessage) return rewardMessage;
             if (rewardId && ITEMS[rewardId]) return `Mở rương nhận được ${ITEMS[rewardId].name}.`;
             return `Đã sử dụng ${ITEMS[pending.itemId]?.name?.toLowerCase() || pending.itemId}.`;
         } catch (error) {

@@ -55,6 +55,7 @@ export class ActionBarUI {
     const f=this.scene.fishingSystem;
     if(this.scene.dialogue?.isOpen)return {icon:'next',label:'Tiếp tục',kind:'dialogue'};
     if(f?.phase&&f.phase!=='idle')return {icon:'cancel',label:f.phase==='finishing'?'Nhận cá…':'Hủy câu',kind:'cancel'};
+    if(this.scene.bossArenaPortal?.near())return {icon:'next',label:'Dịch chuyển',kind:'portal'};
     const npc=this.scene.dialogue?.nearest?.()??this.npc;
     if(npc?.role==='coachman')return {icon:'talk',label:'Dịch chuyển',kind:'npc'};
     if(npc)return {icon:npc.isMerchant?'shop':'talk',label:npc.isMerchant?'Mua bán':'Nói chuyện',kind:'npc'};
@@ -69,6 +70,7 @@ export class ActionBarUI {
     if(id==='interact'){
       const c=this.context(),f=this.scene.fishingSystem;
       if(c.kind==='dialogue'||c.kind==='npc')this.scene.dialogue?.interact();
+      else if(c.kind==='portal')this.scene.bossArenaPortal?.activate();
       else if(c.kind==='mushroom')this.scene.mushroomSystem.start();
       else if(c.kind==='harvest-cancel')this.scene.mushroomSystem.cancel();
       else if(c.kind==='fish')void f.start();

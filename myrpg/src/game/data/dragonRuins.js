@@ -27,6 +27,7 @@ export const dragonRuins={
   ...pack('Long Ưng Tàn Tích','raptor','jade_dragon_core',[[17,6],[20,5],[24,6],[27,5]])
  ],
  npcs:[],
+ bossArenaPortal:{x:21*48,feetY:15*48,target:'DiaLongBoss',spawn:{x:21*48,y:22*48}},
  portals:[{
   kind:'doorway',x:1008,feetY:1536,width:192,height:96,
   label:'Về Khu Rừng Địa Long',target:'DiaLongForest',

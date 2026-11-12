@@ -98,11 +98,22 @@ export const TOME_ITEMS = {
     tome_aura:{name:'Cổ Tịch Linh Vực',icon:'aura',auraDamage:0.20,auraRadius:120,description:'Đòn thường tạo vùng quanh nhân vật, bán kính 120, gây 20% sát thương.'}
 };
 ITEMS.tome_chest={name:'Rương Cổ Tịch',emoji:'📦',type:'consumable',category:'tome-chest',level:1,price:2000,maxStack:99,description:'Mở rương để nhận ngẫu nhiên 1 trong 6 Cổ Tịch.'};
+ITEMS.dragon_chest={name:'Rương Địa Long',emoji:'🐉',type:'consumable',category:'dragon-chest',level:1,price:0,maxStack:99,description:'Mở rương để nhận trọn bộ trang bị Địa Long. Vũ khí phù hợp với class nhân vật.'};
 for (const [id,tome] of Object.entries(TOME_ITEMS)) {
     ITEMS[id]={...tome,type:'tome',category:'tome',level:1,maxStack:99};
 }
+Object.assign(ITEMS, {
+    dragon_armor:{name:'Áo Giáp Địa Long',type:'armor',category:'dragon-gear',icon:'dragon_armor',level:6,maxStack:1,defense:85,maxHP:450,description:'+85 thủ · +450 HP tối đa.'},
+    dragon_helmet:{name:'Mũ Địa Long',type:'helmet',category:'dragon-gear',icon:'dragon_helmet',level:6,maxStack:1,defense:55,maxHP:250,description:'+55 thủ · +250 HP tối đa.'},
+    dragon_boots:{name:'Giày Địa Long',type:'boots',category:'dragon-gear',icon:'dragon_boots',level:6,maxStack:1,defense:45,description:'+45 thủ.'},
+    dragon_gloves:{name:'Găng Địa Long',type:'gloves',category:'dragon-gear',icon:'dragon_gloves',level:6,maxStack:1,attack:65,defense:45,description:'+65 công · +45 thủ.'},
+    dragon_shield:{name:'Khiên Địa Long',type:'shield',category:'dragon-gear',icon:'dragon_shield',level:6,maxStack:1,attack:50,defense:60,maxHP:300,description:'+50 công · +60 thủ · +300 HP tối đa.'},
+    dragon_sword:{name:'Long Nha Kiếm',frame:107,type:'weapon',category:'dragon-gear',level:6,maxStack:1,classCode:'swordsman',attack:180,description:'+180 công. Vũ khí Địa Long dành cho Kiếm sĩ.'},
+    dragon_staff:{name:'Long Tủy Trượng',frame:129,type:'weapon',category:'dragon-gear',level:6,maxStack:1,classCode:'mage',attack:180,description:'+180 công. Vũ khí Địa Long dành cho Pháp sư.'},
+    dragon_axe:{name:'Long Cốt Phủ',frame:118,type:'weapon',category:'dragon-gear',level:6,maxStack:1,classCode:'fighter',attack:180,description:'+180 công. Vũ khí Địa Long dành cho Đấu sĩ.'}
+});
 export const SHOP_ITEMS=Object.keys(ITEMS)
-    .filter(id => !['monster-drop','upgrade','event-weapon','event-gear','tome','tome-chest'].includes(ITEMS[id].category) && !ITEMS[id].eventId)
+    .filter(id => !['monster-drop','upgrade','event-weapon','event-gear','tome','tome-chest','dragon-chest','dragon-gear'].includes(ITEMS[id].category) && !ITEMS[id].eventId)
     .sort((a,b)=>ITEMS[a].level-ITEMS[b].level || ITEMS[a].price-ITEMS[b].price);
 
 const tomeColors={
