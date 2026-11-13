@@ -40,6 +40,7 @@ const tomes = [
   ['tome_range', 'Cổ Tịch Viễn Kích', 'range', '+20 tầm đánh thường mỗi cấp.'],
   ['tome_aura', 'Cổ Tịch Linh Vực', 'aura', 'Đòn thường tạo vùng quanh nhân vật, bán kính 120, gây 20% sát thương.'],
 ];
+const tomeIds = new Set(tomes.map(([id]) => id));
 const dragonChestId = 'dragon_chest';
 const dragonWeaponByClass = { swordsman: 'dragon_sword', mage: 'dragon_staff', fighter: 'dragon_axe' };
 const dragonItems = [
@@ -208,6 +209,14 @@ function createInventoryService(db) {
     }
   }
 
+  async function getTomeLevels(c, characterId) {
+    const [rows] = await c.execute(
+      'SELECT tome_id, level FROM character_tome_progress WHERE character_id = ?',
+      [characterId],
+    );
+    return Object.fromEntries(rows.map(row => [row.tome_id, Number(row.level)]));
+  }
+
   async function ensureDragonDefinitions(c) {
     for (const [id, name, type, maxStack, attackBonus, icon, description] of dragonItems) {
       await c.execute(
@@ -267,6 +276,7 @@ function createInventoryService(db) {
         return {
           characterId: String(character.id),
           items: inventorySnapshot(rows),
+          tomeLevels: await getTomeLevels(c, character.id),
           foodBuff: await currentFoodBuff(c, character.id),
         };
       });
@@ -549,7 +559,73 @@ function createInventoryService(db) {
         };
       });
     },
+    async upgradeTome(userId, input = {}) {
+      if (!input || !tomeIds.has(input.tomeId) || !Number.isSafeInteger(input.expectedLevel)
+        || input.expectedLevel < 1 || typeof input.requestId !== 'string'
+        || !/^[a-f0-9-]{36}$/i.test(input.requestId)) {
+        throw fail(400, 'Yêu cầu nâng cấp Cổ Tịch không hợp lệ.');
+      }
+      return transaction(userId, async (c, character) => {
+        const [receipts] = await c.execute(
+          'SELECT action_type, payload FROM character_economy_events WHERE character_id = ? AND request_id = ?',
+          [character.id, input.requestId],
+        );
+        if (receipts.length) {
+          const payload = typeof receipts[0].payload === 'string' ? JSON.parse(receipts[0].payload) : receipts[0].payload;
+          if (receipts[0].action_type !== 'tome_upgrade' || payload.tomeId !== input.tomeId) {
+            throw fail(409, 'Mã giao dịch đã được dùng cho thao tác khác.');
+          }
+          return {
+            requestId: input.requestId,
+            items: inventorySnapshot(await allItemRows(c, character.id)),
+            tomeLevels: await getTomeLevels(c, character.id),
+            replayed: true,
+          };
+        }
+
+        await c.execute(
+          'INSERT IGNORE INTO character_tome_progress (character_id, tome_id, level) VALUES (?, ?, 1)',
+          [character.id, input.tomeId],
+        );
+        const [levels] = await c.execute(
+          'SELECT level FROM character_tome_progress WHERE character_id = ? AND tome_id = ? FOR UPDATE',
+          [character.id, input.tomeId],
+        );
+        const level = Number(levels[0]?.level);
+        if (level !== input.expectedLevel) throw fail(409, 'Cấp Cổ Tịch đã thay đổi. Hãy kiểm tra lại.');
+
+        const rows = await allItemRows(c, character.id);
+        const owned = rows.filter(row => row.item_definition_id === input.tomeId)
+          .reduce((sum, row) => sum + Number(row.quantity), 0);
+        if (owned < 3) throw fail(409, 'Cần có 3 bản Cổ Tịch giống nhau để nâng cấp.');
+        await consumeQuantity(c, character.id, rows.filter(row => row.item_definition_id === input.tomeId && row.location === 'inventory'), 2);
+        await c.execute(
+          'UPDATE character_tome_progress SET level = level + 1 WHERE character_id = ? AND tome_id = ?',
+          [character.id, input.tomeId],
+        );
+        await c.execute('UPDATE characters SET progress_version = progress_version + 1 WHERE id = ?', [character.id]);
+        await c.execute(
+          'INSERT INTO character_economy_events (character_id, request_id, action_type, payload) VALUES (?, ?, ?, ?)',
+          [character.id, input.requestId, 'tome_upgrade', JSON.stringify({ tomeId: input.tomeId })],
+        );
+        return {
+          requestId: input.requestId,
+          items: inventorySnapshot(await allItemRows(c, character.id)),
+          tomeLevels: await getTomeLevels(c, character.id),
+          replayed: false,
+        };
+      });
+    },
   };
 }
 
-module.exports = { createInventoryService };
+async function createTomeProgressSchema(db) {
+  await db.execute(`CREATE TABLE IF NOT EXISTS character_tome_progress (
+    character_id BIGINT UNSIGNED NOT NULL,
+    tome_id VARCHAR(64) NOT NULL,
+    level INT UNSIGNED NOT NULL DEFAULT 1,
+    PRIMARY KEY (character_id, tome_id)
+  ) ENGINE=InnoDB`);
+}
+
+module.exports = { createInventoryService, createTomeProgressSchema };

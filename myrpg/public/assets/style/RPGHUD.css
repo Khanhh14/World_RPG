@@ -89,6 +89,8 @@
 .rpg-ui .rpg-equipment-stats{font-size:10px;color:#9fb5a3;line-height:1.4}
 .rpg-ui .rpg-equipment-footer{display:flex;justify-content:space-between;align-items:center;gap:4px;margin-top:auto}
 .rpg-ui .rpg-equipment-footer button{padding:3px 7px;font-size:10px}
+.rpg-ui .rpg-tome-upgrade{display:flex;align-items:center;justify-content:space-between;gap:6px;padding-top:6px;border-top:1px solid #354e3c}
+.rpg-ui .rpg-tome-upgrade button{padding:4px 8px;font-size:10px}
 .rpg-ui .rpg-summary-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:9px}
 .rpg-ui .rpg-summary-stats>div{text-align:center;padding:8px 3px;background:#0b1f18;border:1px solid #354e3c;border-radius:7px}
 .rpg-ui .rpg-summary-stats span{display:block;font-size:9px;color:var(--muted);margin-bottom:4px}

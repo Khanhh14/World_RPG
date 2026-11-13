@@ -35,4 +35,8 @@ router.post('/equipment', async (req, res, next) => {
   try { res.set('Cache-Control', 'no-store').json({ success: true, ...await service.equip(req.user.id, req.body || {}) }); }
   catch (error) { next(error); }
 });
+router.post('/tome-upgrade', async (req, res, next) => {
+  try { res.set('Cache-Control', 'no-store').json({ success: true, ...await service.upgradeTome(req.user.id, req.body || {}) }); }
+  catch (error) { next(error); }
+});
 module.exports = router;

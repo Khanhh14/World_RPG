@@ -93,9 +93,9 @@ export const TOME_ITEMS = {
     tome_wind:{name:'Cổ Tịch Phong Hành',icon:'wind',moveSpeed:0.05,description:'+5% tốc độ di chuyển mỗi cấp.'},
     tome_chain:{name:'Cổ Tịch Liên Kích',icon:'chain',basicCooldownReduction:0.04,description:'Giảm 4% hồi đòn thường mỗi cấp.'},
     tome_critical:{name:'Cổ Tịch Bạo Kích',icon:'critical',criticalChance:0.03,criticalMultiplier:1.5,description:'+3% tỉ lệ chí mạng đòn thường mỗi cấp. Chí mạng gây 150% sát thương.'},
-    tome_echo:{name:'Cổ Tịch Toàn Ảnh',icon:'echo',echoDamage:0.25,echoRadius:95,description:'Đòn thường lan trong bán kính 95 quanh mục tiêu, gây 25% sát thương.'},
+    tome_echo:{name:'Cổ Tịch Toàn Ảnh',icon:'echo',echoDamage:0.25,echoRadius:95,description:'Đòn thường lan trong bán kính 95 quanh mục tiêu, gây thêm 25% sát thương mỗi cấp.'},
     tome_range:{name:'Cổ Tịch Viễn Kích',icon:'range',attackRange:20,description:'+20 tầm đánh thường mỗi cấp.'},
-    tome_aura:{name:'Cổ Tịch Linh Vực',icon:'aura',auraDamage:0.20,auraRadius:120,description:'Đòn thường tạo vùng quanh nhân vật, bán kính 120, gây 20% sát thương.'}
+    tome_aura:{name:'Cổ Tịch Linh Vực',icon:'aura',auraDamage:0.20,auraRadius:120,description:'Đòn thường tạo vùng quanh nhân vật, bán kính 120, gây thêm 20% sát thương mỗi cấp.'}
 };
 ITEMS.tome_chest={name:'Rương Cổ Tịch',icon:'chest',type:'consumable',category:'tome-chest',level:1,price:2000,maxStack:99,description:'Mở rương để nhận ngẫu nhiên 1 trong 6 Cổ Tịch.'};
 ITEMS.dragon_chest={name:'Rương Địa Long',icon:'chest',type:'consumable',category:'dragon-chest',level:1,price:0,maxStack:99,description:'Mở rương để nhận ngẫu nhiên 1 trang bị Địa Long. Vũ khí phù hợp với class nhân vật.'};

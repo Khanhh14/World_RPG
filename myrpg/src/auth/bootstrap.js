@@ -16,7 +16,7 @@ export function withAuth(startGame) {
       const [runtime, wingResult, inventory] = await Promise.all([loadRuntime(character.id), wingsApi.load(), inventoryApi.load()]);
       if (String(inventory.characterId) !== String(character.id)) throw new Error('Túi đồ không thuộc nhân vật đã chọn.');
       character.runtime = runtime; character.wings = wingResult.wings;
-      character.items = inventory.items; character.foodBuff = inventory.foodBuff;
+      character.items = inventory.items; character.tomeLevels = inventory.tomeLevels; character.foodBuff = inventory.foodBuff;
       setCharacterProfile(character, user);
       const game = await startGame(user, ...args);
       game?.registry?.set('auth-user', user);

@@ -28,6 +28,7 @@ export const DESTINATIONS = [
 ];
 
 const SAVE_KEY = 'tiny-rpg-progress-v1';
+const PER_LEVEL_TOME_STATS = new Set(['moveSpeed', 'basicCooldownReduction', 'criticalChance', 'echoDamage', 'attackRange', 'auraDamage']);
 
 const integer = (value, min, max, fallback) => {
     return Number.isFinite(value)
@@ -114,6 +115,7 @@ export class RPGState {
             pendingItemUse: null,
             pendingInventoryAction: null,
             pendingEquipmentAction: null,
+            pendingTomeUpgrade: null,
             pendingBossRewards: [],
             bossStoneInbox: 0,
             pendingKills: [],
@@ -123,6 +125,7 @@ export class RPGState {
             mushroomHarvest: {},
             foodBuff: null,
             activeTomes: [],
+            tomeLevels: {},
 
             inventory: {
                 health_potion: 5,
@@ -197,7 +200,7 @@ export class RPGState {
 
     tomeBonus(stat) {
         return (this.data.activeTomes ?? []).reduce((total,id) =>
-            total + (TOME_ITEMS[id]?.[stat] || 0), 0);
+            total + (TOME_ITEMS[id]?.[stat] || 0) * (PER_LEVEL_TOME_STATS.has(stat) ? this.data.tomeLevels?.[id] ?? 1 : 1), 0);
     }
 
     get maxHP() {
@@ -285,6 +288,13 @@ export class RPGState {
                 && /^[a-f0-9-]{36}$/i.test(equipmentAction.requestId)) {
                 this.data.pendingEquipmentAction = equipmentAction;
             }
+            const tomeUpgrade = saved.pendingTomeUpgrade;
+            if (tomeUpgrade && TOME_ITEMS[tomeUpgrade.tomeId] && Number.isSafeInteger(tomeUpgrade.expectedLevel)
+                && tomeUpgrade.expectedLevel >= 1 && /^[a-f0-9-]{36}$/i.test(tomeUpgrade.requestId ?? '')) {
+                this.data.pendingTomeUpgrade = tomeUpgrade;
+            }
+            this.data.tomeLevels = Object.fromEntries(Object.entries(saved.tomeLevels || {})
+                .filter(([id, level]) => TOME_ITEMS[id] && Number.isSafeInteger(level) && level >= 1));
             this.data.pendingWingAction = saved.pendingWingAction || null;
             this.data.pendingSkillAction = saved.pendingSkillAction || null;
             this.data.pendingKills = Array.isArray(saved.pendingKills) ? saved.pendingKills.filter(entry => typeof entry === 'string'
@@ -439,7 +449,7 @@ export class RPGState {
         }
 
         const usedSlots = Object.entries(this.data.inventory).reduce((sum,[itemId,number])=>{
-            if(!ITEMS[itemId])return sum;
+            if (!ITEMS[itemId])return sum;
             const worn=Object.values(this.data.equipment).filter(id=>id===itemId).length+(this.data.activeTomes?.includes(itemId)?1:0);
             const bag=Math.max(0,number-worn);
             return sum+Math.ceil(bag/(ITEMS[itemId].maxStack||99));
@@ -638,7 +648,56 @@ export class RPGState {
         return await this.recoverEquipmentAction();
     }
 
-    applyServerItems(items) {
+    async upgradeTome(id) {
+        if (!TOME_ITEMS[id]) return { ok:false, message:'Cổ Tịch không hợp lệ.' };
+        if (this.data.pendingTomeUpgrade) return await this.recoverTomeUpgrade();
+        if (this.data.pendingSale || this.selling || this.buying || this.usingItem || this.data.pendingPurchase
+            || this.data.pendingEquipmentAction || this.data.pendingItemUse || this.data.pendingInventoryAction) {
+            return { ok:false, message:'Hãy hoàn tất giao dịch vật phẩm đang chờ.' };
+        }
+        if ((this.data.inventory[id] ?? 0) < 3) return { ok:false, message:'Cần có 3 bản Cổ Tịch giống nhau để nâng cấp.' };
+        this.data.pendingTomeUpgrade = {
+            tomeId:id,
+            expectedLevel:this.data.tomeLevels?.[id] ?? 1,
+            requestId:crypto.randomUUID(),
+        };
+        try {
+            if (!this.storage) throw new Error();
+            this.storage.setItem(this.saveKey, JSON.stringify(this.data));
+            const saved = JSON.parse(this.storage.getItem(this.saveKey));
+            if (saved.pendingTomeUpgrade?.requestId !== this.data.pendingTomeUpgrade.requestId) throw new Error();
+        } catch {
+            this.data.pendingTomeUpgrade = null;
+            return { ok:false, message:'Hãy cho phép lưu dữ liệu trình duyệt trước khi nâng Cổ Tịch.' };
+        }
+        return await this.recoverTomeUpgrade();
+    }
+
+    async recoverTomeUpgrade() {
+        const pending = this.data.pendingTomeUpgrade;
+        if (!pending || this.usingItem) return { ok:false, message:'Đang xử lý vật phẩm…' };
+        this.usingItem = true;
+        try {
+            const result = await inventoryApi.upgradeTome(pending);
+            if (result.requestId !== pending.requestId || !Array.isArray(result.items) || !result.tomeLevels) {
+                throw new Error('Máy chủ trả về trạng thái nâng cấp Cổ Tịch không hợp lệ.');
+            }
+            this.applyServerItems(result.items, result.tomeLevels);
+            this.data.pendingTomeUpgrade = null;
+            const level = this.data.tomeLevels[pending.tomeId];
+            return { ok:true, message:`Đã hợp nhất 3 bản ${TOME_ITEMS[pending.tomeId].name}, nâng lên cấp ${level}.` };
+        } catch (error) {
+            if ([400, 403, 409].includes(error.status)) {
+                this.data.pendingTomeUpgrade = null;
+            }
+            return { ok:false, message:error.message || 'Chưa xác nhận được nâng cấp Cổ Tịch.' };
+        } finally {
+            this.usingItem = false;
+            this.changed();
+        }
+    }
+
+    applyServerItems(items, tomeLevels) {
         const inventory = Object.fromEntries(Object.keys(ITEMS).map(id => [id, 0]));
         const equipment = Object.fromEntries(EQUIPMENT_SLOTS.map(([slot]) => [slot, null]));
         const activeTomes = [];
@@ -656,6 +715,10 @@ export class RPGState {
         this.data.inventory = inventory;
         for (const [slot] of EQUIPMENT_SLOTS) this.data.equipment[slot] = equipment[slot];
         this.data.activeTomes = [...new Set(activeTomes)];
+        if (tomeLevels) {
+            this.data.tomeLevels = Object.fromEntries(Object.entries(tomeLevels)
+                .filter(([id, level]) => TOME_ITEMS[id] && Number.isSafeInteger(level) && level >= 1));
+        }
     }
 
     async recoverEquipmentAction() {

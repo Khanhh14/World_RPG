@@ -53,6 +53,8 @@ export function createCharacterState(StateClass, userId) {
   state.data.inventory = seed.inventory;
   state.data.equipment = seed.equipment;
   state.data.activeTomes = seed.activeTomes;
+  state.data.tomeLevels = Object.fromEntries(Object.entries(profile.tomeLevels || {})
+    .filter(([id, level]) => TOME_ITEMS[id] && Number.isSafeInteger(level) && level >= 1));
   Object.assign(state.data, { characterId: profile.id, name: profile.name, classCode: profile.classCode, className: profile.class.name, playerFrame: profile.class.frame });
   // MySQL là nguồn chính cho kinh tế; localStorage chỉ giữ giao diện/túi đồ hiện có.
   state.applyServerCharacter(profile);
@@ -66,6 +68,7 @@ export function createCharacterState(StateClass, userId) {
   if (state.data.pendingItemUse) void state.recoverItemUse();
   if (state.data.pendingInventoryAction) void state.recoverInventoryAction();
   if (state.data.pendingEquipmentAction) void state.recoverEquipmentAction();
+  if (state.data.pendingTomeUpgrade) void state.recoverTomeUpgrade();
   return state;
 }
 // Gắn ngoại hình và tên sau khi Scene đã tạo player + HUD.

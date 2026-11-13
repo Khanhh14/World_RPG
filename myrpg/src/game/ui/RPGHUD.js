@@ -84,6 +84,13 @@ export class RPGHUD {
                 const result = await this.state.buyItem('tome_chest');
                 if (this.destroyed) return;
                 this.toast(result.message);
+                if (this.tab === 'tome-shop') this.renderModal();
+            }
+            if (action === 'tome-upgrade') {
+                const result = await this.state.upgradeTome(id);
+                if (this.destroyed) return;
+                this.toast(result.message);
+                if (this.tab === 'tomes') this.renderModal();
             }
             if (action === 'wing-equip') await this.scene.wingsSystem?.perform('equip', { wingId: id });
             if (action === 'wing-unequip') await this.scene.wingsSystem?.perform('equip', { wingId: null });
@@ -464,10 +471,13 @@ export class RPGHUD {
         const tomes = Object.keys(TOME_ITEMS).map(id => {
             const tome = TOME_ITEMS[id], active = d.activeTomes?.includes(id), available = this.bagQuantity(id) > 0;
             const owned = Number(d.inventory[id]) || 0;
-            return `<article class="rpg-equipment-slot rpg-tome-card ${active ? 'equipped' : ''}"><div class="rpg-equipment-header">${tomeIcon(id, 44)}<div><div class="rpg-equipment-title">Cổ Tịch</div><div class="rpg-equipment-name">${escape(tome.name)}</div></div></div><p class="rpg-subtle">${escape(tome.description)}</p><div class="rpg-equipment-footer"><span class="rpg-tier">${active ? 'ĐANG KÍCH HOẠT' : `Trong túi: ${this.bagQuantity(id)}`}${owned > 1 ? ` · Sở hữu: ${owned}` : ''}</span><button type="button" class="${active ? '' : 'rpg-primary'}" data-action="use" data-id="${id}" ${d.pendingEquipmentAction || (!active && !available) ? 'disabled' : ''}>${active ? 'Tháo' : available ? 'Kích hoạt' : 'Chưa có'}</button></div></article>`;
+            const level = d.tomeLevels?.[id] ?? 1;
+            const retryUpgrade = d.pendingTomeUpgrade?.tomeId === id;
+            const blockedUpgrade = this.state.usingItem || (d.pendingTomeUpgrade && !retryUpgrade);
+            return `<article class="rpg-equipment-slot rpg-tome-card ${active ? 'equipped' : ''}"><div class="rpg-equipment-header">${tomeIcon(id, 44)}<div><div class="rpg-equipment-title">Cổ Tịch cấp ${level}</div><div class="rpg-equipment-name">${escape(tome.name)}</div></div></div><p class="rpg-subtle">${escape(tome.description)}</p><div class="rpg-equipment-footer"><span class="rpg-tier">${active ? 'ĐANG KÍCH HOẠT' : 'Chưa kích hoạt'} · Sở hữu: ${owned}</span><button type="button" class="${active ? '' : 'rpg-primary'}" data-action="use" data-id="${id}" ${d.pendingEquipmentAction || this.state.usingItem || (!active && !available) ? 'disabled' : ''}>${active ? 'Tháo' : available ? 'Kích hoạt' : 'Chưa có'}</button></div><div class="rpg-tome-upgrade"><span class="rpg-tier">${Math.min(owned, 3)}/3 bản để lên cấp ${level + 1}${owned > 3 ? ` · dư ${owned - 3}` : ''}</span><button type="button" data-action="tome-upgrade" data-id="${id}" ${owned < 3 || blockedUpgrade || d.pendingEquipmentAction ? 'disabled' : ''}>${retryUpgrade ? 'Thử lại' : 'Nâng cấp'}</button></div></article>`;
         }).join('');
         const chestCount = Number(d.inventory.tome_chest) || 0;
-        return `<section class="rpg-equipment-panel"><div class="rpg-section-heading"><h3>Cổ Tịch</h3><span>${d.activeTomes?.length ?? 0} đang kích hoạt · Có thể dùng nhiều quyển cùng lúc</span></div>
+        return `<section class="rpg-equipment-panel"><div class="rpg-section-heading"><h3>Cổ Tịch</h3><span>${d.activeTomes?.length ?? 0} đang kích hoạt · Có thể dùng nhiều quyển cùng lúc</span></div><p class="rpg-subtle">Ghép 3 bản trùng cùng loại để tăng 1 cấp; sau khi ghép sẽ giữ lại 1 bản Cổ Tịch.</p>
             ${chestCount ? `<div class="rpg-tome-chest"><div>${itemIcon(ITEMS.tome_chest, 40)}<span>Rương Cổ Tịch · Có ${chestCount}</span></div><button type="button" class="rpg-primary" data-action="use" data-id="tome_chest" ${d.pendingItemUse || this.state.usingItem ? 'disabled' : ''}>Mở rương</button></div>` : ''}
             <div class="rpg-equipment-grid rpg-tomes-grid">${tomes}</div></section>`;
     }
@@ -557,7 +567,7 @@ export class RPGHUD {
         </section>`;
     }
     resaleContent() {
-        const d=this.state.data,ids=Object.keys(ITEMS).filter(id=>this.bagQuantity(id)>0),busy=this.state.selling||this.state.buying||this.state.usingItem||!!d.pendingSale;
+        const d=this.state.data,ids=Object.keys(ITEMS).filter(id=>ITEMS[id]?.type!=='tome'&&this.bagQuantity(id)>0),busy=this.state.selling||this.state.buying||this.state.usingItem||!!d.pendingSale;
         return `<p class="rpg-subtle">Vũ khí và trang bị: 50% giá mua, làm tròn xuống. Các vật phẩm khác: 10 vàng/món. Đồ đang mặc cần tháo ra trước.</p>${d.pendingSale?'<p class="rpg-sale-pending">Có giao dịch bán đang chờ xác nhận. <button data-action="sale-retry">Thử lại</button></p>':''}<div class="rpg-shop-grid">${ids.map(id=>{
             const item=ITEMS[id],quantity=this.bagQuantity(id),price=resalePrice(id),batch=Math.min(99,quantity);
             return `<article class="rpg-shop-item"><header>${itemIcon(item,44)}<div><h3>${escape(item.name)}</h3><span class="rpg-tier">Trong balo: ${quantity}</span></div></header><div class="rpg-shop-buy"><strong>● ${price} vàng/món</strong></div><div class="rpg-sale-actions"><button data-action="sell" data-id="${id}" data-quantity="1" ${busy?'disabled':''}>Bán 1 · ${price} vàng</button>${quantity>1?`<button data-action="sell" data-id="${id}" data-quantity="${batch}" ${busy?'disabled':''}>Bán ${batch} · ${price*batch} vàng</button>`:''}</div></article>`;

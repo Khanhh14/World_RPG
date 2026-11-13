@@ -38,6 +38,7 @@ async function start() {
     await db.execute('SELECT character_id, skill_id FROM character_skill_books LIMIT 0');
     await db.execute('SELECT character_id, slot_index, skill_id FROM character_skill_slots LIMIT 0');
     await require('./services/skillTraining.service').createSkillTrainingSchema(db);
+    await require('./services/inventory.service').createTomeProgressSchema(db);
     console.log('MySQL: đã kết nối; schema tài khoản, nhiệm vụ và tiến trình đã sẵn sàng.');
     server = app.listen(port, host);
     server.once('listening', () => console.log(`Backend: http://${host}:${port}\nFrontend được phép: ${require('./config/auth').origins.join(', ')}\nCtrl+C để dừng.`));

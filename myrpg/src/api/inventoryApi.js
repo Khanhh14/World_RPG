@@ -32,6 +32,7 @@ export const inventoryApi = {
   load: () => request(null, 'state', 'GET'),
   use: input => retryRequest(() => request(input)),
   equip: input => retryRequest(() => request(input, 'equipment')),
+  upgradeTome: input => retryRequest(() => request(input, 'tome-upgrade')),
   exchangeFood: input => retryRequest(() => request(input, 'exchange-food')),
   harvestMushroom: input => retryRequest(() => request(input, 'harvest-mushroom')),
   collectMonsterDrop: input => retryRequest(() => request(input, 'monster-drop')),
