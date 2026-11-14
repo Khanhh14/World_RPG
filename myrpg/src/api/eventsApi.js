@@ -13,5 +13,7 @@ async function request(path,body){
 export const eventsApi={
  load:()=>request('',null),
  exchange:input=>retryRequest(()=>request('/exchange',input)),
- claim:input=>retryRequest(()=>request('/claim',input))
+ claim:input=>retryRequest(()=>request('/claim',input)),
+ exchangeDragonKey:input=>retryRequest(()=>request('/dragon-cache/exchange',input)),
+ spinDragonCache:input=>retryRequest(()=>request('/dragon-cache/spin',input))
 };

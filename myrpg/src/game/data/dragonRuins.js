@@ -26,7 +26,11 @@ export const dragonRuins={
   ...pack('Địa Long Vảy Ngọc','wyrm','ancient_dragon_scale',[[7,20],[12,23],[29,20],[34,23]]),
   ...pack('Long Ưng Tàn Tích','raptor','jade_dragon_core',[[17,6],[20,5],[24,6],[27,5]])
  ],
- npcs:[],
+ npcs:[{
+  id:'dragon-ruins-key-smith',name:'Thợ rèn Long Kha',role:'dragon-cache-exchange',
+  frame:88,col:14.5,row:29.5,
+  lines:['Mang tổng cộng 50 vật phẩm rơi từ quái Phế Tích Địa Long để đổi lấy một chìa khóa.','Sau đó mở Sự kiện → Rương Địa Long để quay một món trang bị phù hợp với class của bạn.']
+ }],
  bossArenaPortal:{x:21*48,feetY:15*48,target:'DiaLongBoss',spawn:{x:21*48,y:22*48}},
  portals:[{
   kind:'doorway',x:1008,feetY:1536,width:192,height:96,

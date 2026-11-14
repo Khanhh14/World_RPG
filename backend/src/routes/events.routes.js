@@ -5,4 +5,6 @@ router.use(requireAuth);
 router.get('/',async(req,res,next)=>{try{res.set('Cache-Control','no-store').json({success:true,...await service.load(req.user.id)});}catch(e){next(e);}});
 router.post('/exchange',async(req,res,next)=>{try{res.set('Cache-Control','no-store').json({success:true,...await service.exchange(req.user.id,req.body||{})});}catch(e){next(e);}});
 router.post('/claim',async(req,res,next)=>{try{res.set('Cache-Control','no-store').json({success:true,...await service.claimMilestone(req.user.id,req.body||{})});}catch(e){next(e);}});
+router.post('/dragon-cache/exchange',async(req,res,next)=>{try{res.set('Cache-Control','no-store').json({success:true,...await service.exchangeDragonKey(req.user.id,req.body||{})});}catch(e){next(e);}});
+router.post('/dragon-cache/spin',async(req,res,next)=>{try{res.set('Cache-Control','no-store').json({success:true,...await service.spinDragonCache(req.user.id,req.body||{})});}catch(e){next(e);}});
 module.exports=router;

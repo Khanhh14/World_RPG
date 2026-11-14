@@ -435,12 +435,13 @@ export class CombatSystem {
       t.entity.sprite.body?.stop();
       for(const o of [t.entity.sprite,t.entity.shadow,t.entity.label])o?.setVisible(false);
       const drop=ITEMS[t.entity.data.dropItem];
-      if(drop&&Math.random()<(t.entity.data.dropChance??0.25)){
+      const serverDropsDragonRuins=this.scene.mapData.id==='dragon-ruins';
+      if(!serverDropsDragonRuins&&drop&&Math.random()<(t.entity.data.dropChance??0.25)){
         if(this.state.addItem(t.entity.data.dropItem)){
           this.scene.hud?.toast(`Nhặt được ${drop.name}.`);
         }
       }
-      if (!t.entity.data.boss && ['west-forest', 'noxii-entrance', 'dia-long-forest', 'dragon-ruins', 'autumn-forest', 'hiuuling-river'].includes(this.scene.mapData.id)) void this.scene.questSystem?.recordKill();
+      if (!t.entity.data.boss && ['west-forest', 'noxii-entrance', 'dia-long-forest', 'dragon-ruins', 'autumn-forest', 'hiuuling-river'].includes(this.scene.mapData.id)) void this.scene.questSystem?.recordKill(serverDropsDragonRuins ? t.entity.data.dropItem : null);
     }
     return previousHP-t.hp;
   }

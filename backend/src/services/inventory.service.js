@@ -54,6 +54,18 @@ const dragonItems = [
   ['dragon_staff', 'Long Tủy Trượng', 'weapon', 1, 180, 'staff', '+180 công. Vũ khí Địa Long dành cho Pháp sư.'],
   ['dragon_axe', 'Long Cốt Phủ', 'weapon', 1, 180, 'axe', '+180 công. Vũ khí Địa Long dành cho Đấu sĩ.'],
 ];
+const dragonRewardsForClass = classCode => {
+  const classWeapon = dragonWeaponByClass[classCode];
+  return classWeapon ? ['dragon_armor', 'dragon_helmet', 'dragon_boots', 'dragon_gloves', 'dragon_shield', classWeapon] : null;
+};
+async function ensureDragonDefinitions(c) {
+  for (const [id, name, type, maxStack, attackBonus, icon, description] of dragonItems) {
+    await c.execute(
+      'INSERT INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES (?, ?, ?, 6, 0, ?, ?, ?, ?, 0) ON DUPLICATE KEY UPDATE name = VALUES(name), type = VALUES(type), max_stack = VALUES(max_stack), attack_bonus = VALUES(attack_bonus), icon_key = VALUES(icon_key), description = VALUES(description), available_in_shop = 0',
+      [id, name, type, maxStack, attackBonus, icon, description],
+    );
+  }
+}
 
 function createInventoryService(db) {
   async function transaction(userId, operation) {
@@ -217,15 +229,6 @@ function createInventoryService(db) {
     return Object.fromEntries(rows.map(row => [row.tome_id, Number(row.level)]));
   }
 
-  async function ensureDragonDefinitions(c) {
-    for (const [id, name, type, maxStack, attackBonus, icon, description] of dragonItems) {
-      await c.execute(
-        'INSERT INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES (?, ?, ?, 6, 0, ?, ?, ?, ?, 0) ON DUPLICATE KEY UPDATE name = VALUES(name), type = VALUES(type), max_stack = VALUES(max_stack), attack_bonus = VALUES(attack_bonus), icon_key = VALUES(icon_key), description = VALUES(description), available_in_shop = 0',
-        [id, name, type, maxStack, attackBonus, icon, description],
-      );
-    }
-  }
-
   function freeInventorySlot(rows) {
     // characterItems() chuẩn hóa slot_key thành slot trước khi truyền vào đây.
     const occupied = new Set(rows.filter(row => row.location === 'inventory').map(row => String(row.slot)));
@@ -329,7 +332,7 @@ function createInventoryService(db) {
         if (dragonChest) {
           const classWeapon = dragonWeaponByClass[character.class_code];
           if (!classWeapon) throw fail(403, 'Class nhân vật chưa có vũ khí Địa Long phù hợp.');
-          const rewards = ['dragon_armor', 'dragon_helmet', 'dragon_boots', 'dragon_gloves', 'dragon_shield', classWeapon];
+          const rewards = dragonRewardsForClass(character.class_code);
           rewardId = rewards[Math.floor(Math.random() * rewards.length)];
           const [rewardDefinitions] = await c.execute('SELECT id, max_stack FROM item_definitions WHERE id = ?', [rewardId]);
           if (!rewardDefinitions.length) throw fail(503, 'Thiếu định nghĩa trang bị Địa Long trong item_definitions.');
@@ -628,4 +631,4 @@ async function createTomeProgressSchema(db) {
   ) ENGINE=InnoDB`);
 }
 
-module.exports = { createInventoryService, createTomeProgressSchema };
+module.exports = { createInventoryService, createTomeProgressSchema, dragonRewardsForClass, ensureDragonDefinitions };

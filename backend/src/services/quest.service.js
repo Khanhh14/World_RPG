@@ -1,5 +1,8 @@
 const { characterView, reward } = require('./progress.service');
+const { randomInt } = require('node:crypto');
 const failure = (status, message) => Object.assign(new Error(message), { status });
+const dragonRuinsDrops = new Set(['dragon_bone', 'ancient_dragon_scale', 'jade_dragon_core']);
+const dragonRuinsDropChance = 0.375;
 
 const objectives = {
   first_steps: {
@@ -34,6 +37,55 @@ const parseProgress = value => {
 };
 
 function createQuestService(db) {
+  async function inventorySnapshot(c, characterId) {
+    const [rows] = await c.execute(
+      'SELECT item_definition_id, quantity, location, slot_key FROM character_items WHERE character_id = ? AND quantity > 0 ORDER BY id',
+      [characterId],
+    );
+    return rows.map(row => ({
+      id: row.item_definition_id,
+      quantity: Number(row.quantity),
+      location: row.location,
+      slot: row.slot_key,
+    }));
+  }
+
+  async function addDragonRuinsDrop(c, characterId, itemId) {
+    const definitions = {
+      dragon_bone: ['Mảnh Long Cốt', 'bone', 'Mảnh xương hóa thạch rơi từ Long Cốt Vệ Sĩ tại Phế Tích Địa Long.'],
+      ancient_dragon_scale: ['Vảy Địa Long Cổ', 'scale', 'Vảy rồng cổ rơi từ Địa Long Vảy Ngọc tại Phế Tích Địa Long.'],
+      jade_dragon_core: ['Ngọc Tủy Long Mạch', 'core', 'Ngọc tủy quý hiếm rơi từ Long Ưng Tàn Tích tại Phế Tích Địa Long.'],
+    };
+    const [name, icon, description] = definitions[itemId];
+    await c.execute(
+      "INSERT IGNORE INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES (?, ?, 'material', 1, 0, 99, 0, ?, ?, 0)",
+      [itemId, name, icon, description],
+    );
+    const [rows] = await c.execute(
+      "SELECT id, quantity, slot_key FROM character_items WHERE character_id = ? AND item_definition_id = ? AND location = 'inventory' ORDER BY id FOR UPDATE",
+      [characterId, itemId],
+    );
+    const stack = rows.find(row => Number(row.quantity) < 99);
+    if (stack) {
+      await c.execute('UPDATE character_items SET quantity = quantity + 1 WHERE id = ? AND character_id = ?', [stack.id, characterId]);
+      return;
+    }
+    const [occupiedRows] = await c.execute(
+      "SELECT slot_key FROM character_items WHERE character_id = ? AND location = 'inventory' FOR UPDATE",
+      [characterId],
+    );
+    const occupied = new Set(occupiedRows.map(row => String(row.slot_key)));
+    let slot;
+    for (let index = 0; index < 28; index++) {
+      if (!occupied.has(String(index))) { slot = String(index); break; }
+    }
+    if (slot === undefined) throw failure(409, 'Túi đồ đã đầy. Hãy dọn túi trước khi nhặt vật phẩm rơi.');
+    await c.execute(
+      "INSERT INTO character_items (character_id, item_definition_id, quantity, location, slot_key) VALUES (?, ?, 1, 'inventory', ?)",
+      [characterId, itemId, String(slot)],
+    );
+  }
+
   async function transaction(fn) {
     const c = await db.getConnection();
     try {
@@ -165,30 +217,53 @@ function createQuestService(db) {
     },
 
     async record(userId, input = {}) {
-      const { eventType, mapId, eventId } = input;
+      const { eventType, mapId, eventId, dropItem } = input;
       if (!['visit', 'monster_kill'].includes(eventType)) throw failure(400, 'Sự kiện nhiệm vụ không hợp lệ.');
       if (typeof eventId !== 'string' || !/^[a-f0-9-]{36}$/i.test(eventId)) throw failure(400, 'Mã sự kiện nhiệm vụ không hợp lệ.');
       if (typeof mapId !== 'string' || !['village', 'west-forest', 'atlast-lake', 'noxii-entrance', 'dia-long-forest', 'dragon-ruins', 'autumn-forest', 'hiuuling-river'].includes(mapId)) {
         throw failure(400, 'Khu vực nhiệm vụ không hợp lệ.');
       }
       if (eventType === 'monster_kill' && !Object.hasOwn(killRewards, mapId)) throw failure(400, 'Không thể ghi nhận hạ quái tại khu vực này.');
+      if (dropItem && (eventType !== 'monster_kill' || mapId !== 'dragon-ruins' || !dragonRuinsDrops.has(dropItem))) {
+        throw failure(400, 'Vật phẩm rơi không hợp lệ cho khu vực này.');
+      }
 
       return transaction(async c => {
         const character = await lockCharacter(c, userId);
+        let awardedDrop = null;
         if (eventType === 'monster_kill') {
-          // Khóa nhân vật phía trên + UNIQUE trong DB ngăn nhận thưởng hai lần.
-          const [insert] = await c.execute(
-            "INSERT IGNORE INTO character_economy_events (character_id, request_id, action_type, payload) VALUES (?, ?, 'monster_kill', ?)",
-            [character.id, eventId, JSON.stringify({ mapId })]);
-          if (insert.affectedRows) {
-            const gains = killRewards[mapId];
-            await reward(c, character, gains.exp, gains.gold);
-            await recordEvent(c, character.id, eventType, mapId, eventId);
+          const [receipts] = await c.execute(
+            'SELECT action_type, payload FROM character_economy_events WHERE character_id = ? AND request_id = ?',
+            [character.id, eventId],
+          );
+          if (receipts.length) {
+            const payload = typeof receipts[0].payload === 'string' ? JSON.parse(receipts[0].payload) : receipts[0].payload;
+            if (receipts[0].action_type !== 'monster_kill' || payload.mapId !== mapId) {
+              throw failure(409, 'Mã sự kiện đã được dùng cho thao tác khác.');
+            }
+            awardedDrop = payload.dropItem || null;
+          } else {
+            awardedDrop = mapId === 'dragon-ruins' && dropItem && randomInt(10000) < dragonRuinsDropChance * 10000
+              ? dropItem
+              : null;
+            const [insert] = await c.execute(
+              "INSERT IGNORE INTO character_economy_events (character_id, request_id, action_type, payload) VALUES (?, ?, 'monster_kill', ?)",
+              [character.id, eventId, JSON.stringify({ mapId, ...(awardedDrop ? { dropItem: awardedDrop } : {}) })]);
+            if (insert.affectedRows) {
+              const gains = killRewards[mapId];
+              await reward(c, character, gains.exp, gains.gold);
+              await recordEvent(c, character.id, eventType, mapId, eventId);
+              if (awardedDrop) await addDragonRuinsDrop(c, character.id, awardedDrop);
+            }
           }
-        } else {
-          await recordEvent(c, character.id, eventType, mapId, eventId);
         }
-        return { quests: await load(c, character.id), character: characterView(character) };
+        return {
+          quests: await load(c, character.id),
+          character: characterView(character),
+          ...(mapId === 'dragon-ruins' && eventType === 'monster_kill'
+            ? { dropItem: awardedDrop, items: await inventorySnapshot(c, character.id) }
+            : {}),
+        };
       });
     },
 

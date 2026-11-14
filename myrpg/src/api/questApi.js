@@ -37,6 +37,8 @@ export async function retryRequest(operation) {
 }
 export const questApi = {
   list: () => request('', null),
-  progress: (eventType, mapId, eventId) => retryRequest(() => request('/progress', { eventType, mapId, eventId })),
+  progress: (eventType, mapId, eventId, dropItem) => retryRequest(() => request('/progress', {
+    eventType, mapId, eventId, ...(dropItem ? { dropItem } : {}),
+  })),
   claim: questId => retryRequest(() => request(`/${encodeURIComponent(questId)}/claim`, {})),
 };

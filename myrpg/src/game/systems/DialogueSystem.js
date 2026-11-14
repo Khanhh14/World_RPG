@@ -77,6 +77,14 @@ export class DialogueSystem {
             this.player.stop(); npc.facePlayer(this.player);
             this.scene.hud?.openExchange(npc); return;
         }
+        if (npc?.role === 'dragon-cache-exchange') {
+            this.player.stop(); npc.facePlayer(this.player);
+            if (this.scene.activityUI) {
+                this.scene.activityUI.events.selectedEventId = 'dragon-cache';
+                this.scene.activityUI.open('events');
+            }
+            return;
+        }
         if (npc?.role === 'fishing-merchant') {
             this.player.stop(); npc.facePlayer(this.player);
             this.scene.fishingSystem?.openMerchant(npc); return;

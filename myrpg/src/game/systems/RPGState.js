@@ -14,6 +14,7 @@ import {
     BAG_CAPACITY,
     TOME_ITEMS,
     MONSTER_MATERIALS,
+    DRAGON_RUINS_MATERIALS,
     monsterMaterialsForMap,
     monsterExchangeForMap,
     FOOD_RECIPES
@@ -120,6 +121,7 @@ export class RPGState {
             bossStoneInbox: 0,
             pendingKills: [],
             pendingEventClaim: null,
+            pendingDragonAction: null,
             pendingDailyAction: null,
             activityRewardReceipts: [],
             mushroomHarvest: {},
@@ -272,6 +274,8 @@ export class RPGState {
             if(eventExchange?.eventId==='tu-linh'&&/^[a-f0-9-]{36}$/i.test(eventExchange.requestId??''))this.data.pendingEventExchange=eventExchange;
             const eventClaim=saved.pendingEventClaim;
             if(eventClaim?.eventId==='hunt-monsters'&&typeof eventClaim.milestoneId==='string'&&/^[a-f0-9-]{36}$/i.test(eventClaim.requestId??''))this.data.pendingEventClaim=eventClaim;
+            const dragonAction=saved.pendingDragonAction;
+            if(dragonAction?.eventId==='dragon-cache'&&['exchange','spin'].includes(dragonAction.action)&&/^[a-f0-9-]{36}$/i.test(dragonAction.requestId??''))this.data.pendingDragonAction=dragonAction;
             const sale=saved.pendingSale;
             if(sale && /^[a-f0-9-]{36}$/i.test(sale.requestId??'') && ITEMS[sale.itemId] && Number.isInteger(sale.quantity) && sale.quantity>0 && sale.quantity<=99 && ['local','inventory'].includes(sale.source))this.data.pendingSale=sale;
             this.data.pendingItemUse = saved.pendingItemUse || null;
@@ -299,7 +303,8 @@ export class RPGState {
             this.data.pendingSkillAction = saved.pendingSkillAction || null;
             this.data.pendingKills = Array.isArray(saved.pendingKills) ? saved.pendingKills.filter(entry => typeof entry === 'string'
                 ? /^[a-f0-9-]{36}$/i.test(entry)
-                : entry && /^[a-f0-9-]{36}$/i.test(entry.eventId) && ['west-forest', 'noxii-entrance', 'dia-long-forest', 'dragon-ruins', 'autumn-forest', 'hiuuling-river'].includes(entry.mapId)) : [];
+                : entry && /^[a-f0-9-]{36}$/i.test(entry.eventId) && ['west-forest', 'noxii-entrance', 'dia-long-forest', 'dragon-ruins', 'autumn-forest', 'hiuuling-river'].includes(entry.mapId)
+                    && (!entry.dropItem || (entry.mapId === 'dragon-ruins' && DRAGON_RUINS_MATERIALS.some(item => item.id === entry.dropItem)))) : [];
 
             for (const id of Object.keys(ITEMS)) {
                 this.data.inventory[id] = integer(
@@ -464,7 +469,7 @@ export class RPGState {
 
     canBuy(id, quantity = 1) {
         if(this.data.pendingWingAction?.action==='enchant')return {ok:false,message:'Mở Cánh để hoàn tất phù phép đang chờ.'};
-        if(this.data.pendingEventExchange)return {ok:false,message:'Mở Sự kiện để hoàn tất giao dịch đang chờ.'};
+        if(this.data.pendingEventExchange||this.data.pendingDragonAction)return {ok:false,message:'Mở Sự kiện để hoàn tất giao dịch đang chờ.'};
         if(this.data.pendingSale || this.selling)return {ok:false,message:'Đang chờ xác nhận bán đồ.'};
         const error = this.canAdd(id, quantity);
 
@@ -522,7 +527,7 @@ export class RPGState {
 
     async sellItem(id,quantity=1,position) {
         if(this.data.pendingWingAction?.action==='enchant'||this.wingPreparing)return {ok:false,message:'Mở Cánh để hoàn tất phù phép đang chờ.'};
-        if(this.data.pendingEventExchange)return {ok:false,message:'Mở Sự kiện để hoàn tất giao dịch đang chờ.'};
+        if(this.data.pendingEventExchange||this.data.pendingDragonAction)return {ok:false,message:'Mở Sự kiện để hoàn tất giao dịch đang chờ.'};
         if(this.selling || this.buying || this.usingItem || this.data.pendingPurchase || this.data.pendingEquipmentAction || this.data.pendingItemUse || this.data.pendingInventoryAction)return {ok:false,message:'Hãy hoàn tất giao dịch vật phẩm đang chờ.'};
         if(this.data.pendingSale)return this.recoverSale();
         const worn=Object.values(this.data.equipment).filter(value=>value===id).length;
@@ -709,7 +714,10 @@ export class RPGState {
             if (item.location === 'equipment' && ITEMS[item.id]?.type === 'tome') activeTomes.push(item.id);
         }
         // Vật phẩm rơi và đá cường hóa dùng bản lưu riêng của nhân vật.
-        for (const material of MONSTER_MATERIALS) inventory[material.id] = this.data.inventory[material.id] ?? 0;
+        const dragonRuinsMaterialIds = new Set(DRAGON_RUINS_MATERIALS.map(material => material.id));
+        for (const material of MONSTER_MATERIALS) {
+            if (!dragonRuinsMaterialIds.has(material.id)) inventory[material.id] = this.data.inventory[material.id] ?? 0;
+        }
         inventory.upgrade_stone = this.data.inventory.upgrade_stone ?? 0;
         inventory.wing_essence = this.data.inventory.wing_essence ?? 0;
         this.data.inventory = inventory;
@@ -750,7 +758,7 @@ export class RPGState {
     }
 
     async beginInventoryAction(action, details) {
-        if(this.data.pendingEventExchange)return {ok:false,message:'Mở Sự kiện để hoàn tất giao dịch đang chờ.'};
+        if(this.data.pendingEventExchange||this.data.pendingDragonAction)return {ok:false,message:'Mở Sự kiện để hoàn tất giao dịch đang chờ.'};
         if(this.data.pendingSale || this.selling)return {ok:false,message:'Hãy hoàn tất giao dịch bán đồ trước.'};
         if (this.usingItem) return {ok:false,message:'Đang xử lý vật phẩm…'};
         if (this.data.pendingInventoryAction) return await this.recoverInventoryAction();
@@ -926,7 +934,7 @@ export class RPGState {
     }
 
     async useItem(id) {
-        if(this.data.pendingEventExchange)return 'Mở Sự kiện để hoàn tất giao dịch đang chờ.';
+        if(this.data.pendingEventExchange||this.data.pendingDragonAction)return 'Mở Sự kiện để hoàn tất giao dịch đang chờ.';
         const item = ITEMS[id];
 
         if (this.data.pendingEquipmentAction) return await this.recoverEquipmentAction();

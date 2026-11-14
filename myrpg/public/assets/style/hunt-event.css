@@ -106,3 +106,53 @@
 .te-hunt-special-note{padding:2px 4px;color:#dbcb95;font-size:8px}
 .te-hunt-claim{width:auto;min-width:148px;align-self:flex-end;margin-top:10px;padding:8px 18px!important}
 @media(max-width:650px){.te-hunt-switch{gap:7px;margin-bottom:15px}.te-hunt-switch button{gap:7px;padding:9px 8px}.te-hunt-switch button>span:first-child{width:29px;height:29px;font-size:16px}.te-hunt-switch button strong{font-size:10px}.te-hunt-switch button small{font-size:8px}.te-hunt-milestones{grid-template-columns:minmax(0,1fr)}.te-loot{flex-basis:102px}.te-hunt-card h5{font-size:21px}.te-hunt-claim{min-width:128px}}
+.te-dragon-detail{box-sizing:border-box;padding:16px 20px!important;background:radial-gradient(ellipse at 82% 0,#29493635,transparent 42%),#172f27}
+.te-dragon-hero{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:21px 24px;border:1px solid #d5bd765e;border-radius:14px;background:radial-gradient(ellipse at 86% 45%,#cda95f26,transparent 36%),linear-gradient(112deg,#304b37,#1a342b 73%,#29372e);box-shadow:inset 0 1px #fff1,0 10px 24px #07170e44}
+.te-dragon-hero h3{margin:4px 0 5px;color:#f4dfaa;font-size:clamp(23px,3vw,34px);line-height:1.12;text-shadow:0 3px 14px #050e0a88}
+.te-dragon-hero p{max-width:570px;margin:0;color:#bdcbb7;font-size:12px;line-height:1.6}
+.te-dragon-class{display:inline-block;margin-top:10px;padding:5px 9px;border:1px solid #c6b77946;border-radius:20px;background:#10251c55;color:#e5d7a4;font-size:10px}
+.te-dragon-key-count{display:grid;place-items:center;flex:none;width:92px;height:92px;border:1px solid #e6ca7d99;border-radius:50%;background:radial-gradient(circle,#6a5732 0,#3e452e 48%,#1d3529 70%);box-shadow:0 0 0 6px #d7bf7012,0 0 30px #e6c46e25;text-align:center}
+.te-dragon-key-count span{font-size:23px;line-height:1}
+.te-dragon-key-count strong{color:#f4dfaa;font-size:23px;line-height:1;font-variant-numeric:tabular-nums}
+.te-dragon-key-count small{color:#d9d4ad;font-size:8px;letter-spacing:1px}
+.te-dragon-exchange,.te-dragon-spin-section,.te-dragon-pool{margin-top:16px;padding:16px;border:1px solid #79916b66;border-radius:12px;background:linear-gradient(130deg,#203e30,#182f27);box-shadow:0 5px 16px #07170e33}
+.te-dragon-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.te-dragon-section-title h4{margin:2px 0 0;color:#f0dfb0;font-size:16px}
+.te-dragon-section-title>strong{color:#f4dda1;font-size:22px;font-variant-numeric:tabular-nums}
+.te-dragon-section-title>strong small{color:#aabca7;font-size:12px;font-weight:400}
+.te-dragon-exchange>p{margin:8px 0;color:#aabca7;font-size:11px}
+.te-dragon-materials{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.te-dragon-materials>div{display:flex;align-items:center;gap:7px;min-width:0;padding:7px;border:1px solid #a5b78417;border-radius:8px;background:#10271e55}
+.te-dragon-materials svg,.te-dragon-materials .te-loot-emoji{flex:none}
+.te-dragon-materials>div>span:last-child{display:grid;min-width:0;gap:3px;color:#d9dfc5;font-size:9px}
+.te-dragon-materials b{color:#e8d28d;font-size:11px}
+.te-dragon-hint{display:block;margin:8px 0;color:#cfbc82;font-size:10px}
+.te-dragon-exchange-button,.te-dragon-spin-button{display:block;width:100%;margin-top:12px;padding:10px 14px!important;border:1px solid #e4cb80!important;border-radius:8px!important;background:linear-gradient(110deg,#ddc276,#b99a56)!important;color:#253124!important;font-size:11px!important;font-weight:700}
+.te-dragon-exchange-button:hover:not(:disabled),.te-dragon-spin-button:hover:not(:disabled){background:linear-gradient(110deg,#f0d998,#d5b66b)!important}
+.te-dragon-exchange-button:disabled,.te-dragon-spin-button:disabled{opacity:.55}
+.te-dragon-chest-icon{display:grid;place-items:center;flex:none;width:82px;height:72px;border:1px solid #cfb86c66;border-radius:12px;background:radial-gradient(circle,#90703733,#10251e);color:#e9d491}
+.te-dragon-chest-icon.is-spinning{animation:te-dragon-wobble .42s ease-in-out infinite alternate}
+.te-dragon-chest-icon svg{width:62px;height:62px}
+.te-dragon-reel{position:relative;display:flex;align-items:center;justify-content:center;height:76px;margin-top:11px;overflow:hidden;border:1px solid #a5b78422;border-radius:10px;background:linear-gradient(90deg,#10251e,#263c2d 50%,#10251e)}
+.te-dragon-reel:before,.te-dragon-reel:after{position:absolute;z-index:2;top:0;width:28px;height:100%;content:"";pointer-events:none}
+.te-dragon-reel:before{left:0;background:linear-gradient(90deg,#142c22,transparent)}
+.te-dragon-reel:after{right:0;background:linear-gradient(270deg,#142c22,transparent)}
+.te-dragon-reel-track{display:flex;align-items:center;gap:24px}
+.te-dragon-reel-track>span{display:grid;place-items:center;width:58px;height:58px;border:1px solid #a5b78433;border-radius:9px;background:#183326}
+.te-dragon-reel-track svg{width:44px;height:44px}
+.te-dragon-reel.is-spinning .te-dragon-reel-track{animation:te-dragon-roll .55s linear infinite}
+.te-dragon-reel>b{position:absolute;z-index:3;bottom:5px;padding:3px 8px;border-radius:12px;background:#152b22dd;color:#f0d98a;font-size:9px}
+.te-dragon-result{display:flex;align-items:center;gap:10px;margin-top:13px;padding:10px 12px;border:1px solid #d4bb706e;border-radius:9px;background:#554a2a33}
+.te-dragon-result>span:first-child{display:none}
+.te-dragon-result>strong{color:#f4dfaa;font-size:12px}
+.te-dragon-result>small{margin-left:auto;color:#a9c4a0;font-size:9px}
+.te-dragon-reward-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.te-dragon-reward{display:flex;align-items:center;gap:8px;min-width:0;padding:8px;border:1px solid #a5b78417;border-radius:8px;background:#10271e55}
+.te-dragon-reward>svg{flex:none;width:42px;height:42px}
+.te-dragon-reward>div{display:grid;min-width:0;gap:3px}
+.te-dragon-reward strong{overflow:hidden;color:#e6dfc3;font-size:10px;text-overflow:ellipsis}
+.te-dragon-reward small{color:#8fa78f;font-size:8px}
+@keyframes te-dragon-wobble{from{transform:rotate(-7deg) translateY(1px)}to{transform:rotate(7deg) translateY(-2px)}}
+@keyframes te-dragon-roll{from{transform:translateX(65px)}to{transform:translateX(-65px)}}
+@media(max-width:650px){.te-dragon-detail{padding:10px 8px!important}.te-dragon-hero{gap:10px;padding:15px 13px}.te-dragon-hero h3{font-size:22px}.te-dragon-hero p{font-size:10px}.te-dragon-key-count{width:68px;height:68px}.te-dragon-key-count strong{font-size:19px}.te-dragon-exchange,.te-dragon-spin-section,.te-dragon-pool{padding:12px}.te-dragon-section-title h4{font-size:14px}.te-dragon-materials{grid-template-columns:minmax(0,1fr)}.te-dragon-materials>div{padding:5px}.te-dragon-reward-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.te-dragon-reward{gap:5px;padding:6px}.te-dragon-reward>svg{width:34px;height:34px}.te-dragon-reward strong{font-size:9px}.te-dragon-result>small{display:none}}
+@media(prefers-reduced-motion:reduce){.te-dragon-chest-icon.is-spinning,.te-dragon-reel.is-spinning .te-dragon-reel-track{animation:none}}

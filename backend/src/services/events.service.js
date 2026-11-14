@@ -5,12 +5,19 @@ const huntEvent=require('../config/huntEvent.json');
 const skillTraining=require('../config/skillTraining.json');
 const {characterView}=require('./progress.service');
 const {availableWingEssence}=require('./wingEnchant');
+const {dragonRewardsForClass,ensureDragonDefinitions}=require('./inventory.service');
+const dragonMaterials=[
+ {id:'dragon_bone',name:'Mảnh Long Cốt'},
+ {id:'ancient_dragon_scale',name:'Vảy Địa Long Cổ'},
+ {id:'jade_dragon_core',name:'Ngọc Tủy Long Mạch'}
+];
+const dragonMaterialIds=new Set(dragonMaterials.map(item=>item.id));
 const fail=(status,message)=>Object.assign(new Error(message),{status});
 const parse=v=>typeof v==='string'?JSON.parse(v):v;
 const uuid=value=>typeof value==='string'&&/^[a-f0-9-]{36}$/i.test(value);
 const eventEquipment={...huntEvent.offhand,...Object.fromEntries(Object.values(huntEvent.classWeapons).map(item=>[item.id,item]))};
 async function eventLog(c,id){
- const [rows]=await c.execute("SELECT action_type, payload FROM character_economy_events WHERE character_id = ? AND action_type IN ('boss_reward','event_exchange','monster_kill','event_milestone_claim','wing_enchant','shop_sell')",[id]);
+ const [rows]=await c.execute("SELECT action_type, payload FROM character_economy_events WHERE character_id = ? AND action_type IN ('boss_reward','event_exchange','monster_kill','event_milestone_claim','wing_enchant','shop_sell','dragon_key_exchange','dragon_cache_spin')",[id]);
  return rows;
 }
 function eventBalances(events){
@@ -45,6 +52,27 @@ function huntSnapshot(events,char){
   return {...m,reward,claimed:claimed.has(m.id),canClaim:count>=m.threshold&&!claimed.has(m.id)};
  });
  return {id:huntEvent.id,name:huntEvent.name,description:huntEvent.description,monsterKills,bossKills,monsterMilestones:viewMilestones(huntEvent.monsterMilestones,monsterKills),bossMilestones:viewMilestones(huntEvent.bossMilestones,bossKills)};
+}
+function dragonKeyCount(events){
+ return Math.max(0,events.reduce((count,event)=>count+(event.action_type==='dragon_key_exchange'?1:event.action_type==='dragon_cache_spin'?-1:0),0));
+}
+async function dragonCacheSnapshot(c,char,log){
+ const rows=await inventory(c,char.id),materials=dragonMaterials.map(material=>({
+  ...material,
+  count:rows.filter(item=>item.id===material.id&&item.location==='inventory').reduce((total,item)=>total+item.quantity,0)
+ }));
+ const rewardIds=dragonRewardsForClass(char.class_code)||[];
+ return {
+  id:'dragon-cache',
+  name:'Rương Địa Long',
+  description:'Đổi 50 vật phẩm rơi tại Phế Tích Địa Long lấy chìa khóa, rồi quay thưởng nhận một món trang bị ngẫu nhiên.',
+  keyCount:dragonKeyCount(log),
+  materials,
+  materialCost:50,
+  rewardIds,
+  classCode:char.class_code,
+  classWeapon:rewardIds[rewardIds.length-1]||null
+ };
 }
 async function addInventoryItem(c,char,itemId,quantity){
  const special=eventEquipment[itemId];
@@ -103,11 +131,12 @@ function createEventsService(db){
   const [books]=await c.execute('SELECT skill_id FROM character_skill_books WHERE character_id = ?',[char.id]),log=await eventLog(c,char.id);
   return {character:characterView(char),wingEssence:availableWingEssence(log),events:[
    {...catalog,equipment,eventSkills,ownedEventSkills:books.map(b=>b.skill_id),classCode:char.class_code,balances:eventBalances(log)},
-   huntSnapshot(log,char)
+   huntSnapshot(log,char),
+   await dragonCacheSnapshot(c,char,log)
   ]};
  }
  return {
-  load:userId=>run(userId,snapshot),
+  load:userId=>run(userId,async(c,char)=>({...await snapshot(c,char),items:await inventory(c,char.id)})),
   async claimMilestone(userId,input={}){
    if(input.eventId!==huntEvent.id||!uuid(input.requestId)||typeof input.milestoneId!=='string')throw fail(400,'Yêu cầu nhận quà sự kiện không hợp lệ.');
    const allMilestones=[...huntEvent.monsterMilestones,...huntEvent.bossMilestones],milestone=allMilestones.find(m=>m.id===input.milestoneId);
@@ -173,7 +202,57 @@ function createEventsService(db){
     await c.execute('UPDATE characters SET progress_version = progress_version + 1 WHERE id = ?',[char.id]);char.progress_version=Number(char.progress_version||0)+1;
     return {...await snapshot(c,char),requestId:input.requestId,itemId,skillId:recipe.skillId||null,items:await inventory(c,char.id),replayed:false};
    });
+  },
+  async exchangeDragonKey(userId,input={}){
+   if(!uuid(input.requestId))throw fail(400,'Yêu cầu đổi chìa khóa không hợp lệ.');
+   const position=input.position;
+   if(position?.mapId!=='dragon-ruins'||!Number.isFinite(position.x)||!Number.isFinite(position.feetY)||Math.hypot(position.x-696,position.feetY-1416)>88)throw fail(409,'Hãy đến gần Thợ rèn Long Kha tại Phế Tích Địa Long để đổi vật phẩm.');
+   return run(userId,async(c,char)=>{
+    const [receipts]=await c.execute('SELECT action_type, payload FROM character_economy_events WHERE character_id = ? AND request_id = ?',[char.id,input.requestId]);
+    if(receipts.length){
+     const payload=parse(receipts[0].payload);
+     if(receipts[0].action_type!=='dragon_key_exchange'||payload.materialCost!==50)throw fail(409,'Mã giao dịch đã dùng cho thao tác khác.');
+     return {...await snapshot(c,char),requestId:input.requestId,items:await inventory(c,char.id),replayed:true};
+    }
+    const [rows]=await c.execute("SELECT id, item_definition_id, quantity, location FROM character_items WHERE character_id = ? AND location = 'inventory' AND item_definition_id IN (?, ?, ?) ORDER BY id FOR UPDATE",[char.id,...dragonMaterialIds]);
+    const owned=rows.reduce((total,row)=>total+Number(row.quantity),0);
+    if(owned<50)throw fail(409,`Cần đủ 50 vật phẩm rơi Phế Tích Địa Long; hiện có ${owned}.`);
+    let remaining=50;
+    for(const row of rows){
+     const quantity=Number(row.quantity),consumed=Math.min(quantity,remaining);
+     if(consumed===quantity)await c.execute('DELETE FROM character_items WHERE id = ? AND character_id = ?',[row.id,char.id]);
+     else await c.execute('UPDATE character_items SET quantity = quantity - ? WHERE id = ? AND character_id = ?',[consumed,row.id,char.id]);
+     remaining-=consumed;
+     if(!remaining)break;
+    }
+    await c.execute('UPDATE characters SET progress_version = progress_version + 1 WHERE id = ?',[char.id]);
+    char.progress_version=Number(char.progress_version||0)+1;
+    await c.execute('INSERT INTO character_economy_events (character_id, request_id, action_type, payload) VALUES (?, ?, ?, ?)',[char.id,input.requestId,'dragon_key_exchange',JSON.stringify({materialCost:50})]);
+    return {...await snapshot(c,char),requestId:input.requestId,items:await inventory(c,char.id),replayed:false};
+   });
+  },
+  async spinDragonCache(userId,input={}){
+   if(!uuid(input.requestId))throw fail(400,'Yêu cầu quay rương không hợp lệ.');
+   return run(userId,async(c,char)=>{
+    const [receipts]=await c.execute('SELECT action_type, payload FROM character_economy_events WHERE character_id = ? AND request_id = ?',[char.id,input.requestId]);
+    if(receipts.length){
+     const payload=parse(receipts[0].payload);
+     if(receipts[0].action_type!=='dragon_cache_spin'||!dragonRewardsForClass(char.class_code)?.includes(payload.rewardId))throw fail(409,'Mã quay đã dùng cho thao tác khác.');
+     return {...await snapshot(c,char),requestId:input.requestId,rewardId:payload.rewardId,items:await inventory(c,char.id),replayed:true};
+    }
+    const log=await eventLog(c,char.id);
+    if(dragonKeyCount(log)<1)throw fail(409,'Bạn chưa có chìa khóa Rương Địa Long.');
+    const rewards=dragonRewardsForClass(char.class_code);
+    if(!rewards)throw fail(409,'Class nhân vật chưa có trang bị Địa Long phù hợp.');
+    await ensureDragonDefinitions(c);
+    const rewardId=rewards[Math.floor(Math.random()*rewards.length)];
+    await addInventoryItem(c,char,rewardId,1);
+    await c.execute('UPDATE characters SET progress_version = progress_version + 1 WHERE id = ?',[char.id]);
+    char.progress_version=Number(char.progress_version||0)+1;
+    await c.execute('INSERT INTO character_economy_events (character_id, request_id, action_type, payload) VALUES (?, ?, ?, ?)',[char.id,input.requestId,'dragon_cache_spin',JSON.stringify({rewardId})]);
+    return {...await snapshot(c,char),requestId:input.requestId,rewardId,items:await inventory(c,char.id),replayed:false};
+   });
   }
  };
 }
-module.exports={createEventsService,eventBalance,huntSnapshot};
+module.exports={createEventsService,eventBalance,huntSnapshot,dragonKeyCount};
