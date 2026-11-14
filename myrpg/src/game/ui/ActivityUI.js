@@ -62,6 +62,11 @@ export class ActivityUI {
   if(tab==='events')void this.events.load();
   if(tab==='daily'&&(!this.daily.view||performance.now()-this.daily.syncedAt>30000))void this.daily.load(true);
  }
+ openDragonCache(){
+  this.events.selectedEventId='dragon-cache';
+  this.open('events');
+  if(this.isOpen)this.render();
+ }
  close(restoreFocus=true){this.isOpen=false;if(this.root.open)this.root.close();this.scene.input?.keyboard?.resetKeys();if(restoreFocus&&this.opener?.isConnected)this.opener.focus();}
  async act(button){
   this.message='';

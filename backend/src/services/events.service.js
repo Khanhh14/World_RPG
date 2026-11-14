@@ -206,7 +206,6 @@ function createEventsService(db){
   async exchangeDragonKey(userId,input={}){
    if(!uuid(input.requestId))throw fail(400,'Yêu cầu đổi chìa khóa không hợp lệ.');
    const position=input.position;
-   if(position?.mapId!=='dragon-ruins'||!Number.isFinite(position.x)||!Number.isFinite(position.feetY)||Math.hypot(position.x-696,position.feetY-1416)>88)throw fail(409,'Hãy đến gần Thợ rèn Long Kha tại Phế Tích Địa Long để đổi vật phẩm.');
    return run(userId,async(c,char)=>{
     const [receipts]=await c.execute('SELECT action_type, payload FROM character_economy_events WHERE character_id = ? AND request_id = ?',[char.id,input.requestId]);
     if(receipts.length){
@@ -214,6 +213,7 @@ function createEventsService(db){
      if(receipts[0].action_type!=='dragon_key_exchange'||payload.materialCost!==50)throw fail(409,'Mã giao dịch đã dùng cho thao tác khác.');
      return {...await snapshot(c,char),requestId:input.requestId,items:await inventory(c,char.id),replayed:true};
     }
+    if(position?.mapId!=='dragon-ruins'||!Number.isFinite(position.x)||!Number.isFinite(position.feetY)||Math.hypot(position.x-696,position.feetY-1416)>88)throw fail(409,'Hãy đến gần Thợ rèn Long Kha tại Phế Tích Địa Long để đổi vật phẩm.');
     const [rows]=await c.execute("SELECT id, item_definition_id, quantity, location FROM character_items WHERE character_id = ? AND location = 'inventory' AND item_definition_id IN (?, ?, ?) ORDER BY id FOR UPDATE",[char.id,...dragonMaterialIds]);
     const owned=rows.reduce((total,row)=>total+Number(row.quantity),0);
     if(owned<50)throw fail(409,`Cần đủ 50 vật phẩm rơi Phế Tích Địa Long; hiện có ${owned}.`);

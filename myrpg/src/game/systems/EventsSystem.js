@@ -7,7 +7,8 @@ export class EventsSystem{
  apply(result){
   if(String(result.character?.id)!==String(this.state.data.characterId)||!Array.isArray(result.events))throw new Error('Dữ liệu sự kiện không thuộc nhân vật.');
   if(Number.isSafeInteger(result.wingEssence)&&result.wingEssence>=0)this.state.data.inventory.wing_essence=result.wingEssence;
-  this.state.applyServerCharacter(result.character);if(Array.isArray(result.items))this.state.applyServerItems(result.items);this.view=result.events;this.error='';
+  this.state.applyServerCharacter(result.character);if(Array.isArray(result.items))this.state.applyServerItems(result.items);this.view=result.events;
+  this.error=result.events.some(event=>event.id==='dragon-cache')?'':'Backend chưa nạp sự kiện Rương Địa Long. Hãy khởi động lại backend rồi làm mới sự kiện.';
  }
  async load(){
   if(this.loading||this.busy)return;this.loading=true;this.notify();

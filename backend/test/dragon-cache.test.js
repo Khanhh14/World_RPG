@@ -126,7 +126,10 @@ test('exchanging 50 mixed ruins materials awards one replay-safe key', async () 
   assert.equal(result.events.find(event => event.id === 'dragon-cache').keyCount, 1);
   assert.equal(result.items.reduce((sum, item) => sum + item.quantity, 0), 0);
 
-  const replay = await service.exchangeDragonKey(1, input);
+  const replay = await service.exchangeDragonKey(1, {
+    requestId: input.requestId,
+    position: { mapId: 'village', x: 0, feetY: 0 },
+  });
   assert.equal(replay.replayed, true);
   assert.equal(replay.events.find(event => event.id === 'dragon-cache').keyCount, 1);
   assert.equal(db.state.receipts.length, 1);

@@ -74,11 +74,11 @@ function renderDragonCache(system,state,event){
 }
 export function renderEvents(system,state){
  const events=system.view||[],busy=system.loading||system.busy;
- if(events.length&&!events.some(e=>e.id===system.selectedEventId))system.selectedEventId=events[0]?.id;
+ if(events.length&&!events.some(e=>e.id===system.selectedEventId)&&system.selectedEventId!=='dragon-cache')system.selectedEventId=events[0]?.id;
  const e=events.find(v=>v.id===system.selectedEventId);
  const refresh=`<button type="button" data-action="events-refresh" ${busy?'disabled':''}>${system.loading?'Đang tải…':'Làm mới'}</button>`;
  const sidebar=`<aside class="te-sidebar" aria-label="Danh sách sự kiện"><h3>SỰ KIỆN</h3><p>${events.length} đang diễn ra</p><nav>${events.map(v=>`<button type="button" data-action="events-select" data-event="${escape(v.id)}" aria-current="${v.id===e?.id}"><span>✦</span><div><strong>${escape(v.name)}</strong><small>Đang diễn ra</small></div><b>›</b></button>`).join('')}</nav><div class="te-sidebar-note">Các sự kiện mới sẽ xuất hiện tại đây.</div></aside>`;
- if(!e)return `<div class="te-shell">${sidebar}<section class="te-detail"><div class="ga-empty"><b>${system.loading?'Đang tải sự kiện…':'Chưa tải được danh sách sự kiện.'}</b><p>Chọn sự kiện để xem thông tin và đổi thưởng.</p>${refresh}</div></section></div>`;
+ if(!e)return `<div class="te-shell">${sidebar}<section class="te-detail"><div class="ga-empty"><b>${system.loading?'Đang tải sự kiện…':system.selectedEventId==='dragon-cache'?'Máy chủ chưa tải sự kiện Rương Địa Long.':'Chưa tải được danh sách sự kiện.'}</b><p>${system.selectedEventId==='dragon-cache'?'Hãy kiểm tra kết nối hoặc khởi động lại backend để nạp sự kiện mới.':'Chọn sự kiện để xem thông tin và đổi thưởng.'}</p>${refresh}</div></section></div>`;
  if(e.id==='hunt-monsters')return `<div class="te-shell">${sidebar}${renderHuntEvent(system,state,e)}</div>`;
  if(e.id==='dragon-cache')return `<div class="te-shell">${sidebar}${renderDragonCache(system,state,e)}</div>`;
  const recipes=e.recipes||[],pending=state.data.pendingEventExchange;
