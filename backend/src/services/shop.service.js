@@ -1,6 +1,7 @@
 const offhands = require('../config/offhands.json');
 const catalog = require('../config/shop.json');
 const { characterView } = require('./progress.service');
+const {INVENTORY_CAPACITY}=require('../config/inventory');
 const fail = (status, message) => Object.assign(new Error(message), { status });
 function createShopService(db) {
   async function addPurchasedItems(c, characterId, itemId, quantity) {
@@ -26,7 +27,7 @@ function createShopService(db) {
     const current = stacks.reduce((sum, row) => sum + Number(row.quantity), 0);
     const requiredStacks = Math.ceil((current + quantity) / maxStack);
     const occupied = new Set(rows.map(row => String(row.slot_key)));
-    const freeSlots = 28 - occupied.size;
+    const freeSlots = INVENTORY_CAPACITY - occupied.size;
     if (requiredStacks > stacks.length + freeSlots) throw fail(409, 'Túi đồ trong CSDL đã đầy.');
     let remaining = quantity;
     for (const stack of stacks) {
@@ -38,7 +39,7 @@ function createShopService(db) {
     }
     while (remaining > 0) {
       let slot = null;
-      for (let index = 0; index < 28; index++) {
+      for (let index = 0; index < INVENTORY_CAPACITY; index++) {
         if (!occupied.has(String(index))) { slot = String(index); break; }
       }
       if (slot === null) throw fail(409, 'Túi đồ trong CSDL đã đầy.');

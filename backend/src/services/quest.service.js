@@ -1,5 +1,6 @@
 const { characterView, reward } = require('./progress.service');
 const { randomInt } = require('node:crypto');
+const { INVENTORY_CAPACITY } = require('../config/inventory');
 const failure = (status, message) => Object.assign(new Error(message), { status });
 const dragonRuinsDrops = new Set(['dragon_bone', 'ancient_dragon_scale', 'jade_dragon_core']);
 const dragonRuinsDropChance = 0.375;
@@ -76,7 +77,7 @@ function createQuestService(db) {
     );
     const occupied = new Set(occupiedRows.map(row => String(row.slot_key)));
     let slot;
-    for (let index = 0; index < 28; index++) {
+    for (let index = 0; index < INVENTORY_CAPACITY; index++) {
       if (!occupied.has(String(index))) { slot = String(index); break; }
     }
     if (slot === undefined) throw failure(409, 'Túi đồ đã đầy. Hãy dọn túi trước khi nhặt vật phẩm rơi.');

@@ -1,4 +1,5 @@
 const {characterView,reward}=require('./progress.service');
+const {INVENTORY_CAPACITY}=require('../config/inventory');
 const fail=(status,message)=>Object.assign(new Error(message),{status});
 const BOSS_CONFIG=Object.freeze({
  'hoa-phuong':{name:'Hỏa Phượng',cooldownMs:1200000,exp:5000,gold:3000,stones:5},
@@ -54,7 +55,7 @@ function createBossRewardService(db){return {
      else{
       const [occupiedRows]=await c.execute("SELECT slot_key FROM character_items WHERE character_id = ? AND location = 'inventory' FOR UPDATE",[char.id]);
       const occupied=new Set(occupiedRows.map(item=>String(item.slot_key)));
-      let slot=null;for(let i=0;i<28;i++)if(!occupied.has(String(i))){slot=String(i);break;}
+      let slot=null;for(let i=0;i<INVENTORY_CAPACITY;i++)if(!occupied.has(String(i))){slot=String(i);break;}
       if(slot===null)throw fail(409,'Túi đồ đầy. Hãy chừa một ô trống rồi nhận thưởng Địa Long.');
       await c.execute("INSERT INTO character_items (character_id, item_definition_id, quantity, location, slot_key) VALUES (?, 'dragon_chest', 1, 'inventory', ?)",[char.id,slot]);
      }

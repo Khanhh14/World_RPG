@@ -1,4 +1,5 @@
 const classes = require('../config/characterClasses');
+const {INVENTORY_CAPACITY}=require('../config/inventory');
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const recognized = row => classes.some(c => c.code === row?.class_code);
 function createCharacterService(db) {
@@ -41,7 +42,7 @@ function createCharacterService(db) {
         const [items] = await c.execute('SELECT id, item_definition_id, quantity, location, slot_key FROM character_items WHERE character_id = ? FOR UPDATE', [row.id]);
         if (!items.some(i => i.item_definition_id === selection.weaponId && Number(i.quantity) > 0)) {
           const occupied = new Set(items.filter(i => i.location === 'inventory').map(i => String(i.slot_key)));
-          let slot; for (let i = 0; i < 28; i++) if (!occupied.has(String(i))) { slot = String(i); break; }
+          let slot; for (let i = 0; i < INVENTORY_CAPACITY; i++) if (!occupied.has(String(i))) { slot = String(i); break; }
           if (slot === undefined) throw fail(409, 'Túi đồ CSDL đã đầy, chưa thể nhận vũ khí khởi đầu.');
           await c.execute("INSERT INTO character_items (character_id, item_definition_id, quantity, location, slot_key) VALUES (?, ?, 1, 'inventory', ?)", [row.id, selection.weaponId, slot]);
         }

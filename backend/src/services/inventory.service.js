@@ -1,5 +1,6 @@
 const {enchantBonuses}=require('./wingEnchant');
 const {validateVitalContext,calculateMaxVitals}=require('./vitalStats');
+const {INVENTORY_CAPACITY}=require('../config/inventory');
 const tuLinhWeapons=require('../config/tuLinh.json').weapons;
 const shopCatalog = require('../config/shop.json');
 const foodRecipes = [
@@ -171,7 +172,7 @@ function createInventoryService(db) {
     }
     const occupied = occupiedSlots(rows);
     let slot = null;
-    for (let index = 0; index < 28; index++) {
+    for (let index = 0; index < INVENTORY_CAPACITY; index++) {
       if (!occupied.has(String(index))) { slot = String(index); break; }
     }
     if (slot === null) throw fail(409, 'Túi đồ trong CSDL đã đầy.');
@@ -232,13 +233,13 @@ function createInventoryService(db) {
   function freeInventorySlot(rows) {
     // characterItems() chuẩn hóa slot_key thành slot trước khi truyền vào đây.
     const occupied = new Set(rows.filter(row => row.location === 'inventory').map(row => String(row.slot)));
-    for (let slot = 0; slot < 28; slot++) if (!occupied.has(String(slot))) return String(slot);
+    for (let slot = 0; slot < INVENTORY_CAPACITY; slot++) if (!occupied.has(String(slot))) return String(slot);
     return null;
   }
 
   function temporaryInventorySlot(rows) {
     const occupied = new Set(rows.filter(row => row.location === 'inventory').map(row => String(row.slot)));
-    for (let slot = 0; slot < 28; slot++) {
+    for (let slot = 0; slot < INVENTORY_CAPACITY; slot++) {
       const candidate = `tmp${slot}`;
       if (!occupied.has(candidate)) return candidate;
     }

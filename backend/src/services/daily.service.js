@@ -1,4 +1,5 @@
 const rewards=require('../config/dailyRewards.json');
+const {INVENTORY_CAPACITY}=require('../config/inventory');
 const {characterView}=require('./progress.service');
 const fail=(status,message)=>Object.assign(new Error(message),{status});
 const uuid=value=>typeof value==='string'&&/^[a-f0-9-]{36}$/i.test(value);
@@ -58,7 +59,7 @@ function createDailyService(db,{now=()=>new Date()}={}){
   if(stack)await c.execute('UPDATE character_items SET quantity = quantity + ? WHERE id = ? AND character_id = ?',[quantity,stack.id,char.id]);
   else{
    const occupied=new Set(rows.map(r=>String(r.slot_key)));let slot;
-   for(let i=0;i<28;i++)if(!occupied.has(String(i))){slot=String(i);break;}
+   for(let i=0;i<INVENTORY_CAPACITY;i++)if(!occupied.has(String(i))){slot=String(i);break;}
    if(slot===undefined)throw fail(409,'Túi đồ đã đầy. Hãy dọn túi rồi nhận trong Quà chờ.');
    await c.execute("INSERT INTO character_items (character_id, item_definition_id, quantity, location, slot_key) VALUES (?, ?, ?, 'inventory', ?)",[char.id,id,quantity,slot]);
   }

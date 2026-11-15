@@ -7,7 +7,7 @@ export const EQUIPMENT_SLOTS = [
     ['weapon','Vũ khí',103], ['shield','Trang bị phụ',102], ['armor','Áo giáp',null],
     ['helmet','Mũ',null], ['boots','Giày',null], ['gloves','Găng tay',null]
 ];
-export const BAG_CAPACITY = 28;
+export const BAG_CAPACITY = 42;
 export const POTION_TIERS = [
     { level:1, hp:50, mp:25, hpPrice:8, mpPrice:6 },
     { level:2, hp:100, mp:50, hpPrice:18, mpPrice:14 },

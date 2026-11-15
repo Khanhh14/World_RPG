@@ -6,6 +6,7 @@ const skillTraining=require('../config/skillTraining.json');
 const {characterView}=require('./progress.service');
 const {availableWingEssence}=require('./wingEnchant');
 const {dragonRewardsForClass,ensureDragonDefinitions}=require('./inventory.service');
+const {INVENTORY_CAPACITY}=require('../config/inventory');
 const dragonMaterials=[
  {id:'dragon_bone',name:'Mảnh Long Cốt'},
  {id:'ancient_dragon_scale',name:'Vảy Địa Long Cổ'},
@@ -86,7 +87,7 @@ async function addInventoryItem(c,char,itemId,quantity){
  const [rows]=await c.execute("SELECT id, item_definition_id, quantity, slot_key FROM character_items WHERE character_id = ? AND location = 'inventory' ORDER BY id FOR UPDATE",[char.id]);
  const stacks=rows.filter(r=>r.item_definition_id===itemId),current=stacks.reduce((n,r)=>n+Number(r.quantity),0);
  const occupied=new Set(rows.map(r=>String(r.slot_key))),required=Math.ceil((current+quantity)/max);
- if(required>stacks.length+28-occupied.size)throw fail(409,'Túi đồ đã đầy. Hãy dọn túi rồi nhận quà sự kiện.');
+ if(required>stacks.length+INVENTORY_CAPACITY-occupied.size)throw fail(409,'Túi đồ đã đầy. Hãy dọn túi rồi nhận quà sự kiện.');
  let remaining=quantity;
  for(const stack of stacks){
   const added=Math.min(remaining,max-Number(stack.quantity));
@@ -94,7 +95,7 @@ async function addInventoryItem(c,char,itemId,quantity){
  }
  while(remaining>0){
   let slot;
-  for(let i=0;i<28;i++)if(!occupied.has(String(i))){slot=String(i);break;}
+  for(let i=0;i<INVENTORY_CAPACITY;i++)if(!occupied.has(String(i))){slot=String(i);break;}
   if(slot===undefined)throw fail(409,'Túi đồ đã đầy. Hãy dọn túi rồi nhận quà sự kiện.');
   const added=Math.min(remaining,max);
   await c.execute("INSERT INTO character_items (character_id, item_definition_id, quantity, location, slot_key) VALUES (?, ?, ?, 'inventory', ?)",[char.id,itemId,added,String(slot)]);
@@ -193,7 +194,7 @@ function createEventsService(db){
      await c.execute('INSERT INTO character_skill_books (character_id, skill_id) VALUES (?, ?)',[char.id,recipe.skillId]);
     }else{
     const items=await inventory(c,char.id),occupied=new Set(items.filter(i=>i.location==='inventory').map(i=>String(i.slot)));
-    let slot=null;for(let i=0;i<28;i++)if(!occupied.has(String(i))){slot=String(i);break;}
+    let slot=null;for(let i=0;i<INVENTORY_CAPACITY;i++)if(!occupied.has(String(i))){slot=String(i);break;}
     if(slot===null)throw fail(409,'Balo đầy. Hãy chừa một ô trống để nhận trang bị; nguyên liệu vẫn được giữ.');
     await c.execute('INSERT IGNORE INTO item_definitions (id, name, type, tier, price, max_stack, attack_bonus, icon_key, description, available_in_shop) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',[itemId,reward.name,reward.type||'weapon',6,0,1,reward.attack||0,reward.icon,reward.description||`Vũ khí Tứ Linh dành cho ${char.class_code}. +${reward.attack} công.`,0]);
     await c.execute("INSERT INTO character_items (character_id, item_definition_id, quantity, location, slot_key) VALUES (?, ?, 1, 'inventory', ?)",[char.id,itemId,slot]);

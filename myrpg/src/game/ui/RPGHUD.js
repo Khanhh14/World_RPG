@@ -35,7 +35,7 @@ export class RPGHUD {
             const wingCSS = document.createElement('link'); wingCSS.rel = 'stylesheet';
             wingCSS.href = '/assets/style/wings.css?v=yuna-1'; wingCSS.dataset.yunaWings = 'true'; document.head.appendChild(wingCSS);
         }
-        this.tab = null; this.selected = 'health_potion'; this.destroyed = false;
+        this.tab = null; this.selected = 'health_potion'; this.bagFilter = 'all'; this.bagFilterOpen = false; this.bagPage = 0; this.destroyed = false;
         // CSS đặt trong public/assets/style, tự nạp nếu index.html chưa nạp.
         const stylesheet = '/assets/style/RPGHUD.css';
         let link = [...document.querySelectorAll('link[rel="stylesheet"]')]
@@ -46,7 +46,7 @@ export class RPGHUD {
             document.head.appendChild(link);
         }
         // Đổi phiên bản để trình duyệt tải CSS mới sau khi thay file.
-        const href = stylesheet + '?v=map-diagram-1';
+        const href = stylesheet + '?v=bag-pagination-2';
         if (link.getAttribute('href') !== href) link.setAttribute('href', href);
         this.root = document.createElement('div'); this.root.className = 'rpg-ui';
         this.root.innerHTML = '<div class="rpg-overview"></div><nav class="rpg-nav" aria-label="Menu nhân vật"></nav><div class="rpg-overlay" hidden><section class="rpg-modal" role="dialog" aria-modal="true" aria-labelledby="rpg-modal-title"></section></div><div class="rpg-world-map-overlay" hidden><section class="rpg-world-map" role="dialog" aria-modal="true" aria-labelledby="world-map-title"></section></div><div class="rpg-toast" role="status" hidden></div>';
@@ -140,6 +140,9 @@ export class RPGHUD {
                 }
             }
             if (action === 'filter') { this.shopCategory = id; this.renderModal(); }
+            if (action === 'bag-filter-toggle') { this.bagFilterOpen = !this.bagFilterOpen; this.renderModal(); }
+            if (action === 'bag-filter') { this.bagFilter = id; this.bagFilterOpen = false; this.bagPage = 0; this.renderModal(); }
+            if (action === 'bag-page') { this.bagPage = Number(id); this.renderModal(); }
             if (action === 'tier') { this.shopLevel = Number(id); this.renderModal(); }
             if (action === 'claim') void this.claimQuest(id);
             if (action === 'quest-retry') this.scene.questSystem?.retry();
@@ -208,7 +211,7 @@ export class RPGHUD {
             ? FOOD_RECIPES.find(recipe => recipe.id === d.foodBuff.foodId)
             : null;
         const buffStatus = buff ? `<div class="rpg-food-buff">${escape(buff.name)} · hiệu lực ${Math.ceil((d.foodBuff.expiresAt - Date.now()) / 60000)} phút</div>` : '';
-        this.root.querySelector('.rpg-overview').innerHTML = `<div class="rpg-status"><div class="rpg-portrait">${icon(96,48)}<span class="rpg-level">LV ${d.level}</span></div><div class="rpg-meters"><div class="rpg-name">${escape(d.name || 'Lữ khách')}</div>${this.bar('hp','HP',d.hp,s.maxHP)}${this.bar('mp','MP',d.mp,s.maxMP)}${buffStatus}${this.bar('xp','EXP',d.exp,s.expNeeded)}</div></div>${tracker}<div class="rpg-location"><span class="rpg-location-name">${escape(this.mapTitle)}</span></div>`;
+        this.root.querySelector('.rpg-overview').innerHTML = `<div class="rpg-status"><div class="rpg-portrait">${icon(96,48)}<span class="rpg-level">LV ${d.level}</span></div><div class="rpg-meters"><div class="rpg-name">${escape(d.name || 'Lữ khách')}</div>${this.bar('hp','HP',d.hp,s.maxHP)}${this.bar('mp','MP',d.mp,s.maxMP)}${this.bar('xp','EXP',d.exp,s.expNeeded)}${buffStatus}</div></div>${tracker}<div class="rpg-location"><span class="rpg-location-name">${escape(this.mapTitle)}</span></div>`;
         this.root.querySelector('.rpg-nav').innerHTML = [['map','Bản đồ','M'],['inventory','Túi đồ','B'],['quests','Nhiệm vụ','J'],['settings','Cài đặt','⚙'],['guide','Hướng dẫn','?']].map(([id,name,key]) => `<button type="button" data-action="${id==='map'?'map-open':['settings','guide'].includes(id)?'activity':'tab'}" data-id="${id}" aria-label="${name} (${key})"><span>${name}</span><kbd>${key}</kbd>${id==='quests' && d.quests?.some(quest => quest.status === 'completed')?'<i class="rpg-dot"></i>':''}</button>`).join('');
         if (this.tab) this.renderModal();
         if (this.mapOpen) this.renderWorldMap();
@@ -413,11 +416,25 @@ export class RPGHUD {
     }
     inventoryContent() {
         const s = this.state, d = s.data;
-        const ids = Object.keys(ITEMS).filter(id => ITEMS[id]?.type !== 'tome' && this.bagQuantity(id) > 0);
-        if (!ids.includes(this.selected)) this.selected = ids[0] ?? null;
-        if (this.previewId && !ids.includes(this.previewId)) this.previewId = null;
-        const item = ITEMS[this.selected];
-        const previewItem = ITEMS[this.previewId];
+        const allIds = Object.keys(ITEMS).filter(id => ITEMS[id]?.type !== 'tome' && this.bagQuantity(id) > 0);
+        const categories = [
+            ['all', 'Tất cả'],
+            ['exchange', 'Nguyên liệu / trao đổi'],
+            ['usable', 'Có thể sử dụng'],
+            ['equipment', 'Trang bị'],
+            ['other', 'Khác'],
+        ];
+        const equipmentTypes = new Set(EQUIPMENT_SLOTS.map(([slot]) => slot));
+        const matchesFilter = id => {
+            const value = ITEMS[id];
+            if (this.bagFilter === 'exchange') return value.type === 'material';
+            if (this.bagFilter === 'usable') return value.type === 'consumable';
+            if (this.bagFilter === 'equipment') return equipmentTypes.has(value.type);
+            if (this.bagFilter === 'other') return !['material', 'consumable'].includes(value.type) && !equipmentTypes.has(value.type);
+            return true;
+        };
+        if (!categories.some(([id]) => id === this.bagFilter)) this.bagFilter = 'all';
+        const ids = allIds.filter(matchesFilter);
         const gear = EQUIPMENT_SLOTS.map(([slot, name, frame]) => {
             const id = d.equipment[slot], value = ITEMS[id];
             const level=s.enhancementLevel(slot), check=s.enhancementCheck(slot);
@@ -432,16 +449,32 @@ export class RPGHUD {
                 <div class="rpg-equipment-footer"><span class="rpg-tier">CẤP ${value.level ?? 1}</span><div class="enhance-actions"><button type="button" data-action="unequip" data-id="${escape(id)}">Tháo</button><button type="button" class="enhance-button" data-action="enhance" data-id="${slot}" data-level="${level}" ${check.ok?'':'disabled'} title="${escape(check.ok?`Sau nâng: ${nextStats}. Giữ cấp khi đổi trang bị.`:check.message)}">Nâng cấp</button></div></div>` : `<div class="enhance-info">Cấp +${level} được giữ cho món mặc tiếp theo.</div>`}
             </div>`;
         }).join('');
-        // Bảy cột, bốn hàng: thêm một cột vào phần trống bên phải.
-        // Tự mở thêm hàng khi sở hữu nhiều loại vật phẩm hơn.
-        const entries=ids.flatMap(id=>Array.from({length:Math.ceil(this.bagQuantity(id)/(ITEMS[id].maxStack||99))},(_,i)=>({id,quantity:Math.min(ITEMS[id].maxStack||99,this.bagQuantity(id)-i*(ITEMS[id].maxStack||99))})));
-        const occupiedSlots = entries.length + Object.keys(TOME_ITEMS).reduce((total, id) => total + Math.ceil(this.bagQuantity(id) / (ITEMS[id].maxStack || 99)), 0);
-        const capacity = Math.max(BAG_CAPACITY, Math.ceil(entries.length / 7) * 7);
-        const cells = Array.from({ length:capacity }, (_, i) => {
-            const entry=entries[i],id=entry?.id,value=ITEMS[id];
+        // Mỗi trang hiển thị 21 ô; bộ lọc chỉ thay đổi vật phẩm được xếp vào trang.
+        const makeEntries = itemIds => itemIds.flatMap(id=>Array.from({length:Math.ceil(this.bagQuantity(id)/(ITEMS[id].maxStack||99))},(_,i)=>({id,quantity:Math.min(ITEMS[id].maxStack||99,this.bagQuantity(id)-i*(ITEMS[id].maxStack||99))})));
+        const allEntries = makeEntries(allIds);
+        const entries = makeEntries(ids);
+        const occupiedSlots = allEntries.length;
+        const pageSize = 21;
+        const displayCapacity = Math.max(BAG_CAPACITY, entries.length);
+        const pageCount = Math.max(1, Math.ceil(displayCapacity / pageSize));
+        this.bagPage = Math.max(0, Math.min(this.bagPage, pageCount - 1));
+        const pageEntries = entries.slice(this.bagPage * pageSize, (this.bagPage + 1) * pageSize);
+        if (!pageEntries.some(entry => entry.id === this.selected)) this.selected = pageEntries[0]?.id ?? null;
+        if (this.previewId && (!ids.includes(this.previewId) || this.previewId !== this.selected)) this.previewId = null;
+        const item = ITEMS[this.selected];
+        const previewItem = ITEMS[this.previewId];
+        const cells = Array.from({ length:Math.min(pageSize, displayCapacity - this.bagPage * pageSize) }, (_, i) => {
+            const entry=pageEntries[i],id=entry?.id,value=ITEMS[id];
             if (!value) return '<div class="rpg-slot empty" aria-hidden="true"></div>';
             return `<button type="button" class="rpg-slot ${id === this.selected ? 'selected' : ''}" data-action="select" data-id="${escape(id)}" aria-label="${escape(value.name)}, số lượng ${entry.quantity}" aria-pressed="${id === this.selected}">${itemIcon(value,36)}<span class="rpg-qty">${entry.quantity}</span></button>`;
         }).join('');
+        const filterLabel = categories.find(([id]) => id === this.bagFilter)?.[1] ?? 'Tất cả';
+        const filterMenu = this.bagFilterOpen ? `<div class="rpg-bag-filter-menu" role="menu">${categories.map(([id,label])=>`<button type="button" role="menuitemradio" aria-checked="${this.bagFilter===id}" class="${this.bagFilter===id?'active':''}" data-action="bag-filter" data-id="${id}">${label}</button>`).join('')}</div>` : '';
+        const pageControls = `<nav class="rpg-bag-pagination" aria-label="Chuyển trang ba lô">
+            <button type="button" data-action="bag-page" data-id="${this.bagPage - 1}" aria-label="Trang trước" ${this.bagPage===0?'disabled':''}>‹</button>
+            ${Array.from({length:pageCount},(_,page)=>`<button type="button" data-action="bag-page" data-id="${page}" class="${this.bagPage===page?'active':''}" aria-label="Trang ${page+1}" aria-current="${this.bagPage===page?'page':'false'}">${page+1}</button>`).join('')}
+            <button type="button" data-action="bag-page" data-id="${this.bagPage + 1}" aria-label="Trang sau" ${this.bagPage===pageCount-1?'disabled':''}>›</button>
+        </nav>`;
         return `<div class="rpg-bag-layout">
             <section class="rpg-equipment-panel">
                 ${(d.pendingBossRewards?.length||this.state.bossRewardError)?`<p>Thưởng boss đang chờ đồng bộ. <button data-action="boss-retry">Thử nhận lại</button></p>`:''}
@@ -456,11 +489,13 @@ export class RPGHUD {
             </section>
             <div class="rpg-bag-column">
             <section class="rpg-bag-panel"><div class="rpg-section-heading"><h3>Ba lô</h3><span>${occupiedSlots} / ${BAG_CAPACITY} ô</span></div>
+                <div class="rpg-bag-filter"><button type="button" class="rpg-bag-filter-trigger" data-action="bag-filter-toggle" aria-haspopup="true" aria-expanded="${this.bagFilterOpen}"><span>${escape(filterLabel)}</span><span aria-hidden="true">${this.bagFilterOpen?'▴':'▾'}</span></button>${filterMenu}</div>
                 <div class="rpg-grid">${cells}</div>
+                ${pageControls}
                 ${item ? `<article class="rpg-item-detail"><header>${itemIcon(item,48)}<div><h4>${escape(item.name)}</h4><div class="rpg-tier">${item.category === 'fishing' ? 'CÂU CÁ' : `CẤP ${item.level ?? 1}`} · Có ${this.bagQuantity(this.selected)}</div></div></header>
                     <p>${escape(item.description ?? '')}</p>${this.gearStats(item) ? `<p class="rpg-tier">${this.gearStats(item)}</p>` : ''}
                     ${item.category === 'gathering' ? '<p class="rpg-subtle">Dùng tại vườn nấm Ngoại ô YuNa. Gặp Nami để mua rổ hoặc đổi nấm.</p>' : item.category === 'fishing' ? '<p class="rpg-subtle">Vật phẩm câu cá được lưu trong túi đồ nhân vật.</p>' : item.type === 'tome' ? `<p class="rpg-subtle">${this.state.data.activeTomes?.includes(this.selected)?'Cổ Tịch đang kích hoạt. Có thể kết hợp với các Cổ Tịch khác.':'Kích hoạt để nhận hiệu quả. Có thể dùng nhiều Cổ Tịch cùng lúc.'}</p>` : (EQUIPMENT_SLOTS.some(([slot]) => slot === item.type) || item.type === 'consumable') ? `<div class="rpg-item-actions">${['weapon','shield'].includes(item.type) ? '<button type="button" data-action="preview">Thử đồ</button>' : ''}<button type="button" class="rpg-primary" data-action="use">${item.type === 'consumable' ? 'Sử dụng' : 'Trang bị'}</button></div>` : '<p class="rpg-subtle">Vật phẩm nguyên liệu, có thể đổi tại Thợ săn ở Khu Rừng Phía Tây.</p>'}
-                </article>` : '<div class="rpg-empty-bag">Ba lô đang trống.<br>Tháo trang bị hoặc mua thêm vật phẩm từ thương nhân.</div>'}
+                </article>` : `<div class="rpg-empty-bag">${allIds.length?'Không có vật phẩm trong nhóm này.':'Ba lô đang trống.<br>Tháo trang bị hoặc mua thêm vật phẩm từ thương nhân.'}</div>`}
             </section>
             ${this.currencyContent()}
             </div>
