@@ -466,7 +466,7 @@ export class RPGHUD {
         const cells = Array.from({ length:Math.min(pageSize, displayCapacity - this.bagPage * pageSize) }, (_, i) => {
             const entry=pageEntries[i],id=entry?.id,value=ITEMS[id];
             if (!value) return '<div class="rpg-slot empty" aria-hidden="true"></div>';
-            return `<button type="button" class="rpg-slot ${id === this.selected ? 'selected' : ''}" data-action="select" data-id="${escape(id)}" aria-label="${escape(value.name)}, số lượng ${entry.quantity}" aria-pressed="${id === this.selected}">${itemIcon(value,18)}<span class="rpg-qty">${entry.quantity}</span></button>`;
+            return `<button type="button" class="rpg-slot ${id === this.selected ? 'selected' : ''}" data-action="select" data-id="${escape(id)}" aria-label="${escape(value.name)}, số lượng ${entry.quantity}" aria-pressed="${id === this.selected}">${itemIcon(value,26)}<span class="rpg-qty">${entry.quantity}</span></button>`;
         }).join('');
         const filterLabel = categories.find(([id]) => id === this.bagFilter)?.[1] ?? 'Tất cả';
         const filterMenu = this.bagFilterOpen ? `<div class="rpg-bag-filter-menu" role="menu">${categories.map(([id,label])=>`<button type="button" role="menuitemradio" aria-checked="${this.bagFilter===id}" class="${this.bagFilter===id?'active':''}" data-action="bag-filter" data-id="${id}">${label}</button>`).join('')}</div>` : '';

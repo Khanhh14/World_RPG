@@ -38,8 +38,8 @@ export class EventsSystem{
    this.error='Hãy hoàn tất giao dịch đang chờ trước.';this.notify();return;
   }
   if(!s.data.pendingDragonAction){
-   if(action==='exchange'&&this.scene.dialogue?.nearest()?.role!=='dragon-cache-exchange'){
-    this.error='Hãy đến gần Thợ rèn Long Kha tại Phế Tích Địa Long để đổi nguyên liệu.';this.notify();return;
+   if(action==='exchange'&&this.scene.mapData.id!=='dragon-ruins'){
+    this.error='Hãy đến Phế Tích Địa Long để đổi nguyên liệu.';this.notify();return;
    }
    const pending={
     eventId:'dragon-cache',action,requestId:crypto.randomUUID(),
