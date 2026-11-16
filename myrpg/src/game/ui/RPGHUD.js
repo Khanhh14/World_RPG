@@ -449,12 +449,12 @@ export class RPGHUD {
                 <div class="rpg-equipment-footer"><span class="rpg-tier">CẤP ${value.level ?? 1}</span><div class="enhance-actions"><button type="button" data-action="unequip" data-id="${escape(id)}">Tháo</button><button type="button" class="enhance-button" data-action="enhance" data-id="${slot}" data-level="${level}" ${check.ok?'':'disabled'} title="${escape(check.ok?`Sau nâng: ${nextStats}. Giữ cấp khi đổi trang bị.`:check.message)}">Nâng cấp</button></div></div>` : `<div class="enhance-info">Cấp +${level} được giữ cho món mặc tiếp theo.</div>`}
             </div>`;
         }).join('');
-        // Mỗi trang hiển thị 21 ô; bộ lọc chỉ thay đổi vật phẩm được xếp vào trang.
+        // Mỗi trang hiển thị toàn bộ sức chứa balo; bộ lọc chỉ đổi vật phẩm trong trang.
         const makeEntries = itemIds => itemIds.flatMap(id=>Array.from({length:Math.ceil(this.bagQuantity(id)/(ITEMS[id].maxStack||99))},(_,i)=>({id,quantity:Math.min(ITEMS[id].maxStack||99,this.bagQuantity(id)-i*(ITEMS[id].maxStack||99))})));
         const allEntries = makeEntries(allIds);
         const entries = makeEntries(ids);
         const occupiedSlots = allEntries.length;
-        const pageSize = 21;
+        const pageSize = BAG_CAPACITY;
         const displayCapacity = Math.max(BAG_CAPACITY, entries.length);
         const pageCount = Math.max(1, Math.ceil(displayCapacity / pageSize));
         this.bagPage = Math.max(0, Math.min(this.bagPage, pageCount - 1));
@@ -466,7 +466,7 @@ export class RPGHUD {
         const cells = Array.from({ length:Math.min(pageSize, displayCapacity - this.bagPage * pageSize) }, (_, i) => {
             const entry=pageEntries[i],id=entry?.id,value=ITEMS[id];
             if (!value) return '<div class="rpg-slot empty" aria-hidden="true"></div>';
-            return `<button type="button" class="rpg-slot ${id === this.selected ? 'selected' : ''}" data-action="select" data-id="${escape(id)}" aria-label="${escape(value.name)}, số lượng ${entry.quantity}" aria-pressed="${id === this.selected}">${itemIcon(value,36)}<span class="rpg-qty">${entry.quantity}</span></button>`;
+            return `<button type="button" class="rpg-slot ${id === this.selected ? 'selected' : ''}" data-action="select" data-id="${escape(id)}" aria-label="${escape(value.name)}, số lượng ${entry.quantity}" aria-pressed="${id === this.selected}">${itemIcon(value,18)}<span class="rpg-qty">${entry.quantity}</span></button>`;
         }).join('');
         const filterLabel = categories.find(([id]) => id === this.bagFilter)?.[1] ?? 'Tất cả';
         const filterMenu = this.bagFilterOpen ? `<div class="rpg-bag-filter-menu" role="menu">${categories.map(([id,label])=>`<button type="button" role="menuitemradio" aria-checked="${this.bagFilter===id}" class="${this.bagFilter===id?'active':''}" data-action="bag-filter" data-id="${id}">${label}</button>`).join('')}</div>` : '';
