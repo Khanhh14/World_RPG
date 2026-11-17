@@ -7,6 +7,7 @@ import { renderSkillsPanel, renderSkillShop, renderSkillTrainingShop } from './S
 import { renderWingsPanel, renderWingShop } from './WingsPanel.js';
 import { BAG_CAPACITY, canShopItem, EQUIPMENT_SLOTS, SHOP_ITEMS, TOME_ITEMS, monsterMaterialsForMap, monsterExchangeForMap, FOOD_RECIPES, gearIcon, tomeIcon } from '../data/items.js';
 import { ITEMS } from '../systems/RPGState.js';
+import { dragonGearTexture } from '../world/DragonGearArt.js';
 import { renderQuestJournal } from './QuestJournal.js';
 import { WORLD_MAP_GROUPS, WORLD_ROUTES, findWorldRoute } from '../data/worldMap.js';
 
@@ -563,10 +564,18 @@ export class RPGHUD {
         // Offset được đổi từ pixel thế giới sang kích thước canvas.
         const worldScale = Math.abs(sprite?.scaleX) || 3;
         const gap = 18 * scale / worldScale;
+        const heldWeapon=ITEMS[equipment.weapon];
+        const dragonWeaponFrame=heldWeapon?.category==='dragon-gear'
+            ? this.scene.textures.getFrame(dragonGearTexture(this.scene,heldWeapon.icon||equipment.weapon,heldWeapon.level))
+            : null;
         const eventWeaponFrame=TU_LINH_WEAPONS[equipment.weapon]||HUNT_EVENT_WEAPONS[equipment.weapon]?this.scene.textures.getFrame(tuLinhWeaponTexture(this.scene,equipment.weapon)):null;
-        const weapon = () => draw(eventWeaponFrame??getFrame(wf), x + direction * gap, y + 6 * scale / worldScale, scale, this.previewLeft);
+        const weapon = () => draw(dragonWeaponFrame??eventWeaponFrame??getFrame(wf), x + direction * gap, y + 6 * scale / worldScale, scale, this.previewLeft);
         const offhand = ITEMS[equipment.shield];
-        const shieldFrame = offhand?.offhandKind ? this.scene.textures.getFrame(offhandTexture(this.scene, offhand)) : getFrame(sf);
+        const shieldFrame = offhand?.offhandKind
+            ? this.scene.textures.getFrame(offhandTexture(this.scene, offhand))
+            : offhand?.category==='dragon-gear'
+                ? this.scene.textures.getFrame(dragonGearTexture(this.scene,offhand.icon||equipment.shield,offhand.level))
+                : getFrame(sf);
         const shield = () => draw(shieldFrame, x - direction * gap, y + scale / worldScale, scale, this.previewLeft);
         ctx.fillStyle = '#00000044'; ctx.beginPath(); ctx.ellipse(x, y + 60, 65, 15, 0, 0, Math.PI * 2); ctx.fill();
         if (this.previewLeft) weapon(); else shield();

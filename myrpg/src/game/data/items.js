@@ -3,6 +3,7 @@ import {eventEquipmentIcon} from '../world/EventEquipmentArt.js';
 import {TU_LINH_WEAPONS,tuLinhWeaponIcon} from './tuLinhWeapons.js';
 import { OFFHAND_ITEMS } from './offhands.js';
 import { HUNT_EVENT_ITEMS,HUNT_EVENT_WEAPONS } from './huntEventItems.js';
+import { dragonGearIcon } from '../world/DragonGearArt.js';
 export const EQUIPMENT_SLOTS = [
     ['weapon','Vũ khí',103], ['shield','Trang bị phụ',102], ['armor','Áo giáp',null],
     ['helmet','Mũ',null], ['boots','Giày',null], ['gloves','Găng tay',null]
@@ -140,6 +141,7 @@ export function gearIcon(kind, level=1, size=40) {
     if(TU_LINH_EQUIPMENT[kind])return eventEquipmentIcon(kind,size);
     if(HUNT_EVENT_WEAPONS[kind])return tuLinhWeaponIcon(kind,size);
     if(TU_LINH_WEAPONS[kind])return tuLinhWeaponIcon(kind,size);
+    if(['dragon_sword','dragon_staff','dragon_axe','dragon_shield'].includes(kind))return dragonGearIcon(kind,level,size);
     const colors=['#b9c5c9','#91c5e5','#bb9cde','#dea572','#e3ca78'];
     const base=colors[Math.max(0,Math.min(4,level-1))];
     const aliases={dragon_armor:'armor',dragon_helmet:'helmet',dragon_boots:'boots',dragon_gloves:'gloves',dragon_shield:'shield',dragon_sword:'sword',dragon_staff:'staff',dragon_axe:'axe',dragon_chest:'chest'};

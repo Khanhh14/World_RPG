@@ -1,6 +1,7 @@
 import {TU_LINH_WEAPONS,tuLinhWeaponTexture} from '../data/tuLinhWeapons.js';
 import {HUNT_EVENT_WEAPONS} from '../data/huntEventItems.js';
 import { ITEMS } from '../data/items.js';
+import { dragonGearTexture } from '../world/DragonGearArt.js';
 import { offhandTexture } from '../world/OffhandTextures.js';
 import { wingTexture } from '../world/WingTextures.js';
 // Logic nhân vật được dùng lại ở làng, rừng và các khu vực tiếp theo.
@@ -106,8 +107,10 @@ export class Player {
             if (weapon) {
                 const frame = this.getWeaponFrame(weapon);
                 const eventWeapon=TU_LINH_WEAPONS[weapon]||HUNT_EVENT_WEAPONS[weapon];
-                if (frame !== null || eventWeapon) {
-                    this.weaponSprite = this.scene.add.image(this.x, this.sprite.y, eventWeapon?tuLinhWeaponTexture(this.scene,weapon):'dungeon', eventWeapon?undefined:frame)
+                const dragonWeapon=ITEMS[weapon]?.category==='dragon-gear';
+                if (frame !== null || eventWeapon || dragonWeapon) {
+                    const texture=dragonWeapon?dragonGearTexture(this.scene,ITEMS[weapon].icon||weapon,ITEMS[weapon].level):eventWeapon?tuLinhWeaponTexture(this.scene,weapon):'dungeon';
+                    this.weaponSprite = this.scene.add.image(this.x, this.sprite.y, texture, dragonWeapon||eventWeapon?undefined:frame)
                         .setScale(this.sprite.scaleX)
                         .setOrigin(0.5, 0.5);
                 }
@@ -124,7 +127,9 @@ export class Player {
             if (shield) {
                 const item=ITEMS[shield], frame = this.getShieldFrame(shield);
                 if (item?.offhandKind || frame !== null) {
-                    this.shieldSprite = this.scene.add.image(this.x, this.sprite.y, item?.offhandKind?offhandTexture(this.scene,item):'dungeon', item?.offhandKind?undefined:frame)
+                    const dragonShield=item?.category==='dragon-gear';
+                    const texture=item?.offhandKind?offhandTexture(this.scene,item):dragonShield?dragonGearTexture(this.scene,item.icon||shield,item.level):'dungeon';
+                    this.shieldSprite = this.scene.add.image(this.x, this.sprite.y, texture, item?.offhandKind||dragonShield?undefined:frame)
                         .setScale(this.sprite.scaleX)
                         .setOrigin(0.5, 0.5);
                 }
