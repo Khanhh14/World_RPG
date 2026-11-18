@@ -104,14 +104,14 @@ for (const [id,tome] of Object.entries(TOME_ITEMS)) {
     ITEMS[id]={...tome,type:'tome',category:'tome',level:1,maxStack:99};
 }
 Object.assign(ITEMS, {
-    dragon_armor:{name:'Áo Giáp Địa Long',type:'armor',category:'dragon-gear',icon:'dragon_armor',level:6,maxStack:1,defense:85,maxHP:450,description:'+85 thủ · +450 HP tối đa.'},
-    dragon_helmet:{name:'Mũ Địa Long',type:'helmet',category:'dragon-gear',icon:'dragon_helmet',level:6,maxStack:1,defense:55,maxHP:250,description:'+55 thủ · +250 HP tối đa.'},
-    dragon_boots:{name:'Giày Địa Long',type:'boots',category:'dragon-gear',icon:'dragon_boots',level:6,maxStack:1,defense:45,description:'+45 thủ.'},
-    dragon_gloves:{name:'Găng Địa Long',type:'gloves',category:'dragon-gear',icon:'dragon_gloves',level:6,maxStack:1,attack:65,defense:45,description:'+65 công · +45 thủ.'},
-    dragon_shield:{name:'Khiên Địa Long',type:'shield',category:'dragon-gear',icon:'dragon_shield',level:6,maxStack:1,attack:50,defense:60,maxHP:300,description:'+50 công · +60 thủ · +300 HP tối đa.'},
-    dragon_sword:{name:'Long Nha Kiếm',icon:'dragon_sword',frame:107,type:'weapon',category:'dragon-gear',level:6,maxStack:1,classCode:'swordsman',attack:180,description:'+180 công. Vũ khí Địa Long dành cho Kiếm sĩ.'},
-    dragon_staff:{name:'Long Tủy Trượng',icon:'dragon_staff',frame:129,type:'weapon',category:'dragon-gear',level:6,maxStack:1,classCode:'mage',attack:180,description:'+180 công. Vũ khí Địa Long dành cho Pháp sư.'},
-    dragon_axe:{name:'Long Cốt Phủ',icon:'dragon_axe',frame:118,type:'weapon',category:'dragon-gear',level:6,maxStack:1,classCode:'fighter',attack:180,description:'+180 công. Vũ khí Địa Long dành cho Đấu sĩ.'}
+    dragon_armor:{name:'Áo Giáp Địa Long',type:'armor',category:'dragon-gear',icon:'dragon_armor',level:6,maxStack:1,sellPrice:10,defense:85,maxHP:450,description:'+85 thủ · +450 HP tối đa.'},
+    dragon_helmet:{name:'Mũ Địa Long',type:'helmet',category:'dragon-gear',icon:'dragon_helmet',level:6,maxStack:1,sellPrice:10,defense:55,maxHP:250,description:'+55 thủ · +250 HP tối đa.'},
+    dragon_boots:{name:'Giày Địa Long',type:'boots',category:'dragon-gear',icon:'dragon_boots',level:6,maxStack:1,sellPrice:10,defense:45,description:'+45 thủ.'},
+    dragon_gloves:{name:'Găng Địa Long',type:'gloves',category:'dragon-gear',icon:'dragon_gloves',level:6,maxStack:1,sellPrice:10,attack:65,defense:45,description:'+65 công · +45 thủ.'},
+    dragon_shield:{name:'Khiên Địa Long',type:'shield',category:'dragon-gear',icon:'dragon_shield',level:6,maxStack:1,sellPrice:10,attack:50,defense:60,maxHP:300,description:'+50 công · +60 thủ · +300 HP tối đa.'},
+    dragon_sword:{name:'Long Nha Kiếm',icon:'dragon_sword',frame:107,type:'weapon',category:'dragon-gear',level:6,maxStack:1,sellPrice:10,classCode:'swordsman',attack:180,description:'+180 công. Vũ khí Địa Long dành cho Kiếm sĩ.'},
+    dragon_staff:{name:'Long Tủy Trượng',icon:'dragon_staff',frame:129,type:'weapon',category:'dragon-gear',level:6,maxStack:1,sellPrice:10,classCode:'mage',attack:180,description:'+180 công. Vũ khí Địa Long dành cho Pháp sư.'},
+    dragon_axe:{name:'Long Cốt Phủ',icon:'dragon_axe',frame:118,type:'weapon',category:'dragon-gear',level:6,maxStack:1,sellPrice:10,classCode:'fighter',attack:180,description:'+180 công. Vũ khí Địa Long dành cho Đấu sĩ.'}
 });
 export const SHOP_ITEMS=Object.keys(ITEMS)
     .filter(id => !['monster-drop','upgrade','event-weapon','event-gear','tome','tome-chest','dragon-chest','dragon-gear'].includes(ITEMS[id].category) && !ITEMS[id].eventId)

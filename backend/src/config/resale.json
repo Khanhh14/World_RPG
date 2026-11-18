@@ -388,5 +388,37 @@
   "hoa_tien_ky": {
     "unitPrice": 10,
     "local": false
+  },
+  "dragon_armor": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "dragon_helmet": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "dragon_boots": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "dragon_gloves": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "dragon_shield": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "dragon_sword": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "dragon_staff": {
+    "unitPrice": 10,
+    "local": false
+  },
+  "dragon_axe": {
+    "unitPrice": 10,
+    "local": false
   }
 }
