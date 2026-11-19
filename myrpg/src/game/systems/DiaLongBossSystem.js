@@ -13,11 +13,14 @@ export class DiaLongBossSystem {
         this.defeated = false;
         this.elapsed = 0;
         this.nextAttack = 2200;
+        this.hurtUntil = 0;
+        this.castUntil = 0;
+        this.lastHP = HP;
         this.warning = null;
-        this.sprite = scene.physics.add.sprite(HOME.x, HOME.y, 'ruins-wyrm-0')
-            .setOrigin(0.5, 1).setScale(7).setDepth(100 + HOME.y);
-        this.sprite.body.setSize(10, 7).setOffset(3, 8).setAllowGravity(false).setCollideWorldBounds(true);
-        this.shadow = scene.add.ellipse(HOME.x, HOME.y - 4, 150, 34, 0x000000, 0.38).setDepth(99 + HOME.y);
+        this.sprite = scene.physics.add.sprite(HOME.x, HOME.y, 'dia-long-idle-0')
+            .setOrigin(0.5, 1).setScale(2.7).setDepth(100 + HOME.y);
+        this.sprite.body.setSize(32, 12).setOffset(32, 78).setAllowGravity(false).setCollideWorldBounds(true);
+        this.shadow = scene.add.ellipse(HOME.x, HOME.y - 5, 230, 46, 0x000000, 0.42).setDepth(99 + HOME.y);
         this.collider = scene.physics.add.collider(this.sprite, scene.world.blockers);
         this.entity = {
             sprite: this.sprite, shadow: this.shadow, home: HOME,
@@ -52,13 +55,18 @@ export class DiaLongBossSystem {
         this.sprite.body.stop();
         this.sprite.setVisible(false);
         this.shadow.setVisible(false);
+        this.sprite.anims.stop();
     }
 
     reset() {
-        Object.assign(this.target, { hp: HP, aggro: false, respawnAt: Infinity });
+        Object.assign(this.target, { hp: HP, aggro: false, stunUntil: 0, burn: null, vulnerableUntil: 0, respawnAt: Infinity });
         this.sprite.body.reset(HOME.x, HOME.y);
         this.sprite.body.stop();
-        this.shadow.setPosition(HOME.x, HOME.y - 4);
+        this.sprite.play('dia-long-idle', true);
+        this.shadow.setPosition(HOME.x, HOME.y - 5);
+        this.lastHP = HP;
+        this.hurtUntil = 0;
+        this.castUntil = 0;
         this.warning = null;
         this.nextAttack = this.elapsed + 2200;
     }
@@ -127,6 +135,7 @@ export class DiaLongBossSystem {
                 this.defeated = true;
                 this.warning = null;
                 this.sprite.body.stop();
+                this.sprite.play('dia-long-death', true);
                 this.updateHUD('Đã đánh bại Địa Long · Đang nhận thưởng…');
                 scene.hud?.toast('Địa Long đã bị đánh bại! Đang nhận thưởng…');
                 this.checkAt = Infinity;
@@ -144,6 +153,8 @@ export class DiaLongBossSystem {
         if (combat.busy) {
             this.sprite.body.stop();
             this.warning = null;
+            this.castUntil = 0;
+            this.sprite.play('dia-long-idle', true);
             this.nextAttack = Math.max(this.nextAttack, this.elapsed + 900);
             this.updateHUD('Tạm dừng');
             return;
@@ -154,14 +165,30 @@ export class DiaLongBossSystem {
         if (this.warning) {
             const warning = this.warning;
             const progress = Math.min(1, (this.elapsed - warning.start) / 1200);
+            const pulse = 176 + Math.sin(this.elapsed / 95) * 7;
+            graphics.lineStyle(18, 0xb07d39, 0.08 + progress * 0.12).strokeCircle(warning.x, warning.y, pulse);
             graphics.lineStyle(4, 0xff765b, 0.3 + progress * 0.6).strokeCircle(warning.x, warning.y, 176);
+            graphics.lineStyle(2, 0xf0c56a, 0.45 + progress * 0.5).strokeCircle(warning.x, warning.y, 146 + progress * 24);
             graphics.fillStyle(0xff5138, 0.08 + progress * 0.16).fillCircle(warning.x, warning.y, 176);
+            for (let crack = 0; crack < 8; crack++) {
+                const angle = crack * Math.PI / 4 + this.elapsed / 1800;
+                const inner = 82 + progress * 20, outer = 130 + progress * 38;
+                graphics.lineStyle(3, 0xe6b963, 0.25 + progress * 0.55).lineBetween(
+                    warning.x + Math.cos(angle) * inner,
+                    warning.y + Math.sin(angle) * inner,
+                    warning.x + Math.cos(angle + 0.09) * outer,
+                    warning.y + Math.sin(angle + 0.09) * outer
+                );
+            }
             this.sprite.body.stop();
             this.updateHUD('LONG VĨ · Né vòng đỏ!');
             if (this.elapsed >= warning.until) {
                 if (Math.hypot(player.x - warning.x, player.y - warning.y) <= 176) combat.damagePlayer(500, this.target);
                 combat.vfx.emit('quake', warning, 176, 0xef765c);
+                this.earthBurst(warning);
+                scene.cameras.main.shake(220, 0.004);
                 this.warning = null;
+                this.castUntil = this.elapsed + 260;
                 this.nextAttack = this.elapsed + 2300;
             }
         } else {
@@ -172,14 +199,58 @@ export class DiaLongBossSystem {
             }
             if (distance < 250 && this.elapsed >= this.nextAttack) {
                 this.warning = { x: this.sprite.x, y: this.sprite.y - 32, start: this.elapsed, until: this.elapsed + 1200 };
+                this.castUntil = this.warning.until + 260;
                 this.sprite.body.stop();
             }
             this.updateHUD(distance < 650 ? 'Địa Long đang giao chiến' : 'Tiến vào đấu trường để khiêu chiến');
         }
+        if (this.target.hp < this.lastHP) this.hurtUntil = this.elapsed + 240;
+        this.lastHP = this.target.hp;
         const moving = Math.hypot(this.sprite.body.velocity.x, this.sprite.body.velocity.y) > 1;
         if (moving) this.sprite.setFlipX(dx < 0);
+        this.sprite.play(this.warning || this.castUntil > this.elapsed
+            ? 'dia-long-cast'
+            : this.hurtUntil > this.elapsed
+                ? 'dia-long-hurt'
+                : moving ? 'dia-long-walk' : 'dia-long-idle', true);
         this.sprite.setDepth(100 + this.sprite.y);
-        this.shadow.setPosition(this.sprite.x, this.sprite.y - 4).setDepth(99 + this.sprite.y);
+        this.shadow.setPosition(this.sprite.x, this.sprite.y - 5).setDepth(99 + this.sprite.y);
+    }
+
+    earthBurst(point) {
+        const graphics = this.scene.add.graphics().setDepth(9600);
+        const progress = { value: 0 };
+        this.scene.tweens.add({
+            targets: progress, value: 1, duration: 720, ease: 'Quad.Out',
+            onUpdate: () => {
+                const t = progress.value, alpha = 1 - t;
+                graphics.clear();
+                graphics.lineStyle(10 * alpha + 2, 0xc98d45, alpha * 0.72)
+                    .strokeCircle(point.x, point.y, 24 + t * 170);
+                graphics.lineStyle(3, 0xf0cb78, alpha * 0.9)
+                    .strokeCircle(point.x, point.y, 38 + t * 130);
+                for (let shard = 0; shard < 12; shard++) {
+                    const angle = shard * Math.PI / 6;
+                    const distance = 24 + t * (92 + shard % 3 * 16);
+                    const x = point.x + Math.cos(angle) * distance;
+                    const y = point.y + Math.sin(angle) * distance;
+                    const height = (8 + shard % 4 * 3) * alpha;
+                    graphics.fillStyle(shard % 2 ? 0x77835a : 0x9b7950, alpha);
+                    graphics.fillTriangle(
+                        x - 7, y + 5, x + 7, y + 5, x + (shard % 2 ? 2 : -2), y - height
+                    );
+                    graphics.lineStyle(2, 0xe8c878, alpha * 0.8)
+                        .lineBetween(x, y - height + 2, x, y + 2);
+                }
+                for (let dust = 0; dust < 8; dust++) {
+                    const angle = dust * Math.PI / 4 + t;
+                    const distance = 38 + t * 115;
+                    graphics.fillStyle(0xc9a76b, alpha * 0.35)
+                        .fillCircle(point.x + Math.cos(angle) * distance, point.y + Math.sin(angle) * distance * 0.6, 5 + (dust % 3) * 2);
+                }
+            },
+            onComplete: () => graphics.destroy()
+        });
     }
 
     destroy() {
