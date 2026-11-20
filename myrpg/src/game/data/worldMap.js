@@ -4,7 +4,8 @@ export const WORLD_MAP_GROUPS = [
         places: [
             { id: 'village', name: 'Làng Khởi Đầu', scene: 'Game', spawn: { x: 960, y: 768 }, diagram: { x: 500, y: 75 } },
             { id: 'yuna-city', name: 'Thành Yuna', scene: 'YunaCity', spawn: { x: 2352, y: 984 }, diagram: { x: 870, y: 70 } },
-            { id: 'yuna-outskirts', name: 'Ngoại ô YuNa', scene: 'YunaOutskirts', spawn: { x: 2256, y: 888 }, diagram: { x: 700, y: 190 } }
+            { id: 'yuna-outskirts', name: 'Ngoại ô YuNa', scene: 'YunaOutskirts', spawn: { x: 2256, y: 888 }, diagram: { x: 700, y: 190 } },
+            { id: 'kagai-town', name: 'Thị Trấn KaGai', scene: 'KagaiTown', spawn: { x: 1056, y: 960 }, diagram: { x: 500, y: 190 } }
         ]
     },
     {
@@ -34,6 +35,10 @@ export const WORLD_MAP_GROUPS = [
 ];
 
 export const WORLD_ROUTES = [
+    { from: 'village', to: 'kagai-town', gate: 'Mã Phu', direction: 'Làng Khởi Đầu', travel: 'coachman' },
+    { from: 'kagai-town', to: 'village', gate: 'Mã Phu', direction: 'Thị Trấn KaGai', travel: 'coachman' },
+    { from: 'yuna-city', to: 'kagai-town', gate: 'Mã Phu', direction: 'Thành Yuna', travel: 'coachman' },
+    { from: 'kagai-town', to: 'yuna-city', gate: 'Mã Phu', direction: 'Thị Trấn KaGai', travel: 'coachman' },
     { from: 'village', to: 'west-forest', gate: 'Cổng Khu Rừng Phía Tây', direction: 'phía Tây của làng' },
     { from: 'village', to: 'atlast-lake', gate: 'Cổng Hồ Nước Atlast', direction: 'phía Đông của làng' },
     { from: 'village', to: 'hiuuling-river', gate: 'Cổng Bờ Sông HiuuLing', direction: 'phía Nam của làng' },

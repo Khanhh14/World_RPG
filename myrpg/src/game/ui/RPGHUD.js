@@ -395,11 +395,14 @@ export class RPGHUD {
             : destination.id === currentMap ? `<p class="rpg-map-empty">Bạn đang ở <strong>${escape(destination.name)}</strong>.</p>`
             : route ? `<ol class="rpg-map-route">${route.map((step, index) => {
                 const from = places.find(place => place.id === step.from), to = places.find(place => place.id === step.to);
-                return `<li><span class="rpg-map-step-number">${index + 1}</span><div><strong>Chặng ${index + 1}/${route.length}: ${escape(from?.name ?? step.from)} → ${escape(to?.name ?? step.to)}</strong><p>Đi tới <b>${escape(step.gate)}</b> ở ${escape(step.direction)}, rồi bước vào cổng. ${index < route.length - 1 ? 'Sau khi tới nơi, mở M để xem chặng kế tiếp.' : 'Đây là chặng cuối.'}</p></div></li>`;
+                const instruction = step.travel === 'coachman'
+                    ? `Nói chuyện với <b>Mã Phu</b> tại ${escape(from?.name ?? step.from)} và chọn ${escape(to?.name ?? step.to)}.`
+                    : `Đi tới <b>${escape(step.gate)}</b> ở ${escape(step.direction)}, rồi bước vào cổng.`;
+                return `<li><span class="rpg-map-step-number">${index + 1}</span><div><strong>Chặng ${index + 1}/${route.length}: ${escape(from?.name ?? step.from)} → ${escape(to?.name ?? step.to)}</strong><p>${instruction} ${index < route.length - 1 ? 'Sau khi tới nơi, mở M để xem chặng kế tiếp.' : 'Đây là chặng cuối.'}</p></div></li>`;
             }).join('')}</ol>`
                 : '<p class="rpg-map-empty">Chưa có tuyến đường đi bộ đã khai báo tới khu vực này.</p>';
         this.worldMapDialog.innerHTML = `<header><div><small>CHỈ ĐƯỜNG LIÊN KHU VỰC · M</small><h2 id="world-map-title">Bản đồ thế giới</h2></div><button type="button" data-action="map-close" aria-label="Đóng bản đồ">✕ <small>Esc</small></button></header>
-            <p class="rpg-map-intro">Bản đồ này <strong>không dịch chuyển tức thời</strong>. Chọn điểm đến để xem cổng cần đi tới; dùng <b>W/A/S/D</b> hoặc <b>phím mũi tên</b> để đi bộ qua cổng. Mở lại bản đồ sau mỗi chặng để xem hướng tiếp theo.</p>
+            <p class="rpg-map-intro">Bản đồ này <strong>không tự dịch chuyển</strong>. Chọn điểm đến để xem đường đi: đi bộ qua cổng hoặc nói chuyện với Mã Phu ở các thị trấn. Mở lại bản đồ sau mỗi chặng để xem hướng tiếp theo.</p>
             <div class="rpg-map-current">Vị trí hiện tại: <strong>${escape(places.find(place => place.id === currentMap)?.name ?? this.mapTitle)}</strong></div>
             <div class="rpg-map-legend"><span><i class="current"></i> Vị trí hiện tại</span><span><i class="selected"></i> Điểm đến</span><span><i class="connection"></i> Lối nối giữa các khu vực</span></div>
             <div class="rpg-map-diagram-scroll"><div class="rpg-map-diagram"><svg viewBox="0 0 1000 660" preserveAspectRatio="none" aria-hidden="true">${connectionsSvg}</svg>${nodes}</div></div>

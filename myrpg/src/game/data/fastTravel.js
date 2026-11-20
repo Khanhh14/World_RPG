@@ -2,9 +2,11 @@
 // spawn là vị trí sprite người chơi, đặt cách NPC/cổng để tránh kẹt hoặc dịch chuyển lặp.
 export const FAST_TRAVEL_STOPS = {
  village: {label:'Làng Khởi Đầu',scene:'Game',spawn:{x:1152,y:1030}},
- 'yuna-city': {label:'Thành Yuna',scene:'YunaCity',spawn:{x:2160,y:1174}}
+ 'yuna-city': {label:'Thành Yuna',scene:'YunaCity',spawn:{x:2160,y:1174}},
+ 'kagai-town': {label:'Thị Trấn KaGai',scene:'KagaiTown',spawn:{x:1056,y:960}}
 };
 export const FAST_TRAVEL_ROUTES = {
- village: ['yuna-city'],
- 'yuna-city': ['village']
+ village: ['yuna-city','kagai-town'],
+ 'yuna-city': ['village','kagai-town'],
+ 'kagai-town': ['village','yuna-city']
 };

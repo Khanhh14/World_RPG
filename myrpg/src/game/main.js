@@ -20,12 +20,13 @@ import { NoxiiEntrance } from './scenes/NoxiiEntrance.js';
 import { WestForest } from './scenes/WestForest.js';
 import { YunaOutskirts } from './scenes/YunaOutskirts.js';
 import { AtlastLake } from './scenes/AtlastLake.js';
+import { KagaiTown } from './scenes/KagaiTown.js';
 
 // Hàm này chỉ được withAuth gọi sau khi xác thực thành công.
 function StartGame(user, parent = 'game-container') {
     const runtime=getCharacterProfile()?.runtime;
-    const all=[VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave,NoxiiEntrance,NoxiiCave,DiaLongForest,DragonRuins,DiaLongBoss,AutumnForest,GuardianCave,HuyenQuyCave,HanNhaMon,HiuuLingRiver,HoaPhuongCave];
-    const byKey={Game:VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,NagaCave,NoxiiEntrance,NoxiiCave,DiaLongForest,DragonRuins,DiaLongBoss,AutumnForest,GuardianCave,HuyenQuyCave,HanNhaMon,HiuuLingRiver,HoaPhuongCave};
+    const all=[VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,KagaiTown,NagaCave,NoxiiEntrance,NoxiiCave,DiaLongForest,DragonRuins,DiaLongBoss,AutumnForest,GuardianCave,HuyenQuyCave,HanNhaMon,HiuuLingRiver,HoaPhuongCave];
+    const byKey={Game:VillageGame,WestForest,AtlastLake,YunaOutskirts,YunaCity,KagaiTown,NagaCave,NoxiiEntrance,NoxiiCave,DiaLongForest,DragonRuins,DiaLongBoss,AutumnForest,GuardianCave,HuyenQuyCave,HanNhaMon,HiuuLingRiver,HoaPhuongCave};
     const first=byKey[runtime?.hp>0?RUNTIME_SCENES[runtime.mapId]:'Game']||VillageGame;
     const config = {
         type: AUTO,
