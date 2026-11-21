@@ -1,7 +1,7 @@
 import { MAX_ENHANCEMENT, enhancementLevel, enhancedItem } from '../data/enhancement.js';
 import { wingStats } from '../data/wings.js';
 import { purchaseItem, sellItemRequest, manageTitle } from '../../api/shopApi.js';
-import { titleById } from '../data/titles.js';
+import { TITLE_STATS, titleById } from '../data/titles.js';
 import { inventoryApi } from '../../api/inventoryApi.js';
 import {
     createCharacterState,
@@ -160,7 +160,7 @@ export class RPGState {
         return EQUIPMENT_SLOTS.reduce(
             (sum, [slot]) => sum + (this.equippedStats(slot)?.[stat] ?? 0),
             0
-        ) + this.wingBonus(stat);
+        ) + this.wingBonus(stat) + (this.data.titles?.length ?? 0) * (TITLE_STATS[stat] ?? 0);
     }
 
     enhancementLevel(slot) { return enhancementLevel(this.data.enhancements?.[slot]); }

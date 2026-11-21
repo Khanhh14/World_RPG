@@ -1,4 +1,5 @@
 export const TITLE_COST = { gold: 10000, gems: 500 };
+export const TITLE_STATS = { maxHP: 100, attack: 10, defense: 10 };
 
 export const TITLES = [
     { id: 'mythic-war-venerable', name: 'Vạn Cổ Chiến Tôn', description: 'Bậc tôn giả từng chinh chiến qua muôn thuở.', color: '#ffe49a', glow: '#ff9d36', aura: '#8a431c' },

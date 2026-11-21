@@ -25,7 +25,6 @@ export class Player {
         this.currentWeapon = null;
         this.currentShield = null;
         this.titleId = null;
-        this.titlePlate = null;
         this.titleLabel = null;
         this.titleTween = null;
 
@@ -70,10 +69,8 @@ export class Player {
         .setDepth(playerDepth - 1);
 
     if (this.titleLabel?.active) {
-        const titleY = this.sprite.y - this.sprite.displayHeight / 2 - 8;
+        const titleY = this.sprite.y - this.sprite.displayHeight / 2 - 26;
         this.titleLabel.setPosition(this.x, titleY).setDepth(playerDepth + 20);
-        this.titlePlate.setPosition(this.x, titleY - this.titleLabel.height / 2 - 2)
-            .setDepth(playerDepth + 19);
     }
 
     if (this.wingSprite) {
@@ -111,10 +108,8 @@ export class Player {
     setTitle(id) {
         if (this.titleId === id) return;
         this.titleTween?.stop();
-        this.titlePlate?.destroy();
         this.titleLabel?.destroy();
         this.titleId = id || null;
-        this.titlePlate = null;
         this.titleLabel = null;
         const title = titleById(id);
         if (!title) return;
@@ -128,10 +123,6 @@ export class Player {
             strokeThickness: 4,
             shadow: { color: title.glow, blur: 10, fill: true, stroke: true }
         }).setOrigin(0.5, 1);
-        this.titlePlate = this.scene.add.rectangle(
-            this.x, this.sprite.y, this.titleLabel.width + 16, this.titleLabel.height + 6,
-            Number.parseInt(title.aura.slice(1), 16), 0.82
-        ).setStrokeStyle(1, Number.parseInt(title.glow.slice(1), 16), 0.95);
         this.titleTween = this.scene.tweens.add({
             targets: this.titleLabel,
             alpha: { from: 0.78, to: 1 },

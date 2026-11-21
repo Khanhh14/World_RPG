@@ -578,7 +578,7 @@ export class RPGHUD {
                 <div class="rpg-title-actions">${hasTitle ? '' : `<span class="rpg-title-cost">● ${TITLE_COST.gold.toLocaleString('vi-VN')} vàng <b>◆ ${TITLE_COST.gems} đá quý</b></span>`}${button}</div>
             </article>`;
         }).join('');
-        return `<section class="rpg-title-intro"><span>ẤN KÝ CHIẾN BINH</span><p>Chọn danh hiệu để khắc ghi hành trình săn quái và thăng cấp. Mỗi danh hiệu có sắc quang riêng; chỉ một danh hiệu được hiển thị cùng lúc.</p><div class="rpg-title-wallet"><b>● ${d.gold.toLocaleString('vi-VN')} vàng</b><b>◆ ${d.gems.toLocaleString('vi-VN')} đá quý</b></div>${current ? `<strong class="rpg-title-current" style="--title-color:${current.color};--title-glow:${current.glow}">Đang mang: ✦ ${escape(current.name)} ✦</strong>` : ''}</section>${pending}<div class="rpg-title-list">${cards}</div>`;
+        return `<section class="rpg-title-intro"><span>ẤN KÝ CHIẾN BINH</span><p>Mỗi danh hiệu sở hữu tăng <b>+100 HP tối đa, +10 công, +10 thủ</b> (không cần trang bị để nhận chỉ số). Trang bị một danh hiệu để hiển thị phía trên nhân vật.</p><div class="rpg-title-wallet"><b>● ${d.gold.toLocaleString('vi-VN')} vàng</b><b>◆ ${d.gems.toLocaleString('vi-VN')} đá quý</b></div>${current ? `<strong class="rpg-title-current" style="--title-color:${current.color};--title-glow:${current.glow}">Đang mang: ✦ ${escape(current.name)} ✦</strong>` : ''}</section>${pending}<div class="rpg-title-list">${cards}</div>`;
     }
     currencyContent() {
         const d = this.state.data;
