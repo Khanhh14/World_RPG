@@ -1,6 +1,7 @@
 import { MAX_ENHANCEMENT, enhancementLevel, enhancedItem } from '../data/enhancement.js';
 import { wingStats } from '../data/wings.js';
-import { purchaseItem, sellItemRequest } from '../../api/shopApi.js';
+import { purchaseItem, sellItemRequest, manageTitle } from '../../api/shopApi.js';
+import { titleById } from '../data/titles.js';
 import { inventoryApi } from '../../api/inventoryApi.js';
 import {
     createCharacterState,
@@ -107,6 +108,9 @@ export class RPGState {
             mp: 50,
             gold: 50,
             gems: 0,
+            titles: [],
+            equippedTitle: null,
+            pendingTitleAction: null,
             wings: null,
             pendingWingAction: null,
             skills: null,
@@ -270,6 +274,14 @@ export class RPGState {
                 };
             }
             this.data.pendingPurchase = saved.pendingPurchase || null;
+            const titleAction = saved.pendingTitleAction;
+            if (titleAction && ['buy', 'equip', 'unequip'].includes(titleAction.action)
+                && titleById(titleAction.titleId)
+                && /^[a-f0-9-]{36}$/i.test(titleAction.requestId ?? '')
+                && (titleAction.action !== 'buy' || (titleAction.position?.mapId === 'village'
+                    && Number.isFinite(titleAction.position.x) && Number.isFinite(titleAction.position.feetY)))) {
+                this.data.pendingTitleAction = titleAction;
+            }
             const eventExchange=saved.pendingEventExchange;
             if(eventExchange?.eventId==='tu-linh'&&/^[a-f0-9-]{36}$/i.test(eventExchange.requestId??''))this.data.pendingEventExchange=eventExchange;
             const eventClaim=saved.pendingEventClaim;
@@ -432,6 +444,70 @@ export class RPGState {
         this.data.mp = Math.min(this.data.mp, this.maxMP);
         this.changed();
         return true;
+    }
+
+    applyServerTitles(ownedTitles, equippedTitle) {
+        this.data.titles = [...new Set((Array.isArray(ownedTitles) ? ownedTitles : []).filter(id => titleById(id)))];
+        this.data.equippedTitle = this.data.titles.includes(equippedTitle) ? equippedTitle : null;
+        this.changed();
+    }
+
+    async performTitleAction(action, titleId, position) {
+        if (this.titleBusy) return { ok:false, message:'Đang xử lý giao dịch danh hiệu…' };
+        if (this.data.pendingTitleAction) {
+            const recovered = await this.recoverTitleAction();
+            return { ...recovered, message:recovered.ok ? 'Đã khôi phục giao dịch trước. Hãy kiểm tra lại danh hiệu.' : recovered.message };
+        }
+        if (!['buy', 'equip', 'unequip'].includes(action) || !titleById(titleId)) {
+            return { ok:false, message:'Danh hiệu hoặc thao tác không hợp lệ.' };
+        }
+        if (action === 'buy' && (this.data.gold < 10000 || this.data.gems < 500)) {
+            return { ok:false, message:'Cần 10.000 vàng và 500 đá quý để mua danh hiệu.' };
+        }
+        if (action !== 'buy' && !this.data.titles.includes(titleId)) {
+            return { ok:false, message:'Bạn chưa sở hữu danh hiệu này.' };
+        }
+        this.data.pendingTitleAction = {
+            action, titleId, requestId:crypto.randomUUID(),
+            ...(action === 'buy' ? { position } : {})
+        };
+        try {
+            if (!this.storage) throw new Error();
+            this.storage.setItem(this.saveKey, JSON.stringify(this.data));
+            const saved = JSON.parse(this.storage.getItem(this.saveKey));
+            if (saved.pendingTitleAction?.requestId !== this.data.pendingTitleAction.requestId) throw new Error();
+        } catch {
+            this.data.pendingTitleAction = null;
+            return { ok:false, message:'Hãy cho phép lưu dữ liệu trình duyệt để xác nhận giao dịch an toàn.' };
+        }
+        return this.recoverTitleAction();
+    }
+
+    async recoverTitleAction() {
+        const pending = this.data.pendingTitleAction;
+        if (!pending || this.titleBusy) return { ok:false, message:'Đang xử lý giao dịch danh hiệu…' };
+        this.titleBusy = true;
+        try {
+            const result = await manageTitle(pending);
+            this.applyServerCharacter(result.character);
+            this.data.titles = Array.isArray(result.titles) ? result.titles.filter(id => titleById(id)) : [];
+            this.data.equippedTitle = this.data.titles.includes(result.equippedTitle) ? result.equippedTitle : null;
+            this.data.pendingTitleAction = null;
+            this.changed();
+            const name = titleById(pending.titleId)?.name;
+            const message = pending.action === 'buy' ? `Đã mua danh hiệu ${name}.`
+                : pending.action === 'equip' ? `Đã trang bị danh hiệu ${name}.`
+                    : `Đã tháo danh hiệu ${name}.`;
+            return { ok:true, message };
+        } catch (error) {
+            if ([400, 403, 409].includes(error.status)) {
+                this.data.pendingTitleAction = null;
+                this.changed();
+            }
+            return { ok:false, message:error.message || 'Danh hiệu đang chờ xác nhận. Hãy thử lại để kiểm tra giao dịch.' };
+        } finally {
+            this.titleBusy = false;
+        }
     }
 
     canAdd(id, quantity = 1) {

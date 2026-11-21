@@ -4,6 +4,7 @@ import { ITEMS } from '../data/items.js';
 import { dragonGearTexture } from '../world/DragonGearArt.js';
 import { offhandTexture } from '../world/OffhandTextures.js';
 import { wingTexture } from '../world/WingTextures.js';
+import { titleById } from '../data/titles.js';
 // Logic nhân vật được dùng lại ở làng, rừng và các khu vực tiếp theo.
 export class Player {
     constructor(scene, config) {
@@ -23,6 +24,10 @@ export class Player {
         this.shieldSprite = null;
         this.currentWeapon = null;
         this.currentShield = null;
+        this.titleId = null;
+        this.titlePlate = null;
+        this.titleLabel = null;
+        this.titleTween = null;
 
         this.updateAppearance();
     }
@@ -64,6 +69,13 @@ export class Player {
         .setPosition(this.x, this.sprite.y + 22)
         .setDepth(playerDepth - 1);
 
+    if (this.titleLabel?.active) {
+        const titleY = this.sprite.y - this.sprite.displayHeight / 2 - 8;
+        this.titleLabel.setPosition(this.x, titleY).setDepth(playerDepth + 20);
+        this.titlePlate.setPosition(this.x, titleY - this.titleLabel.height / 2 - 2)
+            .setDepth(playerDepth + 19);
+    }
+
     if (this.wingSprite) {
         const flutter = Math.sin(this.scene.time.now / 280) * 0.035;
         this.wingSprite.setPosition(this.x, this.sprite.y - 8)
@@ -95,6 +107,43 @@ export class Player {
             .setFlipX(facingLeft);
     }
 }
+
+    setTitle(id) {
+        if (this.titleId === id) return;
+        this.titleTween?.stop();
+        this.titlePlate?.destroy();
+        this.titleLabel?.destroy();
+        this.titleId = id || null;
+        this.titlePlate = null;
+        this.titleLabel = null;
+        const title = titleById(id);
+        if (!title) return;
+
+        this.titleLabel = this.scene.add.text(this.x, this.sprite.y, `✦ ${title.name} ✦`, {
+            fontFamily: 'Georgia, serif',
+            fontSize: '14px',
+            fontStyle: 'bold',
+            color: title.color,
+            stroke: '#17101d',
+            strokeThickness: 4,
+            shadow: { color: title.glow, blur: 10, fill: true, stroke: true }
+        }).setOrigin(0.5, 1);
+        this.titlePlate = this.scene.add.rectangle(
+            this.x, this.sprite.y, this.titleLabel.width + 16, this.titleLabel.height + 6,
+            Number.parseInt(title.aura.slice(1), 16), 0.82
+        ).setStrokeStyle(1, Number.parseInt(title.glow.slice(1), 16), 0.95);
+        this.titleTween = this.scene.tweens.add({
+            targets: this.titleLabel,
+            alpha: { from: 0.78, to: 1 },
+            scaleX: { from: 1, to: 1.06 },
+            scaleY: { from: 1, to: 1.06 },
+            duration: 850,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+        this.updateAppearance();
+    }
 
     updateEquipment(weapon, shield) {
         // Cập nhật vũ khí

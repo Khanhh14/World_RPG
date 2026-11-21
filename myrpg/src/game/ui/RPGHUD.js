@@ -10,6 +10,7 @@ import { ITEMS } from '../systems/RPGState.js';
 import { dragonGearTexture } from '../world/DragonGearArt.js';
 import { renderQuestJournal } from './QuestJournal.js';
 import { WORLD_MAP_GROUPS, WORLD_ROUTES, findWorldRoute } from '../data/worldMap.js';
+import { TITLES, TITLE_COST, titleById } from '../data/titles.js';
 
 const escape = value => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const icon = (frame, size = 40) => `<span class="rpg-icon" aria-hidden="true" style="width:${size}px;height:${size}px;background-size:${size*12}px ${size*11}px;background-position:-${frame%12*size}px -${Math.floor(frame/12)*size}px"></span>`;
@@ -35,6 +36,10 @@ export class RPGHUD {
         if (!document.querySelector('link[data-yuna-wings]')) {
             const wingCSS = document.createElement('link'); wingCSS.rel = 'stylesheet';
             wingCSS.href = '/assets/style/wings.css?v=yuna-1'; wingCSS.dataset.yunaWings = 'true'; document.head.appendChild(wingCSS);
+        }
+        if (!document.querySelector('link[data-title-shop]')) {
+            const titleCSS = document.createElement('link'); titleCSS.rel = 'stylesheet';
+            titleCSS.href = '/assets/style/titles.css?v=1'; titleCSS.dataset.titleShop = 'true'; document.head.appendChild(titleCSS);
         }
         this.tab = null; this.selected = 'health_potion'; this.bagFilter = 'all'; this.bagFilterOpen = false; this.bagPage = 0; this.destroyed = false;
         // CSS đặt trong public/assets/style, tự nạp nếu index.html chưa nạp.
@@ -99,6 +104,20 @@ export class RPGHUD {
             if (action === 'wing-upgrade') {
                 const owned = this.state.data.wings?.collection?.find(item => item.id === id);
                 if (owned) await this.scene.wingsSystem?.perform('upgrade', { wingId: id, expectedLevel: owned.level });
+            }
+            if (action === 'title-retry') {
+                const result = await this.state.recoverTitleAction();
+                this.toast(result.message);
+                if (!this.destroyed && this.tab === 'title-shop') this.renderModal();
+            }
+            if (['title-buy', 'title-equip', 'title-unequip'].includes(action)
+                && this.titleNPC && this.scene.dialogue?.nearest() === this.titleNPC) {
+                const result = await this.state.performTitleAction(action.slice(6), id, {
+                    mapId:this.scene.mapData.id, x:this.scene.player.x, feetY:this.scene.player.feetY
+                });
+                if (this.destroyed) return;
+                this.toast(result.message);
+                if (this.tab === 'title-shop') this.renderModal();
             }
             if (action === 'select') { this.selected = id; this.previewId = null; this.renderModal(); }
             if (action === 'preview') { this.previewId = this.selected; this.renderModal(); }
@@ -212,7 +231,9 @@ export class RPGHUD {
             ? FOOD_RECIPES.find(recipe => recipe.id === d.foodBuff.foodId)
             : null;
         const buffStatus = buff ? `<div class="rpg-food-buff">${escape(buff.name)} · hiệu lực ${Math.ceil((d.foodBuff.expiresAt - Date.now()) / 60000)} phút</div>` : '';
-        this.root.querySelector('.rpg-overview').innerHTML = `<div class="rpg-status"><div class="rpg-portrait">${icon(96,48)}<span class="rpg-level">LV ${d.level}</span></div><div class="rpg-meters"><div class="rpg-name">${escape(d.name || 'Lữ khách')}</div>${this.bar('hp','HP',d.hp,s.maxHP)}${this.bar('mp','MP',d.mp,s.maxMP)}${this.bar('xp','EXP',d.exp,s.expNeeded)}${buffStatus}</div></div>${tracker}<div class="rpg-location"><span class="rpg-location-name">${escape(this.mapTitle)}</span></div>`;
+        const equippedTitle = titleById(d.equippedTitle);
+        const titleBadge = equippedTitle ? `<div class="rpg-title-hud" style="--title-color:${equippedTitle.color};--title-glow:${equippedTitle.glow}">✦ ${escape(equippedTitle.name)} ✦</div>` : '';
+        this.root.querySelector('.rpg-overview').innerHTML = `<div class="rpg-status"><div class="rpg-portrait">${icon(96,48)}<span class="rpg-level">LV ${d.level}</span></div><div class="rpg-meters"><div class="rpg-name">${escape(d.name || 'Lữ khách')}</div>${titleBadge}${this.bar('hp','HP',d.hp,s.maxHP)}${this.bar('mp','MP',d.mp,s.maxMP)}${this.bar('xp','EXP',d.exp,s.expNeeded)}${buffStatus}</div></div>${tracker}<div class="rpg-location"><span class="rpg-location-name">${escape(this.mapTitle)}</span></div>`;
         this.root.querySelector('.rpg-nav').innerHTML = [['map','Bản đồ','M'],['inventory','Túi đồ','B'],['quests','Nhiệm vụ','J'],['settings','Cài đặt','⚙'],['guide','Hướng dẫn','?']].map(([id,name,key]) => `<button type="button" data-action="${id==='map'?'map-open':['settings','guide'].includes(id)?'activity':'tab'}" data-id="${id}" aria-label="${name} (${key})"><span>${name}</span><kbd>${key}</kbd>${id==='quests' && d.quests?.some(quest => quest.status === 'completed')?'<i class="rpg-dot"></i>':''}</button>`).join('');
         if (this.tab) this.renderModal();
         if (this.mapOpen) this.renderWorldMap();
@@ -254,6 +275,11 @@ export class RPGHUD {
         this.tomeNPC = npc;
         this.toggle('tome-shop');
     }
+    openTitleShop(npc) {
+        if (npc?.role !== 'title-merchant' || this.scene.dialogue?.nearest() !== npc) return;
+        this.titleNPC = npc;
+        this.toggle('title-shop');
+    }
     openExchange(npc) {
         if (npc?.role !== 'monster-material-exchange' || this.scene.dialogue?.nearest() !== npc) return;
         this.exchangeNPC = npc;
@@ -264,6 +290,7 @@ export class RPGHUD {
         if (tab === 'skill-shop' && (!this.skillNPC || this.scene.dialogue?.nearest() !== this.skillNPC)) return;
         if (tab === 'wing-shop' && (!this.wingNPC || this.scene.dialogue?.nearest() !== this.wingNPC)) return;
         if (tab === 'tome-shop' && (!this.tomeNPC || this.scene.dialogue?.nearest() !== this.tomeNPC)) return;
+        if (tab === 'title-shop' && (!this.titleNPC || this.scene.dialogue?.nearest() !== this.titleNPC)) return;
         if (tab === 'shop' && (!this.shopNPC || this.scene.dialogue?.nearest() !== this.shopNPC)) return;
         if (tab === 'exchange' && (!this.exchangeNPC || this.scene.dialogue?.nearest() !== this.exchangeNPC)) return;
         if (tab === 'food-exchange' && (!this.foodNPC || this.scene.dialogue?.nearest() !== this.foodNPC)) return;
@@ -282,7 +309,7 @@ export class RPGHUD {
     }
     close() {
         if (!this.tab) return;
-        this.previewId = null; this.tab = null; this.shopNPC = null; this.exchangeNPC = null; this.foodNPC = null; this.wingNPC = null; this.tomeNPC = null; this.skillNPC = null; this.trainingNPC = null; this.overlay.hidden = true;
+        this.previewId = null; this.tab = null; this.shopNPC = null; this.exchangeNPC = null; this.foodNPC = null; this.wingNPC = null; this.tomeNPC = null; this.titleNPC = null; this.skillNPC = null; this.trainingNPC = null; this.overlay.hidden = true;
         this.scene.input.keyboard.resetKeys();
         this.scene.input.keyboard.enabled = this.keyboardWasEnabled;
         if (!this.scene.dialogue?.isOpen) this.scene.dialogueUI?.actionBar?.setVisible(true);
@@ -300,6 +327,7 @@ export class RPGHUD {
         if (this.skillNPC && this.tab !== 'quests') names['skill-shop'] = 'Sách kỹ năng';
         if (this.wingNPC && this.tab !== 'quests') names['wing-shop'] = 'Đá nâng cấp cánh';
         if (this.tomeNPC && this.tab !== 'quests') names['tome-shop'] = 'Rương Cổ Tịch';
+        if (this.titleNPC && this.tab !== 'quests') names['title-shop'] = 'Danh Hiệu';
         if (this.shopNPC && this.tab !== 'quests') names.shop = 'Cửa hàng';
         if (this.exchangeNPC && this.tab === 'exchange') names.exchange = 'Đổi vật phẩm quái';
         if (this.foodNPC && this.tab === 'food-exchange') names['food-exchange'] = 'Đổi món ăn';
@@ -310,6 +338,7 @@ export class RPGHUD {
         this.modal.classList.toggle('rpg-tomes-modal', this.tab === 'tomes');
         this.modal.classList.toggle('rpg-wing-shop-modal', this.tab === 'wing-shop');
         this.modal.classList.toggle('rpg-shop-modal', ['shop','tome-shop'].includes(this.tab));
+        this.modal.classList.toggle('rpg-title-shop-modal', this.tab === 'title-shop');
         this.modal.classList.toggle('rpg-inventory-modal', this.tab === 'inventory');
         this.modal.classList.toggle('rpg-potential-modal', this.tab === 'potential');
         this.modal.classList.toggle('rpg-quests-modal', this.tab === 'quests');
@@ -331,6 +360,7 @@ export class RPGHUD {
         if (this.tab === 'tomes') return this.tomesContent();
         if (this.tab === 'wing-shop') return renderWingShop(this);
         if (this.tab === 'tome-shop') return this.tomeShopContent();
+        if (this.tab === 'title-shop') return this.titleShopContent();
         if (this.tab === 'shop') return this.shopContent();
         if (this.tab === 'exchange') return this.exchangeContent();
         if (this.tab === 'food-exchange') return this.foodExchangeContent();
@@ -526,6 +556,29 @@ export class RPGHUD {
             <div class="rpg-shop-grid"><article class="rpg-shop-item"><header>${itemIcon(item, 48)}<div><h3>${escape(item.name)}</h3><span class="rpg-tier">RƯƠNG BÍ ẨN</span></div></header>
                 <p>${escape(item.description)} Có thể nhận trùng Cổ Tịch.</p><div class="rpg-shop-buy"><strong>● ${item.price.toLocaleString('vi-VN')} vàng</strong><button type="button" class="rpg-primary" data-action="tome-chest-buy" ${!check.ok || this.state.buying ? 'disabled' : ''}>Mua rương</button></div>
             </article></div>`;
+    }
+    titleShopContent() {
+        const d = this.state.data;
+        const busy = this.state.titleBusy || Boolean(d.pendingTitleAction);
+        const owned = new Set(d.titles ?? []);
+        const current = titleById(d.equippedTitle);
+        const pending = d.pendingTitleAction
+            ? '<div class="rpg-title-pending"><span>Giao dịch danh hiệu đang chờ xác nhận.</span><button type="button" data-action="title-retry">Kiểm tra lại</button></div>'
+            : '';
+        const cards = TITLES.map(title => {
+            const hasTitle = owned.has(title.id);
+            const equipped = d.equippedTitle === title.id;
+            const enough = d.gold >= TITLE_COST.gold && d.gems >= TITLE_COST.gems;
+            const button = hasTitle
+                ? `<button type="button" class="${equipped ? 'rpg-title-equipped' : 'rpg-primary'}" data-action="title-${equipped ? 'unequip' : 'equip'}" data-id="${title.id}" ${busy ? 'disabled' : ''}>${equipped ? 'Đang trang bị · Tháo ra' : 'Trang bị danh hiệu'}</button>`
+                : `<button type="button" class="rpg-primary" data-action="title-buy" data-id="${title.id}" ${busy || !enough ? 'disabled' : ''}>${enough ? 'Mua danh hiệu' : 'Chưa đủ tiền'}</button>`;
+            return `<article class="rpg-title-card ${equipped ? 'equipped' : ''}" style="--title-color:${title.color};--title-glow:${title.glow};--title-aura:${title.aura}">
+                <div class="rpg-title-sigil" aria-hidden="true">✦</div>
+                <div class="rpg-title-copy"><span class="rpg-title-rank">${equipped ? 'ĐANG HIỂN THỊ' : hasTitle ? 'ĐÃ SỞ HỮU' : 'DANH HIỆU CỔ XƯA'}</span><h3>${escape(title.name)}</h3><p>${escape(title.description)} ${hasTitle ? 'Trang bị để hiển thị phía trên nhân vật.' : ''}</p></div>
+                <div class="rpg-title-actions">${hasTitle ? '' : `<span class="rpg-title-cost">● ${TITLE_COST.gold.toLocaleString('vi-VN')} vàng <b>◆ ${TITLE_COST.gems} đá quý</b></span>`}${button}</div>
+            </article>`;
+        }).join('');
+        return `<section class="rpg-title-intro"><span>ẤN KÝ CHIẾN BINH</span><p>Chọn danh hiệu để khắc ghi hành trình săn quái và thăng cấp. Mỗi danh hiệu có sắc quang riêng; chỉ một danh hiệu được hiển thị cùng lúc.</p><div class="rpg-title-wallet"><b>● ${d.gold.toLocaleString('vi-VN')} vàng</b><b>◆ ${d.gems.toLocaleString('vi-VN')} đá quý</b></div>${current ? `<strong class="rpg-title-current" style="--title-color:${current.color};--title-glow:${current.glow}">Đang mang: ✦ ${escape(current.name)} ✦</strong>` : ''}</section>${pending}<div class="rpg-title-list">${cards}</div>`;
     }
     currencyContent() {
         const d = this.state.data;

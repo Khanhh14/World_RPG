@@ -17,3 +17,4 @@ async function shopRequest(action,input) {
 
 export const purchaseItem=input=>shopRequest('buy',input);
 export const sellItemRequest=input=>shopRequest('sell',input);
+export const manageTitle=input=>shopRequest('title',input);

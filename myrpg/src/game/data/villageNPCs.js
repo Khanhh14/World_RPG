@@ -4,6 +4,7 @@ export const villageNPCs = [
     {
         id: 'elder',
         name: 'Trưởng làng',
+        role: 'title-merchant',
         frame: 86,
 
         // Bên phải nhà mái đỏ phía trên.
@@ -13,7 +14,8 @@ export const villageNPCs = [
         lines: [
             'Chào mừng cháu đến Làng Khởi Đầu!',
             'Khu cây xanh nằm ở phía tây bắc của làng.',
-            'Hãy làm quen với mọi người trước khi bắt đầu chuyến phiêu lưu.'
+            'Hãy làm quen với mọi người trước khi bắt đầu chuyến phiêu lưu.',
+            'Ta có những danh hiệu cổ xưa dành cho các chiến binh dũng mãnh.'
         ]
     },
     {

@@ -96,6 +96,7 @@ export class BaseWorldScene extends Scene {
         const equipment = this.rpgState.data.equipment;
         this.player.updateEquipment(equipment.weapon, equipment.shield);
         this.player.updateWings(this.rpgState.data.wings);
+        this.player.setTitle(this.rpgState.data.equippedTitle);
     }
 
     update() {

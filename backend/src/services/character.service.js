@@ -5,7 +5,8 @@ const recognized = row => classes.some(c => c.code === row?.class_code);
 function createCharacterService(db) {
   async function view(c, row) {
     const [items] = await c.execute('SELECT item_definition_id, quantity, location, slot_key FROM character_items WHERE character_id = ?', [row.id]);
-    return { id: String(row.id), name: row.name, classCode: row.class_code, class: classes.find(c => c.code === row.class_code), level: Number(row.level), exp: Number(row.exp), gold: Number(row.gold), gems: Number(row.gems || 0), revision: Number(row.progress_version || 0), hp: Number(row.hp), mana: Number(row.mana), mapId: row.map_id, items: items.map(i => ({ id: i.item_definition_id, quantity: Number(i.quantity), location: i.location, slot: i.slot_key })) };
+    const [titles] = await c.execute('SELECT title_id, equipped FROM character_titles WHERE character_id = ? ORDER BY created_at, title_id', [row.id]);
+    return { id: String(row.id), name: row.name, classCode: row.class_code, class: classes.find(c => c.code === row.class_code), level: Number(row.level), exp: Number(row.exp), gold: Number(row.gold), gems: Number(row.gems || 0), revision: Number(row.progress_version || 0), hp: Number(row.hp), mana: Number(row.mana), mapId: row.map_id, items: items.map(i => ({ id: i.item_definition_id, quantity: Number(i.quantity), location: i.location, slot: i.slot_key })), titles: titles.map(title => title.title_id), equippedTitle: titles.find(title => Number(title.equipped) === 1)?.title_id ?? null };
   }
   return {
     async current(userId) {

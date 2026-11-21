@@ -1,0 +1,13 @@
+{
+  "cost": {
+    "gold": 10000,
+    "gems": 500
+  },
+  "titles": [
+    { "id": "mythic-war-venerable", "name": "Vạn Cổ Chiến Tôn" },
+    { "id": "nine-heavens-sword-emperor", "name": "Cửu Thiên Kiếm Đế" },
+    { "id": "ten-directions-slaying-god", "name": "Thập Phương Sát Thần" },
+    { "id": "hundred-battles-peerless", "name": "Bách Chiến Vô Song" },
+    { "id": "blood-moon-demon-venerable", "name": "Huyết Nguyệt Ma Tôn" }
+  ]
+}
